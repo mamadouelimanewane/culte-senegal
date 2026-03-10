@@ -46,7 +46,7 @@ const state = {
   activeTab: 'home',
   listSet: 'infrastructures',
   listFilters: { search: '', region: '', type: '', milieu: '' },
-  mapFilters: { search: '', layer: 'all' },
+  mapFilters: { search: '', layer: 'all', region: '', milieu: '' },
   page: 1,
   perPage: 20,
   favs: new Set(JSON.parse(localStorage.getItem('culte_favs') || '[]')),
@@ -359,8 +359,9 @@ function renderListTabs() {
   document.querySelectorAll('.infra-only').forEach(el => {
     el.style.display = isInfra ? '' : 'none';
   });
-  // Rebuild type chips
+  // Rebuild type chips (mobile + desktop)
   buildTypeChips();
+  buildTypeChipsDt();
 }
 
 function buildTypeChips() {
@@ -965,9 +966,182 @@ function updateClock() {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   DESKTOP
+   ════════════════════════════════════════════════════════════════ */
+function isDesktop() { return window.innerWidth >= 1024; }
+
+function applyLayout() {
+  document.body.classList.toggle('is-desktop', isDesktop());
+}
+
+function setupDesktopFilters() {
+  // Populate explore region select
+  const mapRegSel = document.getElementById('mapRegionSelect');
+  if (mapRegSel) {
+    const regions = [...new Set([
+      ...state.data.infrastructures.map(r => r.REGION),
+      ...state.data.formations.map(r => r.REGION),
+    ].filter(Boolean))].sort();
+    mapRegSel.innerHTML = '<option value="">Toutes les régions</option>' +
+      regions.map(r => `<option value="${r}">${r.charAt(0)+r.slice(1).toLowerCase()}</option>`).join('');
+    mapRegSel.addEventListener('change', e => {
+      state.mapFilters.region = e.target.value;
+      if (state.map) applyMapFilters();
+    });
+  }
+
+  // Desktop milieu pills for map
+  document.querySelectorAll('#tab-explore .ep-milieu').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tab-explore .ep-milieu').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.mapFilters.milieu = btn.dataset.milieu;
+      if (state.map) applyMapFilters();
+    });
+  });
+
+  // Desktop explore reset
+  const epReset = document.getElementById('epReset');
+  if (epReset) epReset.addEventListener('click', () => {
+    state.mapFilters = { search: '', layer: 'all', region: '', milieu: '' };
+    if (mapRegSel) mapRegSel.value = '';
+    document.querySelectorAll('#tab-explore .ep-milieu').forEach(b => b.classList.toggle('active', b.dataset.milieu === ''));
+    document.querySelectorAll('.map-chip').forEach(b => b.classList.toggle('active', b.dataset.layer === 'all'));
+    document.getElementById('mapSearch').value = '';
+    document.getElementById('mapSearchClear').classList.add('hidden');
+    document.getElementById('nlpChipsRow').classList.add('hidden');
+    document.getElementById('mapBotBar').classList.add('hidden');
+    if (state.map) { populateMapLayer('all'); state.map.setView([14.5, -14.5], 6); }
+    updateEpStats();
+  });
+
+  // Desktop list filters
+  const regSelDt = document.getElementById('regionSelectDt');
+  if (regSelDt) {
+    regSelDt.innerHTML = document.getElementById('regionSelect').innerHTML;
+    regSelDt.addEventListener('change', e => {
+      state.listFilters.region = e.target.value;
+      document.getElementById('regionSelect').value = e.target.value;
+      applyListFilters(true);
+    });
+  }
+
+  document.querySelectorAll('#milieuRowDt .ep-milieu').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#milieuRowDt .ep-milieu').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.listFilters.milieu = btn.dataset.milieu;
+      document.querySelectorAll('.milieu-pill').forEach(b => b.classList.toggle('active', b.dataset.milieu === btn.dataset.milieu));
+      applyListFilters(true);
+    });
+  });
+
+  const drawerResetDt = document.getElementById('drawerResetDt');
+  if (drawerResetDt) drawerResetDt.addEventListener('click', () => {
+    state.listFilters = { search: '', region: '', type: '', milieu: '' };
+    document.getElementById('listSearch').value = '';
+    document.getElementById('regionSelect').value = '';
+    if (regSelDt) regSelDt.value = '';
+    document.querySelectorAll('.milieu-pill, #milieuRowDt .ep-milieu').forEach(b => b.classList.toggle('active', b.dataset.milieu === ''));
+    renderListTabs();
+    applyListFilters(true);
+  });
+
+  // Desktop search bar
+  const dtSearch = document.getElementById('dtSearch');
+  if (dtSearch) {
+    let dtTimer;
+    dtSearch.addEventListener('input', () => {
+      clearTimeout(dtTimer);
+      dtTimer = setTimeout(() => {
+        const val = dtSearch.value.trim();
+        if (!val) return;
+        switchTab('list');
+        state.listFilters.search = val;
+        document.getElementById('listSearch').value = val;
+        applyListFilters(true);
+      }, 350);
+    });
+    dtSearch.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const val = dtSearch.value.trim();
+        if (!val) return;
+        switchTab('list');
+        state.listFilters.search = val;
+        document.getElementById('listSearch').value = val;
+        applyListFilters(true);
+      }
+    });
+  }
+
+  // Update total count
+  const total = state.data.infrastructures.length + state.data.formations.length;
+  const el = document.getElementById('dtTotalCount');
+  if (el) el.textContent = total.toLocaleString('fr-FR');
+
+  updateEpStats();
+}
+
+function updateEpStats() {
+  const el = document.getElementById('epInfraCount');
+  if (el) el.textContent = state.data.infrastructures.length;
+  const el2 = document.getElementById('epFormCount');
+  if (el2) el2.textContent = state.data.formations.length;
+  const el3 = document.getElementById('epRegCount');
+  if (el3) el3.textContent = new Set(state.data.infrastructures.map(r => r.REGION).filter(Boolean)).size;
+}
+
+function buildTypeChipsDt() {
+  const container = document.getElementById('typeChipsDt');
+  if (!container) return;
+  const isFormation = state.listSet === 'formations';
+  const records = isFormation ? state.data.formations : state.data.infrastructures;
+  const typeCounts = {};
+  records.forEach(r => {
+    const t = isFormation ? (r.BRANCHE || 'default') : getInfraType(r);
+    typeCounts[t] = (typeCounts[t] || 0) + 1;
+  });
+  const sorted = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+  container.innerHTML = sorted.map(([type]) => {
+    const active = state.listFilters.type === type;
+    return `<button class="type-chip${active?' active':''}" data-type="${type}">${type}</button>`;
+  }).join('');
+  container.querySelectorAll('.type-chip').forEach(btn => {
+    btn.onclick = () => {
+      state.listFilters.type = state.listFilters.type === btn.dataset.type ? '' : btn.dataset.type;
+      buildTypeChips(); buildTypeChipsDt();
+      applyListFilters(true);
+    };
+  });
+}
+
+/* Extended map filter with region/milieu */
+function applyMapFilters() {
+  const { layer, region, milieu } = state.mapFilters;
+  state.mapCluster.clearLayers();
+  let shown = 0;
+  state.mapMarkers.forEach(({ marker, rec, isFormation }) => {
+    const recRegion = (rec.REGION || '').toUpperCase();
+    const recMilieu = (rec.MILIEU || '').toUpperCase();
+    const layerOk = layer === 'all' || (layer === 'infrastructures' && !isFormation) || (layer === 'formations' && isFormation);
+    const regionOk = !region || recRegion === region.toUpperCase();
+    const milieuOk = !milieu || recMilieu === milieu;
+    if (layerOk && regionOk && milieuOk) {
+      state.mapCluster.addLayer(marker);
+      shown++;
+    }
+  });
+  // Update chip counts
+  document.getElementById('chipAll').textContent = shown;
+}
+
+/* ════════════════════════════════════════════════════════════════
    INIT
    ════════════════════════════════════════════════════════════════ */
 async function init() {
+  applyLayout();
+  window.addEventListener('resize', () => applyLayout());
+
   updateClock();
   setInterval(updateClock, 30000);
 
@@ -995,6 +1169,7 @@ async function init() {
       document.getElementById('listSearch').value = '';
       document.getElementById('regionSelect').value = '';
       renderListTabs();
+      buildTypeChipsDt();
       applyListFilters(true);
     });
   });
@@ -1008,13 +1183,13 @@ async function init() {
     listTimer = setTimeout(() => applyListFilters(true), 280);
   });
 
-  // Region select
+  // Region select (mobile drawer)
   document.getElementById('regionSelect').addEventListener('change', e => {
     state.listFilters.region = e.target.value;
     applyListFilters(true);
   });
 
-  // Milieu pills
+  // Milieu pills (mobile drawer)
   document.querySelectorAll('.milieu-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.milieu-pill').forEach(b => b.classList.remove('active'));
@@ -1024,7 +1199,7 @@ async function init() {
     });
   });
 
-  // Drawer reset
+  // Drawer reset (mobile)
   document.getElementById('drawerReset').addEventListener('click', () => {
     state.listFilters = { search: '', region: '', type: '', milieu: '' };
     document.getElementById('listSearch').value = '';
@@ -1034,7 +1209,7 @@ async function init() {
     applyListFilters(true);
   });
 
-  // Filter button toggle
+  // Filter button toggle (mobile)
   document.getElementById('filterBtn').addEventListener('click', () => {
     const drawer = document.getElementById('listFilterDrawer');
     drawer.classList.toggle('hidden');
@@ -1046,7 +1221,13 @@ async function init() {
       document.querySelectorAll('.map-chip').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.mapFilters.layer = btn.dataset.layer;
-      if (state.map) populateMapLayer(btn.dataset.layer);
+      if (state.map) {
+        if (isDesktop() && (state.mapFilters.region || state.mapFilters.milieu)) {
+          applyMapFilters();
+        } else {
+          populateMapLayer(btn.dataset.layer);
+        }
+      }
     });
   });
 
@@ -1064,7 +1245,6 @@ async function init() {
       pos => {
         fab.classList.remove('locating');
         state.map?.setView([pos.coords.latitude, pos.coords.longitude], 13);
-        // Add user marker
         L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
           radius: 8, fillColor: '#00b4d8', color: 'white', weight: 3, fillOpacity: 1
         }).addTo(state.map).bindPopup('📍 Vous êtes ici').openPopup();
@@ -1093,6 +1273,9 @@ async function init() {
   } else {
     micBtn.style.opacity = '.3';
   }
+
+  // Desktop filters setup
+  setupDesktopFilters();
 
   // Hide splash
   setTimeout(() => {

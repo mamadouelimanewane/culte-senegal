@@ -27,182 +27,286 @@
 <!-- ═══════════════════════════════════ APP ══════════════════════ -->
 <div id="app" class="hidden">
 
-  <!-- ── TOP STATUS BAR (decorative) ── -->
+  <!-- ── STATUS BAR (mobile) / TOPBAR (desktop) ── -->
   <div class="status-bar">
-    <span id="statusTime">9:41</span>
-    <span class="status-icons">
+    <!-- Mobile only -->
+    <span id="statusTime" class="mobile-only">9:41</span>
+    <span class="status-icons mobile-only">
       <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0.5" width="3" height="11.5" rx="1"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity=".3"/></svg>
       <svg width="16" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M1.5 8.5a13 13 0 0 1 21 0M5 12a10 10 0 0 1 14 0M8.5 15.5a6 6 0 0 1 7 0M12 19h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
       <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor"><rect x="0" y="1" width="18" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="2"/><rect x="19" y="4" width="2.5" height="4" rx="1"/></svg>
     </span>
+    <!-- Desktop only -->
+    <div class="dt-brand desktop-only">
+      <span class="dt-brand-icon">🌊</span>
+      <div>
+        <div class="dt-brand-name">Culte</div>
+        <div class="dt-brand-sub">Culture Sénégal</div>
+      </div>
+    </div>
+    <div class="dt-search-wrap desktop-only">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="dtSearch" type="text" placeholder="Rechercher musées, cinémas, formations, régions…" autocomplete="off">
+    </div>
+    <div class="dt-topbar-right desktop-only">
+      <span class="dt-count-badge">🗺 <span id="dtTotalCount">—</span> lieux</span>
+      <button class="btn-notif dt-notif" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+    </div>
   </div>
 
-  <!-- ══════════════ TAB: HOME ══════════════ -->
-  <section id="tab-home" class="tab-section active">
+  <!-- ── TAB WRAP ── -->
+  <div id="tab-wrap">
 
-    <!-- Header -->
-    <div class="home-header">
-      <div class="home-header-top">
-        <div>
-          <p class="home-greeting">Bonjour 👋</p>
-          <h1 class="home-title">Découvrir la Culture</h1>
+    <!-- ══════════════ TAB: HOME ══════════════ -->
+    <section id="tab-home" class="tab-section active">
+
+      <!-- Header -->
+      <div class="home-header">
+        <div class="home-header-top">
+          <div>
+            <p class="home-greeting">Bonjour 👋</p>
+            <h1 class="home-title">Découvrir la Culture</h1>
+          </div>
+          <button class="btn-notif mobile-only" id="btnNotif" aria-label="Notifications">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="notif-dot"></span>
+          </button>
         </div>
-        <button class="btn-notif" id="btnNotif" aria-label="Notifications">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="notif-dot"></span>
-        </button>
-      </div>
 
-      <!-- Search bar -->
-      <div class="home-search-wrap">
-        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="homeSearch" type="text" placeholder="Rechercher musées, cinémas…" autocomplete="off">
-        <button class="mic-btn" id="micBtn" aria-label="Recherche vocale">🎤</button>
-      </div>
-    </div>
-
-    <!-- Scroll content -->
-    <div class="home-scroll">
-
-      <!-- Categories -->
-      <div class="section-header">
-        <span class="section-title">Catégories</span>
-        <button class="see-all" data-goto="explore">Voir tout</button>
-      </div>
-      <div class="categories-row" id="categoriesRow">
-        <!-- injected by JS -->
-      </div>
-
-      <!-- Featured Carousel -->
-      <div class="section-header" style="margin-top:20px">
-        <span class="section-title">À la une</span>
-        <button class="see-all" data-goto="explore">Explorer</button>
-      </div>
-      <div class="carousel-wrap">
-        <div class="carousel-track" id="carouselTrack"><!-- injected --></div>
-        <div class="carousel-dots" id="carouselDots"></div>
-      </div>
-
-      <!-- Top Regions -->
-      <div class="section-header" style="margin-top:20px">
-        <span class="section-title">Top Régions</span>
-      </div>
-      <div class="regions-row" id="regionsRow">
-        <!-- injected by JS -->
-      </div>
-
-      <!-- Recent / Near you -->
-      <div class="section-header" style="margin-top:20px">
-        <span class="section-title">Explorer par type</span>
-        <button class="see-all" data-goto="list">Tous</button>
-      </div>
-      <div class="mini-cards-grid" id="miniCardsGrid">
-        <!-- injected by JS -->
-      </div>
-
-      <!-- Stats strip -->
-      <div class="stats-strip" id="statsStrip">
-        <div class="stat-item"><span class="stat-num" id="statInfra">—</span><span class="stat-lbl">Infrastructures</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-num" id="statFormations">—</span><span class="stat-lbl">Formations</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-num" id="statRegions">—</span><span class="stat-lbl">Régions</span></div>
-      </div>
-
-      <div style="height:20px"></div>
-    </div>
-  </section>
-
-  <!-- ══════════════ TAB: EXPLORE (MAP) ══════════════ -->
-  <section id="tab-explore" class="tab-section">
-    <div class="explore-header">
-      <h2 class="explore-title">Explorer</h2>
-      <div class="explore-search-wrap">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="mapSearch" type="text" placeholder="Recherche NLP…" autocomplete="off">
-        <button id="mapSearchClear" class="clear-btn hidden">✕</button>
-      </div>
-      <!-- Filter chips -->
-      <div class="map-filter-row" id="mapFilterRow">
-        <button class="map-chip active" data-layer="all">Tout <span class="chip-count" id="chipAll">—</span></button>
-        <button class="map-chip" data-layer="infrastructures">Infras <span class="chip-count" id="chipInfra">—</span></button>
-        <button class="map-chip" data-layer="formations">Formations <span class="chip-count" id="chipFormation">—</span></button>
-      </div>
-      <!-- NLP result chips -->
-      <div class="nlp-chips-row hidden" id="nlpChipsRow"></div>
-    </div>
-    <!-- Bot response -->
-    <div class="map-bot-bar hidden" id="mapBotBar">
-      <span class="bot-avatar">🤖</span>
-      <span id="mapBotMsg"></span>
-    </div>
-    <!-- Map -->
-    <div id="exploreMap"></div>
-    <!-- Locate FAB -->
-    <button class="locate-fab" id="locateFab" aria-label="Me localiser">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" opacity=".25"/></svg>
-    </button>
-  </section>
-
-  <!-- ══════════════ TAB: LIST ══════════════ -->
-  <section id="tab-list" class="tab-section">
-    <div class="list-header">
-      <h2 class="list-title">Annuaire</h2>
-      <div class="list-tabs">
-        <button class="list-tab active" data-set="infrastructures">Infrastructures <span id="listInfraCount"></span></button>
-        <button class="list-tab" data-set="formations">Formations <span id="listFormCount"></span></button>
-      </div>
-      <!-- Filters -->
-      <div class="list-filters">
-        <div class="list-search-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="listSearch" type="text" placeholder="Filtrer…" autocomplete="off">
+        <!-- Search bar -->
+        <div class="home-search-wrap">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="homeSearch" type="text" placeholder="Rechercher musées, cinémas…" autocomplete="off">
+          <button class="mic-btn" id="micBtn" aria-label="Recherche vocale">🎤</button>
         </div>
-        <button class="filter-btn" id="filterBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </button>
       </div>
-    </div>
 
-    <!-- Filter drawer -->
-    <div class="list-filter-drawer hidden" id="listFilterDrawer">
-      <div class="drawer-pill"></div>
-      <div class="drawer-body">
-        <p class="drawer-label">Région</p>
-        <select id="regionSelect" class="drawer-select">
-          <option value="">Toutes les régions</option>
-        </select>
-        <p class="drawer-label" id="typeLabel">Type</p>
-        <div class="type-chips" id="typeChips"></div>
-        <p class="drawer-label infra-only">Milieu</p>
-        <div class="milieu-row infra-only">
-          <button class="milieu-pill active" data-milieu="">Tous</button>
-          <button class="milieu-pill" data-milieu="URBAIN">Urbain</button>
-          <button class="milieu-pill" data-milieu="RURAL">Rural</button>
+      <!-- Scroll content -->
+      <div class="home-scroll">
+
+        <!-- Categories -->
+        <div class="section-header">
+          <span class="section-title">Catégories</span>
+          <button class="see-all" data-goto="explore">Voir tout</button>
         </div>
-        <button class="drawer-reset" id="drawerReset">Réinitialiser</button>
+        <div class="categories-row" id="categoriesRow"><!-- injected --></div>
+
+        <!-- Carte du Sénégal CTA -->
+        <div class="map-cta-card" onclick="switchTab('explore')">
+          <div class="map-cta-bg">
+            <svg viewBox="0 0 260 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M50 70 L68 48 L90 44 L115 40 L145 44 L168 56 L178 72 L174 90 L162 106 L146 118 L132 128 L120 145 L112 158 L100 148 L88 134 L72 122 L56 112 L44 98 L40 84 Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.30)" stroke-width="1.5"/>
+              <circle cx="112" cy="80" r="5" fill="rgba(0,210,255,0.85)"/>
+              <circle cx="140" cy="68" r="3.5" fill="rgba(0,210,255,0.65)"/>
+              <circle cx="82" cy="90" r="3.5" fill="rgba(0,210,255,0.65)"/>
+              <circle cx="122" cy="100" r="3" fill="rgba(0,210,255,0.55)"/>
+              <circle cx="92" cy="116" r="2.5" fill="rgba(0,210,255,0.45)"/>
+              <circle cx="152" cy="100" r="2.5" fill="rgba(0,210,255,0.45)"/>
+              <circle cx="66" cy="105" r="2" fill="rgba(0,210,255,0.35)"/>
+              <circle cx="135" cy="118" r="2" fill="rgba(0,210,255,0.35)"/>
+              <circle cx="105" cy="130" r="1.5" fill="rgba(0,210,255,0.3)"/>
+              <!-- grid lines -->
+              <line x1="30" y1="80" x2="200" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="30" y1="100" x2="200" y2="100" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="90" y1="40" x2="90" y2="160" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="130" y1="40" x2="130" y2="160" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="170" y1="40" x2="170" y2="160" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="map-cta-content">
+            <div class="map-cta-left">
+              <span class="map-cta-icon">🗺</span>
+              <div class="map-cta-text">
+                <div class="map-cta-title">Carte du Sénégal</div>
+                <div class="map-cta-sub">1 226 lieux culturels localisés</div>
+              </div>
+            </div>
+            <div class="map-cta-arrow">→</div>
+          </div>
+        </div>
+
+        <!-- Featured Carousel -->
+        <div class="section-header" style="margin-top:20px">
+          <span class="section-title">À la une</span>
+          <button class="see-all" data-goto="explore">Explorer</button>
+        </div>
+        <div class="carousel-wrap">
+          <div class="carousel-track" id="carouselTrack"><!-- injected --></div>
+          <div class="carousel-dots" id="carouselDots"></div>
+        </div>
+
+        <!-- Top Regions -->
+        <div class="section-header" style="margin-top:20px">
+          <span class="section-title">Top Régions</span>
+        </div>
+        <div class="regions-row" id="regionsRow"><!-- injected --></div>
+
+        <!-- Explorer par type -->
+        <div class="section-header" style="margin-top:20px">
+          <span class="section-title">Explorer par type</span>
+          <button class="see-all" data-goto="list">Tous</button>
+        </div>
+        <div class="mini-cards-grid" id="miniCardsGrid"><!-- injected --></div>
+
+        <!-- Stats strip -->
+        <div class="stats-strip" id="statsStrip">
+          <div class="stat-item"><span class="stat-num" id="statInfra">—</span><span class="stat-lbl">Infrastructures</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><span class="stat-num" id="statFormations">—</span><span class="stat-lbl">Formations</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><span class="stat-num" id="statRegions">—</span><span class="stat-lbl">Régions</span></div>
+        </div>
+
+        <div style="height:20px"></div>
       </div>
-    </div>
+    </section>
 
-    <div class="list-cards" id="listCards"></div>
-    <div class="pagination" id="pagination"></div>
-  </section>
+    <!-- ══════════════ TAB: EXPLORE (MAP) ══════════════ -->
+    <section id="tab-explore" class="tab-section">
+      <div class="explore-layout">
 
-  <!-- ══════════════ TAB: FAVORITES ══════════════ -->
-  <section id="tab-favorites" class="tab-section">
-    <div class="favs-header">
-      <h2 class="favs-title">Favoris</h2>
-    </div>
-    <div class="favs-content" id="favsContent">
-      <div class="empty-state">
-        <span class="empty-icon">💙</span>
-        <p>Aucun favori pour l'instant</p>
-        <small>Appuyez sur ♡ sur une fiche pour l'ajouter</small>
+        <!-- Panel: search + filters (header on mobile, sidebar on desktop) -->
+        <div class="explore-panel">
+          <div class="explore-panel-header">
+            <h2 class="explore-title">Explorer</h2>
+            <div class="explore-search-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="mapSearch" type="text" placeholder="Recherche NLP…" autocomplete="off">
+              <button id="mapSearchClear" class="clear-btn hidden">✕</button>
+            </div>
+            <!-- Filter chips -->
+            <div class="map-filter-row" id="mapFilterRow">
+              <button class="map-chip active" data-layer="all">Tout <span class="chip-count" id="chipAll">—</span></button>
+              <button class="map-chip" data-layer="infrastructures">Infras <span class="chip-count" id="chipInfra">—</span></button>
+              <button class="map-chip" data-layer="formations">Formations <span class="chip-count" id="chipFormation">—</span></button>
+            </div>
+            <!-- NLP chips -->
+            <div class="nlp-chips-row hidden" id="nlpChipsRow"></div>
+            <!-- Bot bar -->
+            <div class="map-bot-bar hidden" id="mapBotBar">
+              <span class="bot-avatar">🤖</span>
+              <span id="mapBotMsg"></span>
+            </div>
+          </div>
+
+          <!-- Desktop extended filters -->
+          <div class="explore-panel-filters desktop-only">
+            <p class="ep-label">Région</p>
+            <select id="mapRegionSelect" class="ep-select">
+              <option value="">Toutes les régions</option>
+            </select>
+            <p class="ep-label" style="margin-top:16px">Milieu</p>
+            <div class="ep-milieu-row">
+              <button class="ep-milieu active" data-milieu="">Tous</button>
+              <button class="ep-milieu" data-milieu="URBAIN">Urbain</button>
+              <button class="ep-milieu" data-milieu="RURAL">Rural</button>
+            </div>
+            <p class="ep-label" style="margin-top:16px">Statistiques</p>
+            <div class="ep-stats" id="epStats">
+              <div class="ep-stat-row"><span>Infrastructures</span><span id="epInfraCount">—</span></div>
+              <div class="ep-stat-row"><span>Formations</span><span id="epFormCount">—</span></div>
+              <div class="ep-stat-row"><span>Régions couvertes</span><span id="epRegCount">—</span></div>
+            </div>
+            <button class="ep-reset" id="epReset">Réinitialiser les filtres</button>
+          </div>
+        </div>
+
+        <!-- Map area -->
+        <div class="explore-map-area">
+          <div id="exploreMap"></div>
+          <!-- Locate FAB -->
+          <button class="locate-fab" id="locateFab" aria-label="Me localiser">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" opacity=".25"/></svg>
+          </button>
+        </div>
+
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ══════════════ BOTTOM NAV ══════════════ -->
+    <!-- ══════════════ TAB: LIST ══════════════ -->
+    <section id="tab-list" class="tab-section">
+      <div class="list-header">
+        <h2 class="list-title">Annuaire</h2>
+        <div class="list-tabs">
+          <button class="list-tab active" data-set="infrastructures">Infrastructures <span id="listInfraCount"></span></button>
+          <button class="list-tab" data-set="formations">Formations <span id="listFormCount"></span></button>
+        </div>
+        <!-- Filters -->
+        <div class="list-filters">
+          <div class="list-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="listSearch" type="text" placeholder="Filtrer…" autocomplete="off">
+          </div>
+          <button class="filter-btn" id="filterBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter drawer -->
+      <div class="list-filter-drawer hidden" id="listFilterDrawer">
+        <div class="drawer-pill"></div>
+        <div class="drawer-body">
+          <p class="drawer-label">Région</p>
+          <select id="regionSelect" class="drawer-select">
+            <option value="">Toutes les régions</option>
+          </select>
+          <p class="drawer-label" id="typeLabel">Type</p>
+          <div class="type-chips" id="typeChips"></div>
+          <p class="drawer-label infra-only">Milieu</p>
+          <div class="milieu-row infra-only">
+            <button class="milieu-pill active" data-milieu="">Tous</button>
+            <button class="milieu-pill" data-milieu="URBAIN">Urbain</button>
+            <button class="milieu-pill" data-milieu="RURAL">Rural</button>
+          </div>
+          <button class="drawer-reset" id="drawerReset">Réinitialiser</button>
+        </div>
+      </div>
+
+      <div class="list-body">
+        <!-- Desktop: filter sidebar always visible -->
+        <div class="list-desktop-filters desktop-only">
+          <div class="ldf-inner">
+            <p class="ep-label">Région</p>
+            <select id="regionSelectDt" class="ep-select"></select>
+            <p class="ep-label" style="margin-top:14px">Type</p>
+            <div id="typeChipsDt" class="ep-type-chips"></div>
+            <p class="ep-label infra-only" style="margin-top:14px">Milieu</p>
+            <div class="ep-milieu-row infra-only" id="milieuRowDt">
+              <button class="ep-milieu active" data-milieu="">Tous</button>
+              <button class="ep-milieu" data-milieu="URBAIN">Urbain</button>
+              <button class="ep-milieu" data-milieu="RURAL">Rural</button>
+            </div>
+            <button class="ep-reset" id="drawerResetDt" style="margin-top:16px">Réinitialiser</button>
+          </div>
+        </div>
+        <div class="list-main">
+          <div class="list-cards" id="listCards"></div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ TAB: FAVORITES ══════════════ -->
+    <section id="tab-favorites" class="tab-section">
+      <div class="favs-header">
+        <h2 class="favs-title">Favoris</h2>
+      </div>
+      <div class="favs-content" id="favsContent">
+        <div class="empty-state">
+          <span class="empty-icon">💙</span>
+          <p>Aucun favori pour l'instant</p>
+          <small>Appuyez sur ♡ sur une fiche pour l'ajouter</small>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- #tab-wrap -->
+
+  <!-- ══════════════ BOTTOM NAV / SIDEBAR ══════════════ -->
   <nav class="bottom-nav" id="bottomNav">
     <button class="nav-btn active" data-tab="home">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/></svg>
@@ -210,7 +314,7 @@
     </button>
     <button class="nav-btn" data-tab="explore">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-      <span>Explorer</span>
+      <span>Carte</span>
     </button>
     <button class="nav-btn" data-tab="list">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
