@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function seedDemo() {
   'use strict';
-  if (localStorage.getItem('culte_demo_seeded') === '3') return; // version tag
+  if (localStorage.getItem('culte_demo_seeded') === '4') return; // version tag
 
   /* ── Images Unsplash – thèmes africains ──────────────────────── */
   const IMG = {
@@ -38,6 +38,32 @@
     // Portrait africain
     portrait1:  'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=800&q=80',
     portrait2:  'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=800&q=80',
+    // Art contemporain / peintures africaines
+    artContemp1:   'https://images.unsplash.com/photo-1596449879634-9da7e98a4572?w=800&q=80',
+    artContemp2:   'https://images.unsplash.com/photo-1601042879364-f3947d3f9c16?w=800&q=80',
+    // Expositions / galeries (murs blancs + œuvres)
+    expo1:         'https://images.unsplash.com/photo-1541367777708-7905fe3296c0?w=800&q=80',
+    expo2:         'https://images.unsplash.com/photo-1503479327422-1db85f1b46fe?w=800&q=80',
+    // Sculpture / céramique africaine
+    sculpture1:    'https://images.unsplash.com/photo-1564449572462-2c7bba9d3e25?w=800&q=80',
+    sculpture2:    'https://images.unsplash.com/photo-1580181013706-63d5c0f21e98?w=800&q=80',
+    // Cinéma / salle de projection intérieur
+    cinemaSalle:   'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&q=80',
+    cinemaFoyer:   'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800&q=80',
+    cinemaPublic:  'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80',
+    // Spectacle / danse / ballet africain sur scène
+    spectacle1:    'https://images.unsplash.com/photo-1576153192621-7a3be10b356e?w=800&q=80',
+    spectacle2:    'https://images.unsplash.com/photo-1473177104440-ac316b21d68a?w=800&q=80',
+    spectacle3:    'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80',
+    // Atelier / workshop arts plastiques
+    atelier1:      'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80',
+    // Textile africain / peinture sous verre / batik
+    textile1:      'https://images.unsplash.com/photo-1614622958289-f70a91e2b55e?w=800&q=80',
+    textile2:      'https://images.unsplash.com/photo-1573166475912-1ed8b4f093d2?w=800&q=80',
+    // Architecture bâtiment culturel
+    archi1:        'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&q=80',
+    // Jardins / espaces extérieurs culturels
+    jardin1:       'https://images.unsplash.com/photo-1554224154-22dec7ec8818?w=800&q=80',
   };
 
   const now  = new Date();
@@ -161,6 +187,10 @@ Nous défendons une vision de l'art africain ancré dans son temps : dialogue en
         { id: 'gal_856_3', url: IMG.galAtiss3, caption: 'Installation "Mémoires du Fleuve" — Ibou Diallo, 2024', dateAdded: ts(120) },
         { id: 'gal_856_4', url: IMG.wax1, caption: 'Tissages et textiles wax — Collection permanente', dateAdded: ts(90) },
         { id: 'gal_856_5', url: IMG.portrait1, caption: 'Portraits d\'Afrique — Série photographique de Seydou Diao', dateAdded: ts(45) },
+        { id: 'gal_856_6', url: IMG.expo1,        caption: 'Vue d\'ensemble de la grande salle — 45 œuvres exposées', dateAdded: ts(30) },
+        { id: 'gal_856_7', url: IMG.artContemp1,  caption: 'Peintures acryliques grand format — Collection "Négritude Urbaine"', dateAdded: ts(20) },
+        { id: 'gal_856_8', url: IMG.textile1,     caption: 'Peinture sous verre souwèr — Artistes de l\'école de Dakar', dateAdded: ts(10) },
+        { id: 'gal_856_9', url: IMG.atelier1,     caption: 'Atelier pédagogique ouvert au public — Samedi créatif', dateAdded: ts(5) },
       ],
       events: [
         {
@@ -226,6 +256,10 @@ Le Cinéma Médina se distingue par son engagement fort pour le cinéma africain
         { id: 'gal_858_2', url: IMG.cinema2, caption: 'Séance de projection lors du Festival du Film Africain', dateAdded: ts(200) },
         { id: 'gal_858_3', url: IMG.cinema3, caption: 'Façade historique du Cinéma Médina — Monument de la Médina', dateAdded: ts(150) },
         { id: 'gal_858_4', url: IMG.dakar2, caption: 'Soirée de gala en plein air sur le parvis', dateAdded: ts(60) },
+        { id: 'gal_858_5', url: IMG.cinemaSalle,  caption: 'Salle de projection principale — 380 fauteuils VIP en cuir', dateAdded: ts(120) },
+        { id: 'gal_858_6', url: IMG.cinemaPublic, caption: 'Public enthousiaste lors du Festival du Film Africain de Dakar', dateAdded: ts(80) },
+        { id: 'gal_858_7', url: IMG.cinemaFoyer,  caption: 'Hall d\'entrée historique — Mosaïques originales de 1961 restaurées', dateAdded: ts(40) },
+        { id: 'gal_858_8', url: IMG.dakar1,       caption: 'Projection en plein air sur le parvis — Cinéma sous les étoiles', dateAdded: ts(15) },
       ],
       events: [
         {
@@ -292,6 +326,10 @@ Notre mission : rendre la culture accessible à tous les Dakarois, préserver et
         { id: 'gal_860_3', url: IMG.music1, caption: 'Percussions sabar — Festival Rythmes d\'Afrique', dateAdded: ts(140) },
         { id: 'gal_860_4', url: IMG.culture3, caption: 'Atelier de théâtre pour enfants — Programme éducatif', dateAdded: ts(80) },
         { id: 'gal_860_5', url: IMG.culture4, caption: 'Soirée de gala annuelle — Hommage à Douta Seck', dateAdded: ts(30) },
+        { id: 'gal_860_6', url: IMG.spectacle1,   caption: 'Grande salle Douta Seck (600 places) — Soirée de gala nationale', dateAdded: ts(25) },
+        { id: 'gal_860_7', url: IMG.spectacle2,   caption: 'Répétition du Ballet National du Sénégal — Lumières de scène', dateAdded: ts(18) },
+        { id: 'gal_860_8', url: IMG.spectacle3,   caption: 'Festival Panafricain de Danse — Compagnies de 8 pays africains', dateAdded: ts(10) },
+        { id: 'gal_860_9', url: IMG.music2,       caption: 'Atelier de chant traditionnel — Griottes et voix du terroir', dateAdded: ts(4) },
       ],
       events: [
         {
@@ -365,6 +403,10 @@ Le musée dispose également d'un espace de recherche, d'une médiathèque spéc
         { id: 'gal_868_3', url: IMG.galAtiss3, caption: 'Galerie des artistes en résidence 2024-2025', dateAdded: ts(200) },
         { id: 'gal_868_4', url: IMG.musee3, caption: 'Terrasse panoramique — Vue sur l\'Atlantique et l\'île de Gorée', dateAdded: ts(100) },
         { id: 'gal_868_5', url: IMG.portrait2, caption: 'Vernissage de la collection "Voix des Sans-Voix"', dateAdded: ts(50) },
+        { id: 'gal_868_6', url: IMG.expo2,        caption: 'Salle des installations lumineuses — Art vidéo et digital africain', dateAdded: ts(80) },
+        { id: 'gal_868_7', url: IMG.sculpture1,   caption: 'Galerie de sculptures contemporaines — Bois, bronze et résine', dateAdded: ts(60) },
+        { id: 'gal_868_8', url: IMG.jardin1,      caption: 'Jardin de sculptures en plein air — Face à l\'Atlantique', dateAdded: ts(40) },
+        { id: 'gal_868_9', url: IMG.artContemp2,  caption: 'Collection "Afrique en couleurs" — 30 artistes, 30 pays', dateAdded: ts(20) },
       ],
       events: [
         {
@@ -507,6 +549,6 @@ Le musée dispose également d'un espace de recherche, d'une médiathèque spéc
   });
   localStorage.setItem('culte_site_content', JSON.stringify(existingContent));
 
-  localStorage.setItem('culte_demo_seeded', '3');
+  localStorage.setItem('culte_demo_seeded', '4');
   console.log('[Culte] Données de démonstration initialisées ✓');
 })();

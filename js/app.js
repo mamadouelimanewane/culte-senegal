@@ -39,18 +39,18 @@ const REGION_EMOJIS = {
 
 /* ── Default images par type (Unsplash) — remplaçables par le responsable ── */
 const TYPE_DEFAULT_IMAGES = {
-  'Centre culturel':      'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=700&q=75',
+  'Centre culturel':      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=700&q=75',
   'Cinéma':               'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=700&q=75',
-  'Galerie':              'https://images.unsplash.com/photo-1578926375604-c5e560b1da2f?w=700&q=75',
+  'Galerie':              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=700&q=75',
   'Musée':                'https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=700&q=75',
   'Foyer des femmes':     'https://images.unsplash.com/photo-1607748851687-ba9a10438621?w=700&q=75',
   'Foyer des jeunes':     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=700&q=75',
-  'Salle de spectacle':   'https://images.unsplash.com/photo-1503095396549-807759245b35?w=700&q=75',
-  'Salle des fêtes':      'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=700&q=75',
+  'Salle de spectacle':   'https://images.unsplash.com/photo-1583912267550-d974498571e4?w=700&q=75',
+  'Salle des fêtes':      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=700&q=75',
   'Bibliothèque':         'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=700&q=75',
-  'Village artisanal':    'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=700&q=75',
-  'Maison de la culture': 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=700&q=75',
-  'default':              'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=700&q=75',
+  'Village artisanal':    'https://images.unsplash.com/photo-1573166475912-1ed8b4f093d2?w=700&q=75',
+  'Maison de la culture': 'https://images.unsplash.com/photo-1576153192621-7a3be10b356e?w=700&q=75',
+  'default':              'https://images.unsplash.com/photo-1627552244573-fc77c028e74f?w=700&q=75',
 };
 
 /* Retourne l'image à afficher : galerie approuvée > défaut par type */
