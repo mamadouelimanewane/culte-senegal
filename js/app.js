@@ -39,18 +39,18 @@ const REGION_EMOJIS = {
 
 /* ── Default images par type (Unsplash) — remplaçables par le responsable ── */
 const TYPE_DEFAULT_IMAGES = {
-  'Centre culturel':      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=700&q=75',
-  'Cinéma':               'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=700&q=75',
-  'Galerie':              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=700&q=75',
-  'Musée':                'https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=700&q=75',
-  'Foyer des femmes':     'https://images.unsplash.com/photo-1607748851687-ba9a10438621?w=700&q=75',
-  'Foyer des jeunes':     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=700&q=75',
-  'Salle de spectacle':   'https://images.unsplash.com/photo-1583912267550-d974498571e4?w=700&q=75',
-  'Salle des fêtes':      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=700&q=75',
-  'Bibliothèque':         'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=700&q=75',
-  'Village artisanal':    'https://images.unsplash.com/photo-1573166475912-1ed8b4f093d2?w=700&q=75',
-  'Maison de la culture': 'https://images.unsplash.com/photo-1576153192621-7a3be10b356e?w=700&q=75',
-  'default':              'https://images.unsplash.com/photo-1627552244573-fc77c028e74f?w=700&q=75',
+  'Centre culturel':      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=1200&q=85',
+  'Cinéma':               'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=85',
+  'Galerie':              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&q=85',
+  'Musée':                'https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=1200&q=85',
+  'Foyer des femmes':     'https://images.unsplash.com/photo-1607748851687-ba9a10438621?w=1200&q=85',
+  'Foyer des jeunes':     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&q=85',
+  'Salle de spectacle':   'https://images.unsplash.com/photo-1583912267550-d974498571e4?w=1200&q=85',
+  'Salle des fêtes':      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1200&q=85',
+  'Bibliothèque':         'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=85',
+  'Village artisanal':    'https://images.unsplash.com/photo-1573166475912-1ed8b4f093d2?w=1200&q=85',
+  'Maison de la culture': 'https://images.unsplash.com/photo-1576153192621-7a3be10b356e?w=1200&q=85',
+  'default':              'https://images.unsplash.com/photo-1627552244573-fc77c028e74f?w=1200&q=85',
 };
 
 /* Retourne l'image à afficher : galerie approuvée > défaut par type */
@@ -713,27 +713,67 @@ function parseQuery(raw) {
   const s = norm(raw);
   const intent = { types: [], regions: [], milieu: '', free: raw };
 
-  // Detect types
+  // Types — enrichi avec synonymes, pluriels, formes partielles
   const typeMap = {
-    'mus': 'Musée','cin': 'Cinéma','galer': 'Galerie','bibl': 'Bibliothèque',
-    'theatr': 'Salle de spectacle','jeun': 'Foyer des jeunes','femm': 'Foyer des femmes',
-    'artisan': 'Village artisanal','maison': 'Maison de la culture','centre': 'Centre culturel',
-    'formation': 'formations','arts': 'ARTS','audiovis': 'AUDIOVISUEL',
+    'mus':       'Musée',
+    'galer':     'Galerie',
+    'cin':       'Cinéma',
+    'film':      'Cinéma',
+    'bibl':      'Bibliothèque',
+    'livre':     'Bibliothèque',
+    'lecture':   'Bibliothèque',
+    'theatr':    'Salle de spectacle',
+    'spectacl':  'Salle de spectacle',
+    'scene':     'Salle de spectacle',
+    'concert':   'Salle de spectacle',
+    'festival':  'Salle de spectacle',
+    'danse':     'Salle de spectacle',
+    'jeun':      'Foyer des jeunes',
+    'femm':      'Foyer des femmes',
+    'artisan':   'Village artisanal',
+    'maison':    'Maison de la culture',
+    'centre':    'Centre culturel',
+    'cultur':    'Centre culturel',
+    'formation': 'formations',
+    'ecole':     'formations',
+    'cours':     'formations',
+    'apprenti':  'formations',
+    'audiovis':  'formations',
+    'peintur':   'formations',
   };
   for (const [kw, type] of Object.entries(typeMap)) {
-    if (s.includes(kw)) intent.types.push(type);
+    if (s.includes(kw) && !intent.types.includes(type)) intent.types.push(type);
   }
 
-  // Detect regions
-  const regions = ['DAKAR','SAINT-LOUIS','THIES','DIOURBEL','FATICK','KAOLACK','KAFFRINE',
-    'ZIGUINCHOR','KOLDA','SEDHIOU','TAMBACOUNDA','KEDOUGOU','LOUGA','MATAM'];
-  for (const reg of regions) {
-    if (s.includes(norm(reg))) intent.regions.push(reg);
+  // Régions — normalisées avec alias
+  const regionMap = {
+    'dakar':        'DAKAR',
+    'saint-louis':  'SAINT-LOUIS',
+    'saintlouis':   'SAINT-LOUIS',
+    'st louis':     'SAINT-LOUIS',
+    'thies':        'THIES',
+    'diourbel':     'DIOURBEL',
+    'fatick':       'FATICK',
+    'kaolack':      'KAOLACK',
+    'kaffrine':     'KAFFRINE',
+    'ziguin':       'ZIGUINCHOR',
+    'kolda':        'KOLDA',
+    'sedhiou':      'SEDHIOU',
+    'tambacounda':  'TAMBACOUNDA',
+    'tamba':        'TAMBACOUNDA',
+    'kedougou':     'KEDOUGOU',
+    'louga':        'LOUGA',
+    'matam':        'MATAM',
+  };
+  for (const [kw, reg] of Object.entries(regionMap)) {
+    if (s.includes(norm(kw)) && !intent.regions.includes(reg)) intent.regions.push(reg);
   }
 
   // Milieu
-  if (s.includes('urban') || s.includes('ville')) intent.milieu = 'URBAIN';
-  if (s.includes('rural') || s.includes('campagne')) intent.milieu = 'RURAL';
+  const milieuMap = { 'urban': 'URBAIN', 'ville': 'URBAIN', 'cit': 'URBAIN', 'rural': 'RURAL', 'campagne': 'RURAL' };
+  for (const [kw, mil] of Object.entries(milieuMap)) {
+    if (s.includes(kw)) { intent.milieu = mil; break; }
+  }
 
   return intent;
 }
@@ -741,7 +781,7 @@ function parseQuery(raw) {
 function runNlpSearch(raw) {
   if (!raw) return;
   const intent = parseQuery(raw);
-  const sNorm = norm(raw);
+  const sNorm  = norm(raw);
 
   // Filter markers
   const matches = state.mapMarkers.filter(({ rec, isFormation, typeKey }) => {
@@ -754,7 +794,7 @@ function runNlpSearch(raw) {
     if (intent.milieu && mil !== intent.milieu) return false;
     if (intent.types.length) {
       const typeNorm = norm(typeKey);
-      if (!intent.types.some(t => typeNorm.includes(norm(t)) || norm(typeKey).includes(norm(t)))) return false;
+      if (!intent.types.some(t => t === 'formations' ? isFormation : typeNorm.includes(norm(t)))) return false;
     }
     if (!intent.types.length && !intent.regions.length && !intent.milieu) {
       return name.includes(sNorm) || commune.includes(sNorm) || norm(region).includes(sNorm);
@@ -762,41 +802,182 @@ function runNlpSearch(raw) {
     return true;
   });
 
-  // Rebuild visible markers
   MAP.clearMarkers();
   MAP.addMarkers(matches.map(m => m.marker));
 
-  // Show chips
-  const nlpRow = document.getElementById('nlpChipsRow');
-  const chips = [];
-  if (intent.types.length) chips.push(`<span class="nlp-chip" style="background:#0d5fa0">🏛 ${intent.types.join(', ')}</span>`);
-  if (intent.regions.length) chips.push(`<span class="nlp-chip" style="background:#00695c">📍 ${intent.regions.join(', ')}</span>`);
-  if (intent.milieu) chips.push(`<span class="nlp-chip" style="background:#e65100">🌍 ${intent.milieu}</span>`);
-  if (chips.length) {
-    nlpRow.innerHTML = chips.join('');
-    nlpRow.classList.remove('hidden');
-  } else {
-    nlpRow.classList.add('hidden');
-  }
+  // Chips
+  NLP.showChips(intent);
 
-  // Bot bar
-  const botBar = document.getElementById('mapBotBar');
-  const botMsg = document.getElementById('mapBotMsg');
+  // Bot bar with typewriter effect
   const n = matches.length;
-  if (n === 0) botMsg.textContent = `Aucun résultat pour "${raw}". Essayez "musée Dakar" ou "cinéma Thiès".`;
-  else if (n === 1) botMsg.textContent = `1 lieu trouvé ✓`;
-  else botMsg.textContent = `${n} lieux trouvés pour votre recherche.`;
-  botBar.classList.remove('hidden');
+  const infraTypes = intent.types.filter(t => t !== 'formations');
+  const regStr = intent.regions.map(r => r.charAt(0) + r.slice(1).toLowerCase()).join(', ');
+  let msg;
+  if (n === 0) {
+    msg = `Aucun résultat pour "${raw}". Essayez "musée Dakar" ou "cinéma Thiès".`;
+  } else {
+    msg = `${n} lieu${n > 1 ? 'x' : ''} trouvé${n > 1 ? 's' : ''}`;
+    if (infraTypes.length) msg += ` · ${infraTypes.join(', ')}`;
+    if (regStr)            msg += ` en ${regStr}`;
+    if (intent.milieu)     msg += ` (${intent.milieu.charAt(0) + intent.milieu.slice(1).toLowerCase()})`;
+    msg += ' ✓';
+  }
+  NLP.showBot(msg);
 
   // Auto zoom
-  if (matches.length > 0) {
-    const lats = matches.map(m => parseFloat(m.rec.LATITUDE)).filter(Boolean);
-    const lons = matches.map(m => parseFloat(m.rec.LONGITUDE)).filter(Boolean);
-    if (lats.length) {
-      MAP.fitBounds(lats.map((lat, i) => [lat, lons[i]]));
-    }
+  if (matches.length) {
+    const pts = matches
+      .map(m => [parseFloat(m.rec.LATITUDE), parseFloat(m.rec.LONGITUDE)])
+      .filter(([la, lo]) => !isNaN(la) && !isNaN(lo) && (la || lo));
+    if (pts.length) MAP.fitBounds(pts);
   }
+
+  // Save history
+  NLP.saveHistory(raw);
 }
+
+/* ── NLP Engine Object ──────────────────────────────────────────── */
+const NLP = {
+  suggestions: [
+    { label: '🖼 Galeries à Dakar',       q: 'galeries à Dakar' },
+    { label: '🎬 Cinémas Dakar',          q: 'cinémas Dakar' },
+    { label: '🏺 Musées du Sénégal',      q: 'musées' },
+    { label: '📚 Bibliothèques Dakar',    q: 'bibliothèques Dakar' },
+    { label: '🎓 Formations artistiques', q: 'formations' },
+    { label: '🏛 Centres culturels',      q: 'centres culturels' },
+    { label: '🎪 Salles de spectacle',    q: 'salles de spectacle' },
+    { label: '🌴 Culture Ziguinchor',     q: 'Ziguinchor' },
+    { label: '🌹 Patrimoine Saint-Louis', q: 'Saint-Louis' },
+    { label: '🏗 Infrastructures Thiès',  q: 'Thiès' },
+    { label: '👩 Foyers des femmes',      q: 'foyers femmes' },
+    { label: '🌿 En zones rurales',       q: 'rural' },
+  ],
+
+  _botTimer: null,
+
+  typewriter(el, text, speed) {
+    speed = speed || 24;
+    clearTimeout(this._botTimer);
+    el.textContent = '';
+    let i = 0;
+    const tick = () => {
+      if (i < text.length) { el.textContent += text.charAt(i++); this._botTimer = setTimeout(tick, speed); }
+    };
+    tick();
+  },
+
+  showBot(msg) {
+    const bar   = document.getElementById('mapBotBar');
+    const msgEl = document.getElementById('mapBotMsg');
+    if (!bar || !msgEl) return;
+    bar.classList.remove('hidden');
+    bar.style.animation = 'none';
+    void bar.offsetWidth; // reflow
+    bar.style.animation = 'botSlideIn .3s ease';
+    this.typewriter(msgEl, msg, 22);
+  },
+
+  showChips(intent) {
+    const row = document.getElementById('nlpChipsRow');
+    if (!row) return;
+    const chips = [];
+    const infraTypes = intent.types.filter(t => t !== 'formations');
+    infraTypes.forEach(t => chips.push(`<span class="nlp-chip" style="background:#0d5fa0">🏛 ${t}</span>`));
+    if (intent.types.includes('formations')) chips.push(`<span class="nlp-chip" style="background:#6a1b9a">🎓 Formations</span>`);
+    intent.regions.forEach(r => chips.push(`<span class="nlp-chip" style="background:#1a6b3e">📍 ${r.charAt(0) + r.slice(1).toLowerCase()}</span>`));
+    if (intent.milieu) chips.push(`<span class="nlp-chip" style="background:#e65100">🌍 ${intent.milieu.charAt(0) + intent.milieu.slice(1).toLowerCase()}</span>`);
+    if (chips.length) { row.innerHTML = chips.join(''); row.classList.remove('hidden'); }
+    else row.classList.add('hidden');
+  },
+
+  saveHistory(raw) {
+    if (!raw || raw.trim().length < 2) return;
+    const h = this.getHistory().filter(x => x !== raw.trim());
+    h.unshift(raw.trim());
+    try { localStorage.setItem('culte_nlp_history', JSON.stringify(h.slice(0, 8))); } catch(e) {}
+  },
+
+  getHistory() {
+    try { return JSON.parse(localStorage.getItem('culte_nlp_history') || '[]'); } catch(e) { return []; }
+  },
+
+  showSuggestionsPanel(inputEl) {
+    let panel = document.getElementById('nlpSuggestPanel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'nlpSuggestPanel';
+      panel.className = 'nlp-suggest-panel';
+      document.body.appendChild(panel);
+      panel.addEventListener('mousedown', e => e.preventDefault()); // keep input focus
+    }
+
+    const hist = this.getHistory();
+    let html = '';
+    if (hist.length) {
+      html += '<div class="nlp-suggest-sec">Recherches récentes</div>';
+      html += hist.map(h =>
+        `<div class="nlp-suggest-item" data-q="${escAttr(h)}"><span class="nlp-sug-icon">🕐</span><span>${escAttr(h)}</span></div>`
+      ).join('');
+      html += '<div class="nlp-suggest-divider"></div>';
+    }
+    html += '<div class="nlp-suggest-sec">Suggestions</div>';
+    html += this.suggestions.map(s =>
+      `<div class="nlp-suggest-item" data-q="${escAttr(s.q)}">${s.label}</div>`
+    ).join('');
+    panel.innerHTML = html;
+
+    panel.querySelectorAll('.nlp-suggest-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const q = item.dataset.q;
+        panel.style.display = 'none';
+        inputEl.value = q;
+        if (inputEl.id === 'mapSearch') {
+          document.getElementById('mapSearchClear').classList.remove('hidden');
+          runNlpSearch(q);
+        } else {
+          switchTab('list');
+          NLP.applyToListTab(q);
+        }
+        NLP.saveHistory(q);
+      });
+    });
+
+    const rect = inputEl.getBoundingClientRect();
+    panel.style.left    = rect.left + 'px';
+    panel.style.top     = (rect.bottom + window.scrollY + 4) + 'px';
+    panel.style.width   = Math.max(rect.width, 260) + 'px';
+    panel.style.display = 'block';
+
+    const closePanel = e => {
+      if (!panel.contains(e.target) && e.target !== inputEl) {
+        panel.style.display = 'none';
+        document.removeEventListener('mousedown', closePanel, true);
+        document.removeEventListener('touchstart', closePanel, true);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', closePanel, true);
+      document.addEventListener('touchstart', closePanel, true);
+    }, 50);
+  },
+
+  applyToListTab(raw) {
+    const intent = parseQuery(raw);
+    state.listFilters.search = raw;
+    if (intent.regions.length) {
+      state.listFilters.region = intent.regions[0];
+      const sel = document.getElementById('regionSelect');
+      if (sel) sel.value = intent.regions[0];
+    }
+    const infraTypes = intent.types.filter(t => t !== 'formations');
+    if (infraTypes.length) state.listFilters.type = infraTypes[0];
+    if (intent.milieu) state.listFilters.milieu = intent.milieu;
+    if (intent.types.includes('formations')) { state.listSet = 'formations'; renderListTabs(); }
+    const listSearch = document.getElementById('listSearch');
+    if (listSearch) listSearch.value = raw;
+    applyListFilters(true);
+  },
+};
 
 function openModalFromMap(idx) {
   const entry = state.nlpStore[idx];
@@ -1325,29 +1506,11 @@ async function init() {
     );
   });
 
-  // Mic button (voice search)
-  const micBtn = document.getElementById('micBtn');
-  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    micBtn.addEventListener('click', () => {
-      const rec = new SR();
-      rec.lang = 'fr-FR';
-      rec.onresult = e => {
-        const text = e.results[0][0].transcript;
-        document.getElementById('homeSearch').value = text;
-        switchTab('list');
-        state.listFilters.search = text;
-        document.getElementById('listSearch').value = text;
-        applyListFilters(true);
-      };
-      rec.start();
-    });
-  } else {
-    micBtn.style.opacity = '.3';
-  }
-
   // Desktop filters setup
   setupDesktopFilters();
+
+  // NLP enhanced search — mic, suggestions, history
+  initNlpSearch();
 
   // Hide splash
   setTimeout(() => {
@@ -1359,5 +1522,90 @@ async function init() {
     }, 500);
   }, 1200);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   NLP SEARCH INIT — voix, suggestions, historique
+   ════════════════════════════════════════════════════════════════ */
+function initNlpSearch() {
+  // ── Mic button — routes to map or list based on active tab
+  const micBtn = document.getElementById('micBtn');
+  if (micBtn) {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      micBtn.addEventListener('click', () => {
+        const rec = new SR();
+        rec.lang = 'fr-FR';
+        micBtn.classList.add('mic-active');
+        rec.onend   = () => micBtn.classList.remove('mic-active');
+        rec.onerror = () => micBtn.classList.remove('mic-active');
+        rec.onresult = e => {
+          const text = e.results[0][0].transcript;
+          micBtn.classList.remove('mic-active');
+          NLP.saveHistory(text);
+          if (state.activeTab === 'explore') {
+            const ms = document.getElementById('mapSearch');
+            ms.value = text;
+            document.getElementById('mapSearchClear').classList.remove('hidden');
+            runNlpSearch(text);
+          } else {
+            document.getElementById('homeSearch').value = text;
+            switchTab('list');
+            NLP.applyToListTab(text);
+          }
+        };
+        rec.start();
+      });
+    } else {
+      micBtn.style.opacity = '.35';
+      micBtn.title = 'Votre navigateur ne supporte pas la reconnaissance vocale';
+    }
+  }
+
+  // ── mapSearch — suggestions on focus
+  const mapSearch = document.getElementById('mapSearch');
+  if (mapSearch) {
+    mapSearch.addEventListener('focus', () => NLP.showSuggestionsPanel(mapSearch));
+  }
+
+  // ── homeSearch — suggestions on focus
+  const homeSearch = document.getElementById('homeSearch');
+  if (homeSearch) {
+    homeSearch.addEventListener('focus', () => NLP.showSuggestionsPanel(homeSearch));
+    // Override Enter to use NLP-aware list routing
+    homeSearch.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const val = homeSearch.value.trim();
+        if (!val) return;
+        NLP.hideSuggestionsPanel();
+        NLP.saveHistory(val);
+        switchTab('list');
+        NLP.applyToListTab(val);
+      }
+    });
+  }
+
+  // ── dtSearch (desktop topbar) — suggestions on focus
+  const dtSearch = document.getElementById('dtSearch');
+  if (dtSearch) {
+    dtSearch.addEventListener('focus', () => NLP.showSuggestionsPanel(dtSearch));
+    dtSearch.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const val = dtSearch.value.trim();
+        if (!val) return;
+        NLP.hideSuggestionsPanel();
+        NLP.saveHistory(val);
+        switchTab('list');
+        NLP.applyToListTab(val);
+        document.getElementById('listSearch').value = val;
+      }
+    });
+  }
+}
+
+/* Helper: hide the suggestions panel */
+NLP.hideSuggestionsPanel = function() {
+  const panel = document.getElementById('nlpSuggestPanel');
+  if (panel) panel.style.display = 'none';
+};
 
 document.addEventListener('DOMContentLoaded', init);

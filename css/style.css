@@ -1120,3 +1120,81 @@ input { outline: none; }
   /* Stats strip on desktop */
   .stats-strip { max-width: 600px; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   NLP SEARCH — Panel de suggestions, animations, historique
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Suggestions panel ────────────────────────────────────────── */
+.nlp-suggest-panel {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08);
+  border: 1px solid rgba(0,0,0,.06);
+  max-height: 380px;
+  overflow-y: auto;
+  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: #e0d9ce transparent;
+  animation: suggestFadeIn .18s ease;
+}
+@keyframes suggestFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nlp-suggest-panel::-webkit-scrollbar { width: 4px; }
+.nlp-suggest-panel::-webkit-scrollbar-thumb { background: #e0d9ce; border-radius: 4px; }
+
+.nlp-suggest-sec {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #9a9ab0;
+  padding: 10px 14px 4px;
+}
+.nlp-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nlp-suggest-item:hover,
+.nlp-suggest-item:active { background: #f5f2eb; }
+.nlp-sug-icon { font-size: 15px; flex-shrink: 0; opacity: .7; }
+.nlp-suggest-divider {
+  height: 1px;
+  background: #ece8e0;
+  margin: 4px 12px;
+}
+
+/* ── Bot bar animation ────────────────────────────────────────── */
+@keyframes botSlideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Mic button active state ──────────────────────────────────── */
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(13,95,160,.55); }
+  50%       { box-shadow: 0 0 0 10px rgba(13,95,160,0);  }
+}
+.mic-active {
+  animation: micPulse .75s ease infinite !important;
+  background: #fee2e2 !important;
+  color: #c0392b !important;
+}
+
+/* ── NLP chip hover (removable future use) ────────────────────── */
+.nlp-chip {
+  transition: opacity .15s;
+}
+.nlp-chip:hover { opacity: .8; }
