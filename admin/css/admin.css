@@ -356,6 +356,49 @@ a { color: inherit; }
   .view-header { flex-direction: column; align-items: flex-start; }
 }
 
+/* ── Sidebar notification badge ─────────────────────────────── */
+.sb-separator { height: 1px; background: rgba(255,255,255,.08); margin: 8px 16px; }
+.sb-notif {
+  margin-left: auto; min-width: 20px; height: 20px;
+  background: var(--gold); color: white; font-size: 11px; font-weight: 700;
+  border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 5px;
+}
+.sb-notif.hidden { display: none; }
+
+/* ── Status pills ────────────────────────────────────────────── */
+.status-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.status-pending  { background: #fff3cd; color: #856404; }
+.status-approved { background: #d1e7dd; color: #0f5132; }
+.status-rejected { background: #f8d7da; color: #842029; }
+
+/* ── Type badge for contenus ─────────────────────────────────── */
+.type-pill {
+  display: inline-block; padding: 3px 9px; border-radius: 12px;
+  font-size: 11px; font-weight: 600;
+}
+.type-profile     { background: #e3f2fd; color: #0d47a1; }
+.type-gallery_add { background: #e8f5e9; color: #1b5e20; }
+.type-event       { background: #f3e5f5; color: #4a148c; }
+.type-actu        { background: #fff3e0; color: #e65100; }
+
+/* ── Wide modal (review) ─────────────────────────────────────── */
+.modal-dialog-wide { max-width: 680px; }
+.review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.review-field { display: flex; flex-direction: column; gap: 4px; }
+.review-field label { font-size: 11px; font-weight: 700; color: var(--text-sm); text-transform: uppercase; letter-spacing: .05em; }
+.review-field .rv-val { font-size: 14px; color: var(--text); }
+.review-sep { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+.review-full { grid-column: 1/-1; }
+.review-photo { max-width: 100%; max-height: 240px; border-radius: var(--radius-sm); object-fit: cover; margin-top: 4px; }
+.review-note { margin-top: 16px; }
+.review-note textarea { width: 100%; min-height: 72px; resize: vertical; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-family: inherit; }
+.btn-approve { background: linear-gradient(135deg,#2e7d32,#4caf50); color: white; border: none; padding: 10px 22px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; }
+.btn-reject  { background: linear-gradient(135deg,#c62828,#ef5350); color: white; border: none; padding: 10px 22px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; }
+
 /* Leaflet marker overrides */
 .leaflet-control-zoom { border: none !important; box-shadow: var(--shadow) !important; border-radius: 10px !important; overflow: hidden; }
 .leaflet-control-zoom a { width: 34px !important; height: 34px !important; line-height: 34px !important; }

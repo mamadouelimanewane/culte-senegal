@@ -616,6 +616,12 @@ input { outline: none; }
   background: var(--bg); color: var(--ocean-3);
   border: 1.5px solid var(--ocean-4);
 }
+.modal-btn-site {
+  background: linear-gradient(135deg, #1a6b3e, #2d9e5f);
+  color: white; text-decoration: none; display: flex;
+  align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(26,107,62,.25);
+}
 .modal-close {
   position: absolute; top: 16px; right: 16px;
   width: 32px; height: 32px; border-radius: 50%;

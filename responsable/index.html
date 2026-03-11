@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Responsable — Culte Culture Sénégal</title>
+  <link rel="stylesheet" href="css/responsable.css">
+</head>
+<body class="resp-body">
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-icon">🌊</span>
+      <div>
+        <div class="login-brand">Espace Responsable</div>
+        <div class="login-sub">Culte Culture Sénégal</div>
+      </div>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <div class="form-group">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="votre@email.sn" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input id="loginPwd" type="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <p class="login-error hidden" id="loginError"></p>
+      <button type="submit" class="btn-primary btn-full">Se connecter</button>
+    </form>
+    <div class="login-sep">ou</div>
+    <button class="btn-secondary btn-full" id="btnShowRegister">📝 S'inscrire comme responsable</button>
+    <a href="../" class="login-back">← Retour à l'application</a>
+  </div>
+</div>
+
+<!-- ══ INSCRIPTION MODAL ══════════════════════════════════════════ -->
+<div id="registerModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-backdrop" id="registerBackdrop"></div>
+  <div class="modal-dialog modal-dialog-wide">
+    <div class="modal-header">
+      <h2>Demande d'inscription</h2>
+      <button class="modal-x" onclick="closeRegisterModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-intro">Remplissez ce formulaire pour demander un accès responsable. Votre demande sera examinée par notre équipe et vous recevrez une réponse par email.</p>
+      <form id="registerForm" autocomplete="off">
+        <div class="edit-grid">
+          <div class="form-group">
+            <label>Nom complet *</label>
+            <input id="reg-nom" type="text" placeholder="Prénom Nom" required>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input id="reg-email" type="email" placeholder="votre@email.sn" required>
+          </div>
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input id="reg-tel" type="tel" placeholder="+221 77 000 00 00">
+          </div>
+          <div class="form-group">
+            <label>Mot de passe *</label>
+            <input id="reg-pwd" type="password" placeholder="Choisissez un mot de passe" required>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Infrastructure gérée *</label>
+            <div class="infra-search-wrap">
+              <input id="reg-infraSearch" type="text" placeholder="Tapez le nom de votre infrastructure…" autocomplete="off">
+              <div id="reg-infraDropdown" class="infra-dropdown hidden"></div>
+              <input type="hidden" id="reg-infraId">
+              <input type="hidden" id="reg-infraNom">
+              <input type="hidden" id="reg-infraRegion">
+            </div>
+            <div id="reg-infraSelected" class="infra-selected hidden"></div>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Justification *</label>
+            <textarea id="reg-justif" rows="4" placeholder="Expliquez votre rôle dans la gestion de ce site culturel (poste, organisation, contact de référence…)" required></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeRegisterModal()">Annuler</button>
+      <button class="btn-primary" id="btnSubmitRegister">Envoyer la demande</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="respApp" class="resp-app hidden">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <div class="sb-brand">
+        <span>🌊</span>
+        <div>
+          <div class="sb-name" id="sbSiteName">Mon site</div>
+          <div class="sb-sub" id="sbUserName">—</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-btn active" data-view="dashboard">
+        <span class="sb-icon">📊</span><span class="sb-label">Tableau de bord</span>
+      </button>
+      <button class="sb-btn" data-view="profil">
+        <span class="sb-icon">ℹ️</span><span class="sb-label">Profil du site</span>
+      </button>
+      <button class="sb-btn" data-view="galerie">
+        <span class="sb-icon">🖼</span><span class="sb-label">Galerie photos</span>
+      </button>
+      <button class="sb-btn" data-view="evenements">
+        <span class="sb-icon">📅</span><span class="sb-label">Événements</span>
+      </button>
+      <button class="sb-btn" data-view="actualites">
+        <span class="sb-icon">📰</span><span class="sb-label">Actualités</span>
+      </button>
+    </nav>
+    <div class="sb-footer">
+      <a id="sbSiteLink" href="#" target="_blank" class="sb-site-link">🌐 Voir ma page publique</a>
+      <button class="sb-logout" id="btnLogout">🚪 Déconnexion</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="resp-main" id="respMain">
+
+    <!-- Topbar -->
+    <div class="resp-topbar">
+      <button class="hamburger topbar-ham" id="hamburger2" aria-label="Menu">☰</button>
+      <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      <div class="topbar-right">
+        <a id="topbarSiteLink" href="#" target="_blank" class="topbar-link">🌐 Ma page</a>
+        <a href="../" class="topbar-link">← App</a>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ─────────────────────────────────────────────── -->
+    <section class="view active" id="view-dashboard">
+      <div class="view-header">
+        <h1>Mon tableau de bord</h1>
+      </div>
+      <div class="infra-hero" id="infraHero"></div>
+      <div class="stats-grid" id="dashStats"></div>
+      <div class="dash-card" style="margin-top:20px">
+        <h3 class="card-title">Mes soumissions récentes</h3>
+        <div id="recentSubmissions" class="recent-list"></div>
+      </div>
+    </section>
+
+    <!-- ── PROFIL DU SITE ─────────────────────────────────────────── -->
+    <section class="view" id="view-profil">
+      <div class="view-header">
+        <h1>Profil du site</h1>
+        <p class="view-sub">Ces informations seront validées avant d'apparaître sur la page publique</p>
+      </div>
+      <div class="form-card">
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="pf-description" rows="5" placeholder="Décrivez votre site culturel, son histoire, ses missions…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Horaires d'ouverture</label>
+          <input id="pf-horaires" type="text" placeholder="ex : Lun–Ven 9h–18h, Sam 10h–14h">
+        </div>
+        <div class="edit-grid">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input id="pf-telephone" type="tel" placeholder="+221 33 000 00 00">
+          </div>
+          <div class="form-group">
+            <label>Email du site</label>
+            <input id="pf-email" type="email" placeholder="contact@monsite.sn">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Site web</label>
+            <input id="pf-website" type="url" placeholder="https://monsite.sn">
+          </div>
+        </div>
+        <div id="profilStatus" class="submit-status hidden"></div>
+        <button class="btn-primary" id="btnSubmitProfil">Envoyer pour validation ›</button>
+      </div>
+    </section>
+
+    <!-- ── GALERIE ────────────────────────────────────────────────── -->
+    <section class="view" id="view-galerie">
+      <div class="view-header">
+        <h1>Galerie photos</h1>
+        <p class="view-sub">Chaque photo est soumise à validation avant publication</p>
+      </div>
+      <div class="form-card">
+        <h3 class="card-title">Ajouter une photo</h3>
+        <div class="form-group">
+          <label>Photo (JPG, PNG — max 2 Mo)</label>
+          <input id="gal-file" type="file" accept="image/*" class="file-input">
+          <div id="gal-preview" class="photo-preview hidden"></div>
+        </div>
+        <div class="form-group">
+          <label>Légende</label>
+          <input id="gal-caption" type="text" placeholder="Description courte de la photo">
+        </div>
+        <div id="galStatus" class="submit-status hidden"></div>
+        <button class="btn-primary" id="btnSubmitGalerie">Envoyer pour validation ›</button>
+      </div>
+      <div class="dash-card" style="margin-top:20px">
+        <h3 class="card-title">Photos soumises</h3>
+        <div id="galList" class="gal-grid"></div>
+      </div>
+    </section>
+
+    <!-- ── ÉVÉNEMENTS ─────────────────────────────────────────────── -->
+    <section class="view" id="view-evenements">
+      <div class="view-header">
+        <h1>Événements</h1>
+        <p class="view-sub">Publiez vos événements culturels (expositions, spectacles, concerts…)</p>
+      </div>
+      <div class="form-card">
+        <h3 class="card-title">Nouvel événement</h3>
+        <div class="form-group">
+          <label>Titre de l'événement *</label>
+          <input id="ev-titre" type="text" placeholder="ex : Exposition Photographie Sénégalaise">
+        </div>
+        <div class="edit-grid">
+          <div class="form-group">
+            <label>Date de début *</label>
+            <input id="ev-dateDebut" type="date">
+          </div>
+          <div class="form-group">
+            <label>Date de fin</label>
+            <input id="ev-dateFin" type="date">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Lieu (si différent du site)</label>
+            <input id="ev-lieu" type="text" placeholder="ex : Salle principale, Cour extérieure…">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="ev-description" rows="4" placeholder="Décrivez l'événement, les intervenants, le programme…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Photos (optionnel — max 3, JPG/PNG)</label>
+          <input id="ev-photos" type="file" accept="image/*" multiple class="file-input">
+          <div id="ev-previews" class="photo-previews"></div>
+        </div>
+        <div id="evStatus" class="submit-status hidden"></div>
+        <button class="btn-primary" id="btnSubmitEvent">Envoyer pour validation ›</button>
+      </div>
+      <div class="dash-card" style="margin-top:20px">
+        <h3 class="card-title">Mes événements soumis</h3>
+        <div id="evList"></div>
+      </div>
+    </section>
+
+    <!-- ── ACTUALITÉS ─────────────────────────────────────────────── -->
+    <section class="view" id="view-actualites">
+      <div class="view-header">
+        <h1>Actualités</h1>
+        <p class="view-sub">Publiez des nouvelles et annonces de votre site</p>
+      </div>
+      <div class="form-card">
+        <h3 class="card-title">Nouvelle actualité</h3>
+        <div class="form-group">
+          <label>Titre *</label>
+          <input id="ac-titre" type="text" placeholder="ex : Réouverture après travaux">
+        </div>
+        <div class="form-group">
+          <label>Contenu *</label>
+          <textarea id="ac-contenu" rows="5" placeholder="Rédigez votre actualité…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Photo (optionnel)</label>
+          <input id="ac-photo" type="file" accept="image/*" class="file-input">
+          <div id="ac-preview" class="photo-preview hidden"></div>
+        </div>
+        <div id="acStatus" class="submit-status hidden"></div>
+        <button class="btn-primary" id="btnSubmitActu">Envoyer pour validation ›</button>
+      </div>
+      <div class="dash-card" style="margin-top:20px">
+        <h3 class="card-title">Mes actualités soumises</h3>
+        <div id="acList"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="js/responsable.js"></script>
+</body>
+</html>

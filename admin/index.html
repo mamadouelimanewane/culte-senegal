@@ -64,6 +64,16 @@
       <button class="sb-btn" data-view="carte">
         <span class="sb-icon">🗺</span><span class="sb-label">Carte</span>
       </button>
+      <div class="sb-separator"></div>
+      <button class="sb-btn" data-view="inscriptions">
+        <span class="sb-icon">📝</span><span class="sb-label">Inscriptions</span>
+        <span class="sb-notif hidden" id="notifInscriptions">0</span>
+      </button>
+      <button class="sb-btn" data-view="contenus">
+        <span class="sb-icon">✅</span><span class="sb-label">Contenus</span>
+        <span class="sb-notif hidden" id="notifContenus">0</span>
+      </button>
+      <div class="sb-separator"></div>
       <button class="sb-btn" data-view="parametres">
         <span class="sb-icon">⚙</span><span class="sb-label">Paramètres</span>
       </button>
@@ -104,7 +114,7 @@
         </div>
       </div>
       <div class="dash-card" style="margin-top:20px">
-        <h3 class="card-title">Modifications locales récentes</h3>
+        <h3 class="card-title">Activité récente</h3>
         <div id="recentEdits" class="recent-list"></div>
       </div>
     </section>
@@ -139,7 +149,6 @@
         </table>
       </div>
       <div class="table-pagination" id="infraPag"></div>
-      <!-- Mobile cards -->
       <div class="mobile-cards hidden" id="infraMobileCards"></div>
     </section>
 
@@ -193,6 +202,73 @@
           <div class="legend-item"><span class="dot" style="background:#6a1b9a"></span>Formation</div>
         </div>
       </div>
+    </section>
+
+    <!-- ── INSCRIPTIONS ────────────────────────────────────────── -->
+    <section class="view" id="view-inscriptions">
+      <div class="view-header">
+        <h1>Inscriptions Responsables</h1>
+        <p class="view-sub">Demandes d'accès en attente de validation</p>
+      </div>
+      <div class="table-toolbar">
+        <div class="tb-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="inscSearch" type="text" placeholder="Rechercher…" autocomplete="off">
+        </div>
+        <select id="inscStatutFilter" class="tb-select">
+          <option value="">Tous les statuts</option>
+          <option value="pending">En attente</option>
+          <option value="approved">Approuvés</option>
+          <option value="rejected">Rejetés</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="inscTable">
+          <thead><tr>
+            <th>Nom</th><th>Email</th><th>Infrastructure</th><th>Région</th><th>Date</th><th>Statut</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="inscTbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="inscPag"></div>
+      <div class="mobile-cards hidden" id="inscMobileCards"></div>
+    </section>
+
+    <!-- ── CONTENUS ────────────────────────────────────────────── -->
+    <section class="view" id="view-contenus">
+      <div class="view-header">
+        <h1>Validation des Contenus</h1>
+        <p class="view-sub">Soumissions des responsables à approuver</p>
+      </div>
+      <div class="table-toolbar">
+        <div class="tb-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="contSearch" type="text" placeholder="Rechercher…" autocomplete="off">
+        </div>
+        <select id="contTypeFilter" class="tb-select">
+          <option value="">Tous les types</option>
+          <option value="profile">Profil du site</option>
+          <option value="gallery_add">Photo galerie</option>
+          <option value="event">Événement</option>
+          <option value="actu">Actualité</option>
+        </select>
+        <select id="contStatutFilter" class="tb-select">
+          <option value="">Tous les statuts</option>
+          <option value="pending">En attente</option>
+          <option value="approved">Approuvés</option>
+          <option value="rejected">Rejetés</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="contTable">
+          <thead><tr>
+            <th>Responsable</th><th>Infrastructure</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="contTbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="contPag"></div>
+      <div class="mobile-cards hidden" id="contMobileCards"></div>
     </section>
 
     <!-- ── PARAMÈTRES ─────────────────────────────────────────── -->
@@ -259,6 +335,19 @@
       <button class="btn-secondary" onclick="closeConfirm()">Annuler</button>
       <button class="btn-danger" id="btnConfirmDelete">Supprimer</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REVIEW (Inscription / Contenu) ══════════════════════ -->
+<div id="reviewModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-backdrop" id="reviewModalBackdrop"></div>
+  <div class="modal-dialog modal-dialog-wide">
+    <div class="modal-header">
+      <h2 id="reviewModalTitle">Révision</h2>
+      <button class="modal-x" onclick="closeReviewModal()">✕</button>
+    </div>
+    <div class="modal-body" id="reviewModalBody"></div>
+    <div class="modal-footer" id="reviewModalFooter"></div>
   </div>
 </div>
 

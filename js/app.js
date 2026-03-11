@@ -108,8 +108,8 @@ async function loadData() {
   const formJson  = await formRes.json();
   const infraSheet = infraJson.sheets?.INFRASTRUCTURES_CULTURELLES || {};
   const formSheet  = formJson.sheets?.CENTRE_FORMATION_CULTURE || {};
-  state.data.infrastructures = infraSheet.records || [];
-  state.data.formations      = formSheet.records  || [];
+  state.data.infrastructures = (infraSheet.records || []).map((r, i) => ({ ...r, _id: i }));
+  state.data.formations      = (formSheet.records  || []).map((r, i) => ({ ...r, _id: i }));
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -907,6 +907,7 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
     <div class="modal-actions">
       ${hasCoords ? `<button class="modal-btn modal-btn-primary" onclick="navigateTo(${lat},${lon})">🧭 M'y rendre</button>` : ''}
       ${hasCoords ? `<button class="modal-btn modal-btn-secondary" onclick="showOnMap(${lat},${lon})">🗺 Sur la carte</button>` : ''}
+      ${!isFormation && r._id !== undefined ? `<a class="modal-btn modal-btn-site" href="site/?id=${r._id}" target="_blank">🌐 Voir la page</a>` : ''}
     </div>
     <div style="height:8px"></div>
   `;

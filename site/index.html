@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site culturel — Culte Culture Sénégal</title>
+  <meta id="metaDesc" name="description" content="Page publique d'un site culturel du Sénégal">
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+
+<!-- ── LOADING ───────────────────────────────────────────────────── -->
+<div id="loading" class="loading-screen">
+  <div class="loading-inner">
+    <span class="splash-icon">🌊</span>
+    <div class="loading-spinner"></div>
+  </div>
+</div>
+
+<!-- ── ERROR ─────────────────────────────────────────────────────── -->
+<div id="errorScreen" class="hidden error-screen">
+  <div class="error-inner">
+    <span style="font-size:48px">😞</span>
+    <h1>Site introuvable</h1>
+    <p>Ce lien ne correspond à aucun site culturel dans notre base de données.</p>
+    <a href="../" class="btn-back">← Retour à l'application</a>
+  </div>
+</div>
+
+<!-- ── PAGE ──────────────────────────────────────────────────────── -->
+<div id="sitePage" class="hidden">
+
+  <!-- Top nav -->
+  <nav class="site-nav">
+    <a href="../" class="nav-back">← Culte Culture Sénégal</a>
+    <div class="nav-links">
+      <a href="#galerie">Galerie</a>
+      <a href="#evenements">Événements</a>
+      <a href="#actualites">Actualités</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="site-hero" id="siteHero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <span class="hero-badge" id="heroBadge"></span>
+      <h1 class="hero-title" id="heroTitle"></h1>
+      <p class="hero-loc" id="heroLoc"></p>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <div class="site-content">
+
+    <!-- À propos -->
+    <section class="site-section" id="apropos">
+      <h2 class="section-title">À propos</h2>
+      <div id="aboutContent" class="about-text"></div>
+    </section>
+
+    <!-- Galerie -->
+    <section class="site-section" id="galerie">
+      <h2 class="section-title">Galerie photos</h2>
+      <div id="galerieContent" class="gallery-grid"></div>
+    </section>
+
+    <!-- Événements -->
+    <section class="site-section" id="evenements">
+      <h2 class="section-title">Événements</h2>
+      <div id="evContent" class="events-list"></div>
+    </section>
+
+    <!-- Actualités -->
+    <section class="site-section" id="actualites">
+      <h2 class="section-title">Actualités</h2>
+      <div id="acContent" class="actus-list"></div>
+    </section>
+
+    <!-- Contact & Carte -->
+    <section class="site-section contact-grid" id="contact">
+      <div>
+        <h2 class="section-title">Contact & Informations</h2>
+        <div id="contactContent" class="contact-cards"></div>
+      </div>
+      <div>
+        <h2 class="section-title">Localisation</h2>
+        <div id="siteMap" class="site-map-wrap"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span>🌊 Culte Culture Sénégal</span>
+    <a href="../">Voir tous les sites culturels →</a>
+  </footer>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden lightbox">
+  <div class="lb-backdrop" onclick="closeLightbox()"></div>
+  <div class="lb-inner">
+    <button class="lb-close" onclick="closeLightbox()">✕</button>
+    <img id="lbImg" src="" alt="">
+    <p id="lbCaption" class="lb-caption"></p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/site.js"></script>
+</body>
+</html>

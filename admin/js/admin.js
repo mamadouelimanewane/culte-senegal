@@ -7,10 +7,14 @@
 const ADMIN_USERS = [
   { email: 'admin@culte.sn', pwd: 'admin2024', name: 'Administrateur' },
 ];
-const LS_EDITS   = 'culte_admin_edits';
-const LS_LOG     = 'culte_admin_log';
-const LS_SESSION = 'culte_admin_session';
-const PER_PAGE   = 20;
+const LS_EDITS    = 'culte_admin_edits';
+const LS_LOG      = 'culte_admin_log';
+const LS_SESSION  = 'culte_admin_session';
+const LS_REG      = 'culte_registrations';
+const LS_RESP     = 'culte_responsables';
+const LS_PENDING  = 'culte_pending';
+const LS_CONTENT  = 'culte_site_content';
+const PER_PAGE    = 20;
 
 /* ── State ───────────────────────────────────────────────────────── */
 const A = {
@@ -19,7 +23,8 @@ const A = {
   edits: { infras: {}, forms: {}, deleted: { infras: [], forms: [] } },
   log: [],
   infraFiltered: [], formFiltered: [],
-  infraPage: 1, formPage: 1,
+  inscFiltered: [], contFiltered: [],
+  infraPage: 1, formPage: 1, inscPage: 1, contPage: 1,
   adminMap: null, adminCluster: null, adminLayer: 'all',
   confirmFn: null,
   editType: null, editIdx: null,
@@ -36,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showApp();
   }
 
-  // Login form
   document.getElementById('loginForm').addEventListener('submit', e => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
@@ -56,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hamburger2').addEventListener('click', toggleSidebar);
   document.getElementById('editModalBackdrop').addEventListener('click', closeEditModal);
   document.getElementById('confirmBackdrop').addEventListener('click', closeConfirm);
+  document.getElementById('reviewModalBackdrop').addEventListener('click', closeReviewModal);
 });
 
 async function showApp() {
@@ -67,6 +72,7 @@ async function showApp() {
   setupNav();
   setupTableListeners();
   setupSettingsListeners();
+  updateNotifBadges();
   switchView('dashboard');
 }
 
@@ -124,6 +130,49 @@ function addLog(action, name) {
   localStorage.setItem(LS_LOG, JSON.stringify(A.log));
 }
 
+/* ── localStorage helpers ────────────────────────────────────────── */
+function getRegistrations() {
+  return JSON.parse(localStorage.getItem(LS_REG) || '[]');
+}
+function saveRegistrations(arr) {
+  localStorage.setItem(LS_REG, JSON.stringify(arr));
+}
+function getResponsables() {
+  return JSON.parse(localStorage.getItem(LS_RESP) || '[]');
+}
+function saveResponsables(arr) {
+  localStorage.setItem(LS_RESP, JSON.stringify(arr));
+}
+function getPending() {
+  return JSON.parse(localStorage.getItem(LS_PENDING) || '[]');
+}
+function savePending(arr) {
+  localStorage.setItem(LS_PENDING, JSON.stringify(arr));
+}
+function getSiteContent() {
+  return JSON.parse(localStorage.getItem(LS_CONTENT) || '{}');
+}
+function saveSiteContent(obj) {
+  localStorage.setItem(LS_CONTENT, JSON.stringify(obj));
+}
+
+/* ── NOTIFICATION BADGES ─────────────────────────────────────────── */
+function updateNotifBadges() {
+  const regPending  = getRegistrations().filter(r => r.statut === 'pending').length;
+  const contPending = getPending().filter(p => p.statut === 'pending').length;
+
+  const ni = document.getElementById('notifInscriptions');
+  const nc = document.getElementById('notifContenus');
+  if (ni) {
+    ni.textContent = regPending;
+    ni.classList.toggle('hidden', regPending === 0);
+  }
+  if (nc) {
+    nc.textContent = contPending;
+    nc.classList.toggle('hidden', contPending === 0);
+  }
+}
+
 /* ── NAVIGATION ──────────────────────────────────────────────────── */
 function setupNav() {
   document.querySelectorAll('.sb-btn').forEach(btn => {
@@ -140,29 +189,37 @@ function switchView(name) {
   document.getElementById('view-' + name)?.classList.add('active');
   document.getElementById('topbarTitle').textContent = {
     dashboard: 'Tableau de bord', infrastructures: 'Infrastructures',
-    formations: 'Formations', carte: 'Carte', parametres: 'Paramètres',
+    formations: 'Formations', carte: 'Carte',
+    inscriptions: 'Inscriptions Responsables', contenus: 'Validation des Contenus',
+    parametres: 'Paramètres',
   }[name] || name;
 
-  if (name === 'dashboard') renderDashboard();
+  if (name === 'dashboard')      renderDashboard();
   if (name === 'infrastructures') renderInfraTable(true);
-  if (name === 'formations') renderFormTable(true);
-  if (name === 'carte') initAdminMap();
-  if (name === 'parametres') renderParametres();
+  if (name === 'formations')      renderFormTable(true);
+  if (name === 'carte')           initAdminMap();
+  if (name === 'inscriptions')    renderInscriptions(true);
+  if (name === 'contenus')        renderContenus(true);
+  if (name === 'parametres')      renderParametres();
 }
 
 /* ── DASHBOARD ───────────────────────────────────────────────────── */
 function renderDashboard() {
-  const infras = getMergedInfras();
-  const forms  = getMergedForms();
+  const infras  = getMergedInfras();
+  const forms   = getMergedForms();
   const regions = new Set(infras.map(r => r.REGION).filter(Boolean));
-  const editsCount = Object.keys(A.edits.infras).length + Object.keys(A.edits.forms).length;
+  const regs    = getRegistrations();
+  const pend    = getPending();
+  const regsPending  = regs.filter(r => r.statut === 'pending').length;
+  const contPending  = pend.filter(p => p.statut === 'pending').length;
+  const respsCount   = getResponsables().filter(r => r.statut === 'active').length;
 
-  // Stats
   document.getElementById('dashStats').innerHTML = [
     { icon: '🏛', num: infras.length.toLocaleString('fr-FR'), lbl: 'Infrastructures', color: '#0d5fa0' },
     { icon: '🎓', num: forms.length.toLocaleString('fr-FR'),  lbl: 'Formations',       color: '#6a1b9a' },
-    { icon: '📍', num: regions.size,                          lbl: 'Régions couvertes', color: '#00695c' },
-    { icon: '✏️', num: editsCount,                            lbl: 'Modifications locales', color: '#e65100' },
+    { icon: '👤', num: respsCount,                            lbl: 'Responsables actifs', color: '#00695c' },
+    { icon: '📝', num: regsPending,                           lbl: 'Inscriptions en attente', color: '#e65100' },
+    { icon: '✅', num: contPending,                           lbl: 'Contenus à valider', color: '#c62828' },
   ].map(s => `
     <div class="stat-card">
       <div class="stat-icon">${s.icon}</div>
@@ -173,22 +230,19 @@ function renderDashboard() {
     </div>
   `).join('');
 
-  // Update topbar badge
   document.getElementById('topbarBadge').textContent =
     (infras.length + forms.length).toLocaleString('fr-FR') + ' lieux';
 
-  // Chart: by region
   const regionCounts = {};
   infras.forEach(r => { const k = r.REGION || 'N/A'; regionCounts[k] = (regionCounts[k] || 0) + 1; });
   renderBarChart('chartRegions', regionCounts, 12);
 
-  // Chart: by type
   const typeCounts = {};
   infras.forEach(r => { const k = getInfraType(r); typeCounts[k] = (typeCounts[k] || 0) + 1; });
   renderBarChart('chartTypes', typeCounts, 8);
 
-  // Recent edits
   renderRecentEdits();
+  updateNotifBadges();
 }
 
 function renderBarChart(id, counts, limit) {
@@ -206,20 +260,34 @@ function renderBarChart(id, counts, limit) {
 
 function renderRecentEdits() {
   const el = document.getElementById('recentEdits');
-  if (!A.log.length) {
-    el.innerHTML = '<p style="font-size:13px;color:#7a9ab8;padding:8px 0">Aucune modification locale.</p>';
+  const combined = [
+    ...A.log.slice(0, 5).map(item => ({ ...item, src: 'admin' })),
+    ...getPending().filter(p => p.statut === 'pending').slice(0, 3).map(p => ({
+      action: 'submit', name: `${p.respNom} → ${p.infraNom} (${typeLbl(p.type)})`,
+      ts: p.dateSubmit, src: 'resp'
+    })),
+  ].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 8);
+
+  if (!combined.length) {
+    el.innerHTML = '<p style="font-size:13px;color:#7a9ab8;padding:8px 0">Aucune activité.</p>';
     return;
   }
-  el.innerHTML = A.log.slice(0, 8).map(item => {
+  el.innerHTML = combined.map(item => {
     const ts = new Date(item.ts).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-    const cls = { edit: 'badge-edit', add: 'badge-add', delete: 'badge-del' }[item.action] || 'badge-edit';
-    const lbl = { edit: 'Modif.', add: 'Ajout', delete: 'Supprim.' }[item.action] || item.action;
+    const badgeMap = { edit: 'badge-edit', add: 'badge-add', delete: 'badge-del', submit: 'badge-edit' };
+    const lblMap   = { edit: 'Modif.', add: 'Ajout', delete: 'Supprim.', submit: 'Soumis' };
+    const cls = badgeMap[item.action] || 'badge-edit';
+    const lbl = lblMap[item.action]  || item.action;
     return `<div class="recent-item">
       <span class="recent-badge ${cls}">${lbl}</span>
       <span class="recent-name">${item.name}</span>
       <span class="recent-date">${ts}</span>
     </div>`;
   }).join('');
+}
+
+function typeLbl(type) {
+  return { profile: 'Profil', gallery_add: 'Photo', event: 'Événement', actu: 'Actualité' }[type] || type;
 }
 
 function getInfraType(rec) {
@@ -232,7 +300,6 @@ function getInfraType(rec) {
 
 /* ── INFRASTRUCTURES TABLE ───────────────────────────────────────── */
 function setupTableListeners() {
-  // Infras
   let infraTimer;
   document.getElementById('infraSearch').addEventListener('input', () => {
     clearTimeout(infraTimer);
@@ -243,7 +310,6 @@ function setupTableListeners() {
   document.getElementById('btnAddInfra').addEventListener('click', () => openEditModal('infra', null));
   document.getElementById('btnExportInfra').addEventListener('click', () => exportCSV('infra'));
 
-  // Forms
   let formTimer;
   document.getElementById('formSearch').addEventListener('input', () => {
     clearTimeout(formTimer);
@@ -253,6 +319,23 @@ function setupTableListeners() {
   document.getElementById('formBrancheFilter').addEventListener('change', () => renderFormTable(true));
   document.getElementById('btnAddForm').addEventListener('click', () => openEditModal('form', null));
   document.getElementById('btnExportForm').addEventListener('click', () => exportCSV('form'));
+
+  // Inscriptions
+  let inscTimer;
+  document.getElementById('inscSearch').addEventListener('input', () => {
+    clearTimeout(inscTimer);
+    inscTimer = setTimeout(() => renderInscriptions(true), 250);
+  });
+  document.getElementById('inscStatutFilter').addEventListener('change', () => renderInscriptions(true));
+
+  // Contenus
+  let contTimer;
+  document.getElementById('contSearch').addEventListener('input', () => {
+    clearTimeout(contTimer);
+    contTimer = setTimeout(() => renderContenus(true), 250);
+  });
+  document.getElementById('contTypeFilter').addEventListener('change', () => renderContenus(true));
+  document.getElementById('contStatutFilter').addEventListener('change', () => renderContenus(true));
 }
 
 function renderInfraTable(reset) {
@@ -339,18 +422,320 @@ function renderFormTable(reset) {
   renderPagination('formPag', A.formFiltered.length, A.formPage, p => { A.formPage = p; renderFormTable(false); });
 }
 
+/* ── INSCRIPTIONS ────────────────────────────────────────────────── */
+function renderInscriptions(reset) {
+  if (reset) A.inscPage = 1;
+  const regs   = getRegistrations();
+  const search = document.getElementById('inscSearch').value.toLowerCase();
+  const statut = document.getElementById('inscStatutFilter').value;
+
+  A.inscFiltered = regs.filter(r => {
+    if (search && !((r.nom||'') + (r.email||'') + (r.infraNom||'')).toLowerCase().includes(search)) return false;
+    if (statut && r.statut !== statut) return false;
+    return true;
+  });
+
+  renderTableBody('inscTbody', A.inscFiltered, A.inscPage, (r, i) => `
+    <td class="td-name">${esc(r.nom||'')}</td>
+    <td>${esc(r.email||'')}</td>
+    <td class="td-name" title="${esc(r.infraNom||'')}">${esc(r.infraNom||'—')}</td>
+    <td>${esc(r.region||'—')}</td>
+    <td>${fmtDate(r.dateInscription)}</td>
+    <td><span class="status-pill status-${r.statut}">${statutLbl(r.statut)}</span></td>
+    <td class="td-actions">
+      <button class="btn-icon" title="Réviser" onclick="openReviewInscription(${i})">👁</button>
+    </td>
+  `);
+
+  renderMobileCards('inscMobileCards', A.inscFiltered, A.inscPage, (r, i) => `
+    <div class="m-card">
+      <div class="m-card-name">${esc(r.nom||'')}</div>
+      <div class="m-card-meta">
+        <span>${esc(r.email||'')}</span>
+        <span>📍 ${esc(r.infraNom||'—')}</span>
+        <span class="status-pill status-${r.statut}">${statutLbl(r.statut)}</span>
+      </div>
+      <div class="m-card-actions">
+        <button class="btn-secondary" style="font-size:12px;padding:6px 10px" onclick="openReviewInscription(${i})">👁 Réviser</button>
+      </div>
+    </div>
+  `);
+  renderPagination('inscPag', A.inscFiltered.length, A.inscPage, p => { A.inscPage = p; renderInscriptions(false); });
+  updateNotifBadges();
+}
+
+function openReviewInscription(idx) {
+  const r = A.inscFiltered[idx];
+  if (!r) return;
+  document.getElementById('reviewModalTitle').textContent = 'Demande d\'inscription — ' + (r.nom || '');
+
+  document.getElementById('reviewModalBody').innerHTML = `
+    <div class="review-grid">
+      <div class="review-field"><label>Nom</label><div class="rv-val">${esc(r.nom||'—')}</div></div>
+      <div class="review-field"><label>Email</label><div class="rv-val">${esc(r.email||'—')}</div></div>
+      <div class="review-field"><label>Téléphone</label><div class="rv-val">${esc(r.tel||'—')}</div></div>
+      <div class="review-field"><label>Région</label><div class="rv-val">${esc(r.region||'—')}</div></div>
+      <div class="review-field review-full"><label>Infrastructure gérée</label><div class="rv-val">${esc(r.infraNom||'—')}</div></div>
+      <hr class="review-sep">
+      <div class="review-field review-full"><label>Justification</label><div class="rv-val" style="white-space:pre-wrap">${esc(r.justification||'—')}</div></div>
+      <div class="review-field"><label>Date de demande</label><div class="rv-val">${fmtDate(r.dateInscription)}</div></div>
+      <div class="review-field"><label>Statut actuel</label><div class="rv-val"><span class="status-pill status-${r.statut}">${statutLbl(r.statut)}</span></div></div>
+      ${r.noteAdmin ? `<div class="review-field review-full"><label>Note admin précédente</label><div class="rv-val" style="color:var(--red)">${esc(r.noteAdmin)}</div></div>` : ''}
+    </div>
+    <div class="review-note">
+      <label style="font-size:11px;font-weight:700;color:var(--text-sm);text-transform:uppercase;letter-spacing:.05em">Note admin</label>
+      <textarea id="reviewNote" placeholder="Commentaire visible par le responsable…">${esc(r.noteAdmin||'')}</textarea>
+    </div>
+  `;
+
+  const footer = document.getElementById('reviewModalFooter');
+  if (r.statut === 'pending') {
+    footer.innerHTML = `
+      <button class="btn-secondary" onclick="closeReviewModal()">Annuler</button>
+      <button class="btn-reject"  onclick="rejectRegistration('${r.id}')">✕ Rejeter</button>
+      <button class="btn-approve" onclick="approveRegistration('${r.id}')">✓ Approuver</button>
+    `;
+  } else {
+    footer.innerHTML = `<button class="btn-secondary" onclick="closeReviewModal()">Fermer</button>`;
+  }
+
+  document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function approveRegistration(id) {
+  const note = document.getElementById('reviewNote')?.value.trim() || '';
+  const regs = getRegistrations();
+  const idx  = regs.findIndex(r => r.id === id);
+  if (idx === -1) return;
+  regs[idx].statut    = 'approved';
+  regs[idx].noteAdmin = note;
+  saveRegistrations(regs);
+
+  // Create responsable account
+  const reg  = regs[idx];
+  const resps = getResponsables();
+  if (!resps.find(r => r.email === reg.email)) {
+    resps.push({
+      id: 'resp_' + Date.now(),
+      nom: reg.nom, email: reg.email, tel: reg.tel, pwd: reg.pwd,
+      infraId: reg.infraId, infraNom: reg.infraNom, region: reg.region,
+      statut: 'active',
+      dateCreation: new Date().toISOString(),
+    });
+    saveResponsables(resps);
+  }
+
+  addLog('approve_reg', reg.nom + ' → ' + reg.infraNom);
+  closeReviewModal();
+  renderInscriptions(false);
+  updateNotifBadges();
+}
+
+function rejectRegistration(id) {
+  const note = document.getElementById('reviewNote')?.value.trim() || '';
+  const regs = getRegistrations();
+  const idx  = regs.findIndex(r => r.id === id);
+  if (idx === -1) return;
+  regs[idx].statut    = 'rejected';
+  regs[idx].noteAdmin = note;
+  saveRegistrations(regs);
+  addLog('reject_reg', regs[idx].nom);
+  closeReviewModal();
+  renderInscriptions(false);
+  updateNotifBadges();
+}
+
+/* ── CONTENUS ────────────────────────────────────────────────────── */
+function renderContenus(reset) {
+  if (reset) A.contPage = 1;
+  const pendings = getPending();
+  const search   = document.getElementById('contSearch').value.toLowerCase();
+  const type     = document.getElementById('contTypeFilter').value;
+  const statut   = document.getElementById('contStatutFilter').value;
+
+  A.contFiltered = pendings.filter(p => {
+    if (search && !((p.respNom||'') + (p.infraNom||'')).toLowerCase().includes(search)) return false;
+    if (type   && p.type   !== type)   return false;
+    if (statut && p.statut !== statut) return false;
+    return true;
+  }).sort((a, b) => new Date(b.dateSubmit) - new Date(a.dateSubmit));
+
+  renderTableBody('contTbody', A.contFiltered, A.contPage, (p, i) => `
+    <td class="td-name">${esc(p.respNom||'—')}</td>
+    <td class="td-name" title="${esc(p.infraNom||'')}">${esc(p.infraNom||'—')}</td>
+    <td><span class="type-pill type-${p.type}">${typeLbl(p.type)}</span></td>
+    <td>${fmtDate(p.dateSubmit)}</td>
+    <td><span class="status-pill status-${p.statut}">${statutLbl(p.statut)}</span></td>
+    <td class="td-actions">
+      <button class="btn-icon" title="Réviser" onclick="openReviewContent(${i})">👁</button>
+    </td>
+  `);
+
+  renderMobileCards('contMobileCards', A.contFiltered, A.contPage, (p, i) => `
+    <div class="m-card">
+      <div class="m-card-name">${esc(p.infraNom||'—')}</div>
+      <div class="m-card-meta">
+        <span>${esc(p.respNom||'—')}</span>
+        <span class="type-pill type-${p.type}">${typeLbl(p.type)}</span>
+        <span class="status-pill status-${p.statut}">${statutLbl(p.statut)}</span>
+      </div>
+      <div class="m-card-actions">
+        <button class="btn-secondary" style="font-size:12px;padding:6px 10px" onclick="openReviewContent(${i})">👁 Réviser</button>
+      </div>
+    </div>
+  `);
+  renderPagination('contPag', A.contFiltered.length, A.contPage, p => { A.contPage = p; renderContenus(false); });
+  updateNotifBadges();
+}
+
+function openReviewContent(idx) {
+  const p = A.contFiltered[idx];
+  if (!p) return;
+  document.getElementById('reviewModalTitle').textContent = `${typeLbl(p.type)} — ${p.infraNom || ''}`;
+
+  let bodyHtml = `
+    <div class="review-grid">
+      <div class="review-field"><label>Responsable</label><div class="rv-val">${esc(p.respNom||'—')}</div></div>
+      <div class="review-field"><label>Infrastructure</label><div class="rv-val">${esc(p.infraNom||'—')}</div></div>
+      <div class="review-field"><label>Type</label><div class="rv-val"><span class="type-pill type-${p.type}">${typeLbl(p.type)}</span></div></div>
+      <div class="review-field"><label>Date de soumission</label><div class="rv-val">${fmtDate(p.dateSubmit)}</div></div>
+      <hr class="review-sep">
+  `;
+
+  const d = p.data || {};
+  if (p.type === 'profile') {
+    bodyHtml += `
+      <div class="review-field review-full"><label>Description</label><div class="rv-val" style="white-space:pre-wrap">${esc(d.description||'—')}</div></div>
+      <div class="review-field"><label>Horaires</label><div class="rv-val">${esc(d.horaires||'—')}</div></div>
+      <div class="review-field"><label>Téléphone</label><div class="rv-val">${esc(d.telephone||'—')}</div></div>
+      <div class="review-field"><label>Email</label><div class="rv-val">${esc(d.email||'—')}</div></div>
+      <div class="review-field"><label>Site web</label><div class="rv-val">${esc(d.website||'—')}</div></div>
+    `;
+  } else if (p.type === 'gallery_add') {
+    bodyHtml += `
+      <div class="review-field review-full"><label>Caption</label><div class="rv-val">${esc(d.caption||'—')}</div></div>
+      <div class="review-field review-full"><label>Photo</label>
+        ${d.url ? `<img src="${d.url}" class="review-photo" alt="photo">` : '<div class="rv-val">Aucune image</div>'}
+      </div>
+    `;
+  } else if (p.type === 'event') {
+    bodyHtml += `
+      <div class="review-field review-full"><label>Titre</label><div class="rv-val">${esc(d.titre||'—')}</div></div>
+      <div class="review-field"><label>Date début</label><div class="rv-val">${esc(d.dateDebut||'—')}</div></div>
+      <div class="review-field"><label>Date fin</label><div class="rv-val">${esc(d.dateFin||'—')}</div></div>
+      <div class="review-field"><label>Lieu</label><div class="rv-val">${esc(d.lieu||'—')}</div></div>
+      <div class="review-field review-full"><label>Description</label><div class="rv-val" style="white-space:pre-wrap">${esc(d.description||'—')}</div></div>
+      ${d.photos?.length ? `<div class="review-field review-full"><label>Photos (${d.photos.length})</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${d.photos.map(ph => `<img src="${ph}" class="review-photo" style="max-height:120px;max-width:180px" alt="event">`).join('')}</div>
+      </div>` : ''}
+    `;
+  } else if (p.type === 'actu') {
+    bodyHtml += `
+      <div class="review-field review-full"><label>Titre</label><div class="rv-val">${esc(d.titre||'—')}</div></div>
+      <div class="review-field review-full"><label>Contenu</label><div class="rv-val" style="white-space:pre-wrap">${esc(d.contenu||'—')}</div></div>
+      ${d.photo ? `<div class="review-field review-full"><label>Photo</label><img src="${d.photo}" class="review-photo" alt="actu"></div>` : ''}
+    `;
+  }
+
+  if (p.noteAdmin) {
+    bodyHtml += `<div class="review-field review-full"><label>Note admin précédente</label><div class="rv-val" style="color:var(--red)">${esc(p.noteAdmin)}</div></div>`;
+  }
+  bodyHtml += `</div>
+    <div class="review-note">
+      <label style="font-size:11px;font-weight:700;color:var(--text-sm);text-transform:uppercase;letter-spacing:.05em">Note admin</label>
+      <textarea id="reviewNote" placeholder="Commentaire visible par le responsable…">${esc(p.noteAdmin||'')}</textarea>
+    </div>
+  `;
+
+  document.getElementById('reviewModalBody').innerHTML = bodyHtml;
+
+  const footer = document.getElementById('reviewModalFooter');
+  if (p.statut === 'pending') {
+    footer.innerHTML = `
+      <button class="btn-secondary" onclick="closeReviewModal()">Annuler</button>
+      <button class="btn-reject"  onclick="rejectContent('${p.id}')">✕ Rejeter</button>
+      <button class="btn-approve" onclick="approveContent('${p.id}')">✓ Approuver</button>
+    `;
+  } else {
+    footer.innerHTML = `<button class="btn-secondary" onclick="closeReviewModal()">Fermer</button>`;
+  }
+
+  document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function approveContent(id) {
+  const note = document.getElementById('reviewNote')?.value.trim() || '';
+  const pendings = getPending();
+  const idx = pendings.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  pendings[idx].statut    = 'approved';
+  pendings[idx].noteAdmin = note;
+
+  // Merge into site content
+  const p = pendings[idx];
+  const content = getSiteContent();
+  const key = String(p.infraId);
+  if (!content[key]) {
+    content[key] = { description:'', horaires:'', telephone:'', email:'', website:'', gallery:[], events:[], actus:[], updatedAt:'' };
+  }
+
+  const d = p.data || {};
+  if (p.type === 'profile') {
+    Object.assign(content[key], {
+      description: d.description || content[key].description,
+      horaires:    d.horaires    || content[key].horaires,
+      telephone:   d.telephone   || content[key].telephone,
+      email:       d.email       || content[key].email,
+      website:     d.website     || content[key].website,
+    });
+  } else if (p.type === 'gallery_add') {
+    content[key].gallery = content[key].gallery || [];
+    content[key].gallery.push({ id: p.id, url: d.url, caption: d.caption, dateAdded: p.dateSubmit });
+  } else if (p.type === 'event') {
+    content[key].events = content[key].events || [];
+    content[key].events.push({ id: p.id, titre: d.titre, dateDebut: d.dateDebut, dateFin: d.dateFin, lieu: d.lieu, description: d.description, photos: d.photos || [] });
+  } else if (p.type === 'actu') {
+    content[key].actus = content[key].actus || [];
+    content[key].actus.unshift({ id: p.id, titre: d.titre, contenu: d.contenu, photo: d.photo || '', date: p.dateSubmit });
+  }
+
+  content[key].updatedAt = new Date().toISOString();
+  saveSiteContent(content);
+  savePending(pendings);
+  addLog('approve_content', `${typeLbl(p.type)} — ${p.infraNom}`);
+  closeReviewModal();
+  renderContenus(false);
+  updateNotifBadges();
+}
+
+function rejectContent(id) {
+  const note = document.getElementById('reviewNote')?.value.trim() || '';
+  const pendings = getPending();
+  const idx = pendings.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  pendings[idx].statut    = 'rejected';
+  pendings[idx].noteAdmin = note;
+  savePending(pendings);
+  addLog('reject_content', pendings[idx].infraNom);
+  closeReviewModal();
+  renderContenus(false);
+  updateNotifBadges();
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').classList.add('hidden');
+}
+
+/* ── TABLE UTILS ─────────────────────────────────────────────────── */
 function renderTableBody(tbodyId, records, page, rowFn) {
   const tbody = document.getElementById(tbodyId);
   const start = (page - 1) * PER_PAGE;
   const slice = records.slice(start, start + PER_PAGE);
   if (!slice.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-sm)">Aucun résultat</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-sm)">Aucun résultat</td></tr>`;
     return;
   }
-  tbody.innerHTML = slice.map((r, localIdx) => {
-    const globalIdx = start + localIdx;
-    return `<tr>${rowFn(r, globalIdx)}</tr>`;
-  }).join('');
+  tbody.innerHTML = slice.map((r, localIdx) => `<tr>${rowFn(r, start + localIdx)}</tr>`).join('');
 }
 
 function renderMobileCards(id, records, page, cardFn) {
@@ -565,7 +950,6 @@ function doDelete(type, idx) {
   if (!rec) return;
   const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '?';
   if (typeof rec._id === 'string' && rec._id.startsWith('new_')) {
-    // Remove from local array
     const src = type === 'infra' ? A.data.infras : A.data.forms;
     const i = src.findIndex(r => r._id === rec._id);
     if (i !== -1) src.splice(i, 1);
@@ -633,15 +1017,25 @@ function renderParametres() {
   const infraEdits = Object.keys(A.edits.infras).length;
   const formEdits  = Object.keys(A.edits.forms).length;
   const deleted    = A.edits.deleted.infras.length + A.edits.deleted.forms.length;
+  const resps      = getResponsables().length;
+  const regs       = getRegistrations().length;
+  const pends      = getPending().length;
   document.getElementById('settingsStats').innerHTML =
     `<b>${infraEdits}</b> modification(s) d'infrastructures<br>` +
     `<b>${formEdits}</b> modification(s) de formations<br>` +
-    `<b>${deleted}</b> suppression(s) locale(s)`;
+    `<b>${deleted}</b> suppression(s) locale(s)<br>` +
+    `<b>${resps}</b> responsable(s) créé(s)<br>` +
+    `<b>${regs}</b> inscription(s) reçue(s)<br>` +
+    `<b>${pends}</b> soumission(s) de contenu`;
 
   const log = document.getElementById('activityLog');
   log.innerHTML = A.log.slice(0, 30).map(item => {
     const ts = new Date(item.ts).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
-    const lbl = { edit: '✏️ Modif.', add: '➕ Ajout', delete: '🗑 Suppression' }[item.action] || item.action;
+    const lbl = {
+      edit: '✏️ Modif.', add: '➕ Ajout', delete: '🗑 Suppression',
+      approve_reg: '✓ Inscription approuvée', reject_reg: '✕ Inscription rejetée',
+      approve_content: '✓ Contenu approuvé', reject_content: '✕ Contenu rejeté',
+    }[item.action] || item.action;
     return `<div class="log-item">${lbl} — <b>${item.name}</b><br><span class="log-time">${ts}</span></div>`;
   }).join('') || '<p style="font-size:13px;color:var(--text-sm)">Aucune activité.</p>';
 }
@@ -656,7 +1050,11 @@ function setupSettingsListeners() {
   });
 
   document.getElementById('btnExportAll').addEventListener('click', () => {
-    const data = { infras: getMergedInfras(), forms: getMergedForms(), edits: A.edits, log: A.log };
+    const data = {
+      infras: getMergedInfras(), forms: getMergedForms(), edits: A.edits, log: A.log,
+      responsables: getResponsables(), registrations: getRegistrations(),
+      pending: getPending(), siteContent: getSiteContent(),
+    };
     downloadJSON(data, 'culte_admin_export_' + dateStr() + '.json');
   });
 
@@ -687,6 +1085,13 @@ function exportCSV(type) {
 /* ── UTILS ───────────────────────────────────────────────────────── */
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function dateStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function statutLbl(s) {
+  return { pending: 'En attente', approved: 'Approuvé', rejected: 'Rejeté' }[s] || s;
+}
 function downloadJSON(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
