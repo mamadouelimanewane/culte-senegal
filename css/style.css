@@ -59,16 +59,61 @@ input { outline: none; }
 /* ════════════════════════════════════════════════════════════════
    SPLASH
    ════════════════════════════════════════════════════════════════ */
+/* ── SC Logo Badge ────────────────────────────────────────────── */
+.sc-badge {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f0b429 0%, #c8820a 100%);
+  color: #0a3d6b;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  letter-spacing: -2px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 18px rgba(200,130,10,.38);
+  user-select: none;
+}
+.sc-badge-xl {
+  width: 84px; height: 84px; border-radius: 24px; font-size: 32px;
+  margin: 0 auto 18px;
+  animation: scBadgeBounce .9s ease infinite alternate;
+  box-shadow: 0 8px 32px rgba(200,130,10,.5);
+}
+.sc-badge-md { width: 40px; height: 40px; border-radius: 11px; font-size: 16px; }
+.sc-badge-sm { width: 36px; height: 36px; border-radius: 10px; font-size: 14px; }
+
+@keyframes scBadgeBounce {
+  from { transform: translateY(0)   scale(1); }
+  to   { transform: translateY(-10px) scale(1.04); }
+}
+
+/* ── SC Splash wordmark ───────────────────────────────────────── */
+.sc-splash-name {
+  font-size: 46px; font-weight: 900; letter-spacing: -2px;
+  color: white; line-height: 1;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  margin-bottom: 12px;
+}
+.sc-splash-name span { font-weight: 300; opacity: .7; }
+
+/* ── Home brand row ───────────────────────────────────────────── */
+.home-brand-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.home-title { font-size: 24px; font-weight: 900; color: white; letter-spacing: -.8px; margin: 0; }
+.ht-em { font-weight: 300; opacity: .75; }
+
+/* ── Desktop brand "enews" light variant ─────────────────────── */
+.em-light { font-weight: 300; opacity: .7; }
+
+/* ── Splash layout ────────────────────────────────────────────── */
 #splash {
   position: fixed; inset: 0; z-index: 9999;
   background: var(--bg-header);
   display: flex; align-items: center; justify-content: center;
 }
 .splash-inner { text-align: center; color: white; }
-.splash-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
-.splash-icon { font-size: 48px; animation: splashBounce 1s ease infinite alternate; }
-.splash-brand { font-size: 42px; font-weight: 800; letter-spacing: -1px; }
-.splash-tagline { font-size: 15px; opacity: .75; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 36px; }
+.splash-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 0; }
+.splash-tagline { font-size: 14px; opacity: .65; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 36px; }
 .splash-loader { display: flex; gap: 8px; justify-content: center; }
 .splash-loader span {
   width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.5);
@@ -76,7 +121,6 @@ input { outline: none; }
 }
 .splash-loader span:nth-child(2) { animation-delay: .2s; }
 .splash-loader span:nth-child(3) { animation-delay: .4s; }
-@keyframes splashBounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
 @keyframes splashDot { 0%,80%,100% { transform: scale(.8); opacity: .4; } 40% { transform: scale(1.2); opacity: 1; } }
 
 /* ════════════════════════════════════════════════════════════════
@@ -886,9 +930,8 @@ input { outline: none; }
     display: flex; align-items: center; gap: 10px;
     flex-shrink: 0; color: white;
   }
-  .dt-brand-icon { font-size: 28px; line-height: 1; }
-  .dt-brand-name { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
-  .dt-brand-sub { font-size: 11px; opacity: .6; }
+  .dt-brand-name { font-size: 18px; font-weight: 900; letter-spacing: -.4px; color: white; }
+  .dt-brand-sub { font-size: 11px; opacity: .55; }
   .dt-search-wrap {
     flex: 1; max-width: 480px;
     display: flex; align-items: center; gap: 10px;
