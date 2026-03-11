@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function seedDemo() {
   'use strict';
-  if (localStorage.getItem('culte_demo_seeded') === '2') return; // version tag
+  if (localStorage.getItem('culte_demo_seeded') === '3') return; // version tag
 
   /* ── Images Unsplash – thèmes africains ──────────────────────── */
   const IMG = {
@@ -507,6 +507,6 @@ Le musée dispose également d'un espace de recherche, d'une médiathèque spéc
   });
   localStorage.setItem('culte_site_content', JSON.stringify(existingContent));
 
-  localStorage.setItem('culte_demo_seeded', '2');
+  localStorage.setItem('culte_demo_seeded', '3');
   console.log('[Culte] Données de démonstration initialisées ✓');
 })();

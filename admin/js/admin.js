@@ -215,13 +215,13 @@ function renderDashboard() {
   const respsCount   = getResponsables().filter(r => r.statut === 'active').length;
 
   document.getElementById('dashStats').innerHTML = [
-    { icon: '🏛', num: infras.length.toLocaleString('fr-FR'), lbl: 'Infrastructures', color: '#0d5fa0' },
-    { icon: '🎓', num: forms.length.toLocaleString('fr-FR'),  lbl: 'Formations',       color: '#6a1b9a' },
-    { icon: '👤', num: respsCount,                            lbl: 'Responsables actifs', color: '#00695c' },
-    { icon: '📝', num: regsPending,                           lbl: 'Inscriptions en attente', color: '#e65100' },
-    { icon: '✅', num: contPending,                           lbl: 'Contenus à valider', color: '#c62828' },
+    { icon: '🏛', num: infras.length.toLocaleString('fr-FR'), lbl: 'Infrastructures',       color: '#0d5fa0', border: '#0d5fa0' },
+    { icon: '🎓', num: forms.length.toLocaleString('fr-FR'),  lbl: 'Formations',             color: '#6a1b9a', border: '#6a1b9a' },
+    { icon: '👤', num: respsCount,                            lbl: 'Responsables actifs',    color: '#065f46', border: '#059669' },
+    { icon: '📝', num: regsPending,                           lbl: 'Inscriptions en attente',color: '#b45309', border: '#f59e0b' },
+    { icon: '✅', num: contPending,                           lbl: 'Contenus à valider',     color: '#991b1b', border: '#ef4444' },
   ].map(s => `
-    <div class="stat-card">
+    <div class="stat-card" style="border-left-color:${s.border}">
       <div class="stat-icon">${s.icon}</div>
       <div class="stat-info">
         <div class="stat-num" style="color:${s.color}">${s.num}</div>
@@ -248,6 +248,10 @@ function renderDashboard() {
 function renderBarChart(id, counts, limit) {
   const el = document.getElementById(id);
   const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, limit);
+  if (!sorted.length) {
+    el.innerHTML = `<p style="font-size:13px;color:var(--text-sm);padding:12px 0;text-align:center">Chargement des données…</p>`;
+    return;
+  }
   const max = sorted[0]?.[1] || 1;
   el.innerHTML = sorted.map(([label, count]) => `
     <div class="bar-row">
@@ -364,7 +368,7 @@ function renderInfraTable(reset) {
       <button class="btn-icon" title="Modifier" onclick="openEditModal('infra',${i})">✏️</button>
       <button class="btn-icon" title="Supprimer" onclick="confirmDelete('infra',${i})">🗑</button>
     </td>
-  `);
+  `, '🏛', 'Aucune infrastructure', 'Essayez de modifier vos filtres');
   renderMobileCards('infraMobileCards', A.infraFiltered, A.infraPage, (r, i) => `
     <div class="m-card">
       <div class="m-card-name">${r.DESIGNATION||'Sans nom'}</div>
@@ -406,7 +410,7 @@ function renderFormTable(reset) {
       <button class="btn-icon" title="Modifier" onclick="openEditModal('form',${i})">✏️</button>
       <button class="btn-icon" title="Supprimer" onclick="confirmDelete('form',${i})">🗑</button>
     </td>
-  `);
+  `, '🎓', 'Aucune formation', 'Essayez de modifier vos filtres');
   renderMobileCards('formMobileCards', A.formFiltered, A.formPage, (r, i) => `
     <div class="m-card">
       <div class="m-card-name">${r.NOM_ETABLISSEMENT||'Sans nom'}</div>
@@ -445,7 +449,7 @@ function renderInscriptions(reset) {
     <td class="td-actions">
       <button class="btn-icon" title="Réviser" onclick="openReviewInscription(${i})">👁</button>
     </td>
-  `);
+  `, '📝', 'Aucune inscription', 'Les demandes d\'accès apparaîtront ici');
 
   renderMobileCards('inscMobileCards', A.inscFiltered, A.inscPage, (r, i) => `
     <div class="m-card">
@@ -569,7 +573,7 @@ function renderContenus(reset) {
     <td class="td-actions">
       <button class="btn-icon" title="Réviser" onclick="openReviewContent(${i})">👁</button>
     </td>
-  `);
+  `, '✅', 'Aucune soumission', 'Les contenus soumis par les responsables apparaîtront ici');
 
   renderMobileCards('contMobileCards', A.contFiltered, A.contPage, (p, i) => `
     <div class="m-card">
@@ -727,12 +731,17 @@ function closeReviewModal() {
 }
 
 /* ── TABLE UTILS ─────────────────────────────────────────────────── */
-function renderTableBody(tbodyId, records, page, rowFn) {
+function renderTableBody(tbodyId, records, page, rowFn, emptyIcon, emptyMsg, emptyHint) {
   const tbody = document.getElementById(tbodyId);
-  const start = (page - 1) * PER_PAGE;
-  const slice = records.slice(start, start + PER_PAGE);
+  const cols   = tbody.closest('table')?.querySelectorAll('th').length || 8;
+  const start  = (page - 1) * PER_PAGE;
+  const slice  = records.slice(start, start + PER_PAGE);
   if (!slice.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-sm)">Aucun résultat</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${cols}" class="table-empty-row">
+      <span class="empty-icon">${emptyIcon || '🔍'}</span>
+      <span class="empty-msg">${emptyMsg  || 'Aucun résultat'}</span>
+      ${emptyHint ? `<span class="empty-hint">${emptyHint}</span>` : ''}
+    </td></tr>`;
     return;
   }
   tbody.innerHTML = slice.map((r, localIdx) => `<tr>${rowFn(r, start + localIdx)}</tr>`).join('');
@@ -744,20 +753,23 @@ function renderMobileCards(id, records, page, cardFn) {
   const start = (page - 1) * PER_PAGE;
   const slice = records.slice(start, start + PER_PAGE);
   el.innerHTML = slice.length ? slice.map((r, li) => cardFn(r, start + li)).join('') :
-    '<p style="font-size:13px;color:var(--text-sm);padding:16px 0">Aucun résultat</p>';
+    `<div style="text-align:center;padding:40px 20px;color:var(--text-sm)">
+      <div style="font-size:32px;margin-bottom:8px">🔍</div>
+      <div style="font-weight:600;color:var(--text-md)">Aucun résultat</div>
+    </div>`;
 }
 
 function renderPagination(id, total, current, onPage) {
   const el = document.getElementById(id);
   const pages = Math.ceil(total / PER_PAGE);
-  if (pages <= 1) { el.innerHTML = ''; return; }
+  if (pages <= 1) { el.innerHTML = total > 0 ? `<span class="pag-info">${total} résultat${total>1?'s':''}</span>` : ''; return; }
   let html = '';
   if (current > 1) html += `<button class="pg-btn" onclick="(${onPage.toString()})(${current-1})">‹</button>`;
   for (let p = Math.max(1, current-2); p <= Math.min(pages, current+2); p++) {
     html += `<button class="pg-btn${p===current?' active':''}" onclick="(${onPage.toString()})(${p})">${p}</button>`;
   }
   if (current < pages) html += `<button class="pg-btn" onclick="(${onPage.toString()})(${current+1})">›</button>`;
-  html += `<span style="font-size:12px;color:var(--text-sm);margin-left:8px">${total} résultats</span>`;
+  html += `<span class="pag-info">${total.toLocaleString('fr-FR')} résultat${total>1?'s':''}</span>`;
   el.innerHTML = html;
 }
 
