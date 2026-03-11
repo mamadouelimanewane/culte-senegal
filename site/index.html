@@ -44,6 +44,7 @@
 
   <!-- Hero -->
   <header class="site-hero" id="siteHero">
+    <img class="site-hero-img" id="siteHeroImg" src="" alt="">
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <span class="hero-badge" id="heroBadge"></span>
@@ -91,6 +92,11 @@
       </div>
     </section>
 
+    <div class="site-actions">
+      <button class="btn-share" onclick="sharesite()">📤 Partager</button>
+      <a href="#" class="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Haut de page</a>
+    </div>
+
   </div>
 
   <!-- Footer -->
@@ -105,8 +111,11 @@
   <div class="lb-backdrop" onclick="closeLightbox()"></div>
   <div class="lb-inner">
     <button class="lb-close" onclick="closeLightbox()">✕</button>
+    <button class="lb-prev" onclick="navLightbox(-1)">‹</button>
     <img id="lbImg" src="" alt="">
+    <button class="lb-next" onclick="navLightbox(1)">›</button>
     <p id="lbCaption" class="lb-caption"></p>
+    <span id="lbCounter" class="lb-counter"></span>
   </div>
 </div>
 

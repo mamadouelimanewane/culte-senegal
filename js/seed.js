@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function seedDemo() {
   'use strict';
-  if (localStorage.getItem('culte_demo_seeded') === '4') return; // version tag
+  if (localStorage.getItem('culte_demo_seeded') === '5') return; // version tag
 
   /* ── Images Unsplash – thèmes africains ──────────────────────── */
   const IMG = {
@@ -542,13 +542,16 @@ Le musée dispose également d'un espace de recherche, d'une médiathèque spéc
   localStorage.setItem('culte_registrations',  JSON.stringify(mergeById(existing_reg, registrations)));
   localStorage.setItem('culte_pending',        JSON.stringify(mergeById(existing_pend, pending)));
 
-  // Site content: merge per-site (don't erase existing)
+  // Force-update demo site content (4 known demo sites)
+  const DEMO_SITE_IDS = ['856', '858', '860', '868'];
   const existingContent = JSON.parse(localStorage.getItem('culte_site_content') || '{}');
   Object.keys(siteContent).forEach(key => {
-    if (!existingContent[key]) existingContent[key] = siteContent[key];
+    if (DEMO_SITE_IDS.includes(key) || !existingContent[key]) {
+      existingContent[key] = siteContent[key];
+    }
   });
   localStorage.setItem('culte_site_content', JSON.stringify(existingContent));
 
-  localStorage.setItem('culte_demo_seeded', '4');
+  localStorage.setItem('culte_demo_seeded', '5');
   console.log('[Culte] Données de démonstration initialisées ✓');
 })();

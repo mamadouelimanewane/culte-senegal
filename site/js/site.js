@@ -5,6 +5,29 @@
 
 const LS_CONTENT = 'culte_site_content';
 
+const TYPE_DEFAULT_IMAGES = {
+  'Centre culturel':      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=1400&q=85',
+  'Cinéma':               'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1400&q=85',
+  'Galerie':              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1400&q=85',
+  'Musée':                'https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=1400&q=85',
+  'Foyer des femmes':     'https://images.unsplash.com/photo-1607748851687-ba9a10438621?w=1400&q=85',
+  'Foyer des jeunes':     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&q=85',
+  'Salle de spectacle':   'https://images.unsplash.com/photo-1583912267550-d974498571e4?w=1400&q=85',
+  'Salle des fêtes':      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1400&q=85',
+  'Bibliothèque':         'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1400&q=85',
+  'Village artisanal':    'https://images.unsplash.com/photo-1573166475912-1ed8b4f093d2?w=1400&q=85',
+  'Maison de la culture': 'https://images.unsplash.com/photo-1576153192621-7a3be10b356e?w=1400&q=85',
+  'default':              'https://images.unsplash.com/photo-1627552244573-fc77c028e74f?w=1400&q=85',
+};
+
+function getHeroImage(typeStr, content) {
+  if (content.gallery && content.gallery.length) return content.gallery[0].url;
+  for (const [k, url] of Object.entries(TYPE_DEFAULT_IMAGES)) {
+    if (k !== 'default' && (typeStr || '').toLowerCase().includes(k.toLowerCase())) return url;
+  }
+  return TYPE_DEFAULT_IMAGES.default;
+}
+
 /* ── Init ────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   // Parse ?id= from URL
@@ -61,7 +84,18 @@ function renderPage(rec, content) {
 
   // Hero
   const hero = document.getElementById('siteHero');
-  hero.style.background = `linear-gradient(135deg, ${typeColor(rec)}, #00b4d8)`;
+  const heroImg = document.getElementById('siteHeroImg');
+  const imgUrl = getHeroImage(type, content);
+  if (heroImg && imgUrl) {
+    heroImg.src = imgUrl;
+    heroImg.alt = name;
+    heroImg.onerror = () => {
+      heroImg.style.display = 'none';
+      hero.style.background = `linear-gradient(135deg, ${typeColor(rec)}, #00b4d8)`;
+    };
+  } else {
+    hero.style.background = `linear-gradient(135deg, ${typeColor(rec)}, #00b4d8)`;
+  }
   document.getElementById('heroBadge').textContent  = typeIcon(rec) + ' ' + type;
   document.getElementById('heroTitle').textContent  = name;
   document.getElementById('heroLoc').textContent    = [commune, dept, region].filter(Boolean).join(' › ');
@@ -69,7 +103,10 @@ function renderPage(rec, content) {
   // About
   const aboutEl = document.getElementById('aboutContent');
   if (content.description) {
-    aboutEl.textContent = content.description;
+    aboutEl.innerHTML = content.description
+      .split(/\n\n+/)
+      .map(p => `<p>${esc(p.trim())}</p>`)
+      .join('');
   } else {
     aboutEl.innerHTML = '<p class="empty-state">Aucune description disponible pour le moment.</p>';
   }
@@ -226,18 +263,49 @@ function renderMap(lat, lon, name) {
 }
 
 /* ── Lightbox ────────────────────────────────────────────────────── */
+let _lbIdx = 0;
 function openLightbox(idx) {
-  const photos = window._galleryPhotos || [];
-  const ph     = photos[idx];
-  if (!ph) return;
-  document.getElementById('lbImg').src          = ph.url;
-  document.getElementById('lbCaption').textContent = ph.caption || '';
+  _lbIdx = idx;
+  _updateLb();
   document.getElementById('lightbox').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function navLightbox(dir) {
+  const photos = window._galleryPhotos || [];
+  _lbIdx = (_lbIdx + dir + photos.length) % photos.length;
+  _updateLb();
+}
+function _updateLb() {
+  const photos = window._galleryPhotos || [];
+  const ph = photos[_lbIdx];
+  if (!ph) return;
+  const img = document.getElementById('lbImg');
+  img.style.opacity = '0';
+  setTimeout(() => { img.src = ph.url; img.onload = () => { img.style.opacity = '1'; }; }, 80);
+  document.getElementById('lbCaption').textContent = ph.caption || '';
+  document.getElementById('lbCounter').textContent = `${_lbIdx + 1} / ${photos.length}`;
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.add('hidden');
+  document.body.style.overflow = '';
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('lightbox');
+  if (lb.classList.contains('hidden')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+/* ── Share ───────────────────────────────────────────────────────── */
+function sharesite() {
+  const name = document.getElementById('heroTitle').textContent;
+  if (navigator.share) {
+    navigator.share({ title: name, url: location.href }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(location.href).then(() => alert('Lien copié !'));
+  }
+}
 
 /* ── Error ───────────────────────────────────────────────────────── */
 function showError() {

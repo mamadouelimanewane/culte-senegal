@@ -549,7 +549,6 @@ input { outline: none; }
 }
 .modal-backdrop {
   position: absolute; inset: 0; background: rgba(10,30,53,.55);
-  backdrop-filter: blur(2px);
 }
 .modal-sheet {
   position: absolute; bottom: 0; left: 0; right: 0;
