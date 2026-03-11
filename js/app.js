@@ -570,54 +570,7 @@ function removeFav(e, key) {
    ════════════════════════════════════════════════════════════════ */
 function initMap() {
   if (state.map) return;
-  if (window._mapUseFallback) {
-    if (!window._leafletReady) {
-      window._pendingInitMap = initMap;
-      if (typeof loadLeafletFallback === 'function') loadLeafletFallback(initMap);
-      return;
-    }
-    initMapLeaflet(); return;
-  }
-  if (!window._gmapsReady) { window._pendingInitMap = initMap; return; }
-  initMapGoogle();
-}
-
-function initMapGoogle() {
-  state.map = new google.maps.Map(document.getElementById('exploreMap'), {
-    center: { lat: 14.5, lng: -14.5 }, zoom: 6,
-    mapTypeControl: true,
-    mapTypeControlOptions: {
-      position: google.maps.ControlPosition.TOP_RIGHT,
-      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-    },
-    fullscreenControl: false, streetViewControl: false,
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
-    gestureHandling: 'greedy',
-  });
-  state.infoWindow = new google.maps.InfoWindow({ maxWidth: 280 });
-  state.mapCluster = new markerClusterer.MarkerClusterer({ map: state.map });
-
-  MAP.setView = (lat, lng, zoom) => { state.map.setCenter({ lat, lng }); state.map.setZoom(zoom); };
-  MAP.fitBounds = (pts) => { const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend({ lat: p[0], lng: p[1] })); state.map.fitBounds(b); };
-  MAP.clearMarkers = () => state.mapCluster.clearMarkers();
-  MAP.addMarkers = (ms) => state.mapCluster.addMarkers(ms);
-  MAP.createMarker = (lat, lon, conf, html) => {
-    const m = new google.maps.Marker({ position: { lat, lng: lon }, icon: createGmIcon(conf) });
-    m.addListener('click', () => { state.infoWindow.setContent(html); state.infoWindow.open(state.map, m); });
-    return m;
-  };
-  MAP.resize = () => google.maps.event.trigger(state.map, 'resize');
-  MAP.closeInfoWindow = () => state.infoWindow?.close();
-  MAP.addUserMarker = (lat, lng) => {
-    const m = new google.maps.Marker({
-      position: { lat, lng }, map: state.map,
-      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#00b4d8', fillOpacity: 1, strokeColor: 'white', strokeWeight: 3 },
-    });
-    state.infoWindow.setContent('📍 Vous êtes ici');
-    state.infoWindow.open(state.map, m);
-  };
-  populateMapLayer('all');
-  setupMapSearch();
+  initMapLeaflet();
 }
 
 function initMapLeaflet() {
@@ -646,15 +599,6 @@ function initMapLeaflet() {
   };
   populateMapLayer('all');
   setupMapSearch();
-}
-
-function createGmIcon(conf) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40"><path d="M16 0C7.16 0 0 7.16 0 16c0 10.9 16 24 16 24s16-13.1 16-24C32 7.16 24.84 0 16 0" fill="${conf.color}"/><circle cx="16" cy="16" r="9" fill="rgba(255,255,255,0.92)"/><text x="16" y="20" text-anchor="middle" font-size="11" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${conf.icon}</text></svg>`;
-  return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(32, 40),
-    anchor: new google.maps.Point(16, 40),
-  };
 }
 
 function createLeafletIcon(conf) {
