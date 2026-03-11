@@ -52,6 +52,7 @@ const state = {
   favs: new Set(JSON.parse(localStorage.getItem('culte_favs') || '[]')),
   map: null,
   mapCluster: null,
+  infoWindow: null,
   mapMarkers: [],
   nlpStore: [],
   modalRecord: null,
@@ -556,33 +557,45 @@ function removeFav(e, key) {
    ════════════════════════════════════════════════════════════════ */
 function initMap() {
   if (state.map) return;
-  state.map = L.map('exploreMap', { zoomControl: true, attributionControl: false }).setView([14.5, -14.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '© OSM'
-  }).addTo(state.map);
-  state.mapCluster = L.markerClusterGroup({ maxClusterRadius: 60, showCoverageOnHover: false });
-  state.map.addLayer(state.mapCluster);
+  if (!window._gmapsReady) { window._pendingInitMap = initMap; return; }
 
-  // Zoom control position
-  state.map.zoomControl.setPosition('bottomright');
+  state.map = new google.maps.Map(document.getElementById('exploreMap'), {
+    center: { lat: 14.5, lng: -14.5 },
+    zoom: 6,
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+      position: google.maps.ControlPosition.TOP_RIGHT,
+      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+    },
+    fullscreenControl: false,
+    streetViewControl: false,
+    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+    gestureHandling: 'greedy',
+  });
+
+  state.infoWindow = new google.maps.InfoWindow({ maxWidth: 280 });
+  state.mapCluster = new markerClusterer.MarkerClusterer({ map: state.map });
 
   populateMapLayer('all');
   setupMapSearch();
 }
 
-function createIcon(conf) {
-  return L.divIcon({
-    html: `<div class="custom-marker" style="background:${conf.color};border-color:white">${conf.icon}</div>`,
-    iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -44],
-    className: '',
-  });
+function createGmIcon(conf) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40"><path d="M16 0C7.16 0 0 7.16 0 16c0 10.9 16 24 16 24s16-13.1 16-24C32 7.16 24.84 0 16 0" fill="${conf.color}"/><circle cx="16" cy="16" r="9" fill="rgba(255,255,255,0.92)"/><text x="16" y="20" text-anchor="middle" font-size="11" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${conf.icon}</text></svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(32, 40),
+    anchor: new google.maps.Point(16, 40),
+  };
 }
 
 function populateMapLayer(layer) {
-  state.mapCluster.clearLayers();
+  state.mapCluster.clearMarkers();
   state.mapMarkers = [];
+  state.nlpStore = [];
 
   const addRecords = (records, isFormation) => {
+    const batch = [];
     records.forEach(rec => {
       const lat = parseFloat(rec.LATITUDE);
       const lon = parseFloat(rec.LONGITUDE);
@@ -593,29 +606,33 @@ function populateMapLayer(layer) {
       const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || 'Sans nom';
       const commune = rec.COMMUNE || rec.LOCALITE || '';
       const region  = rec.REGION || '';
-
-      const marker = L.marker([lat, lon], { icon: createIcon(conf) });
       const idx = state.nlpStore.length;
       state.nlpStore.push({ lat, lon, name, isFormation, rec });
 
-      marker.bindPopup(() => {
-        const div = document.createElement('div');
-        div.className = 'map-popup';
-        div.innerHTML = `
-          <div class="mp-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
-          <div class="mp-name">${name}</div>
-          <div class="mp-loc">📍 ${commune}${region ? ', '+region : ''}</div>
-          <div class="mp-actions">
-            <button class="mp-btn mp-btn-primary" onclick="openModalFromMap(${idx})">Voir la fiche</button>
-            <button class="mp-btn mp-btn-secondary" onclick="navigateTo(${lat},${lon})">🧭 Y aller</button>
-          </div>
-        `;
-        return div;
-      }, { maxWidth: 260 });
+      const marker = new google.maps.Marker({
+        position: { lat, lng: lon },
+        icon: createGmIcon(conf),
+      });
+
+      const content = `<div class="map-popup">
+        <div class="mp-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
+        <div class="mp-name">${name}</div>
+        <div class="mp-loc">📍 ${commune}${region ? ', '+region : ''}</div>
+        <div class="mp-actions">
+          <button class="mp-btn mp-btn-primary" onclick="openModalFromMap(${idx})">Voir la fiche</button>
+          <button class="mp-btn mp-btn-secondary" onclick="navigateTo(${lat},${lon})">🧭 Y aller</button>
+        </div>
+      </div>`;
+
+      marker.addListener('click', () => {
+        state.infoWindow.setContent(content);
+        state.infoWindow.open(state.map, marker);
+      });
 
       state.mapMarkers.push({ marker, rec, isFormation, typeKey });
-      state.mapCluster.addLayer(marker);
+      batch.push(marker);
     });
+    state.mapCluster.addMarkers(batch);
   };
 
   if (layer === 'all' || layer === 'infrastructures') addRecords(state.data.infrastructures, false);
@@ -646,7 +663,8 @@ function setupMapSearch() {
     document.getElementById('nlpChipsRow').classList.add('hidden');
     document.getElementById('mapBotBar').classList.add('hidden');
     populateMapLayer(state.mapFilters.layer);
-    state.map.setView([14.5, -14.5], 6);
+    state.map.setCenter({ lat: 14.5, lng: -14.5 });
+    state.map.setZoom(6);
   };
 }
 
@@ -705,8 +723,8 @@ function runNlpSearch(raw) {
   });
 
   // Rebuild visible markers
-  state.mapCluster.clearLayers();
-  matches.forEach(({ marker }) => state.mapCluster.addLayer(marker));
+  state.mapCluster.clearMarkers();
+  state.mapCluster.addMarkers(matches.map(m => m.marker));
 
   // Show chips
   const nlpRow = document.getElementById('nlpChipsRow');
@@ -735,8 +753,9 @@ function runNlpSearch(raw) {
     const lats = matches.map(m => parseFloat(m.rec.LATITUDE)).filter(Boolean);
     const lons = matches.map(m => parseFloat(m.rec.LONGITUDE)).filter(Boolean);
     if (lats.length) {
-      const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lons[i]]));
-      state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+      const bounds = new google.maps.LatLngBounds();
+      lats.forEach((lat, i) => bounds.extend({ lat, lng: lons[i] }));
+      state.map.fitBounds(bounds);
     }
   }
 }
@@ -744,25 +763,26 @@ function runNlpSearch(raw) {
 function openModalFromMap(idx) {
   const entry = state.nlpStore[idx];
   if (!entry) return;
-  state.map.closePopup();
+  state.infoWindow?.close();
   openModal(null, entry.rec, entry.isFormation, null, null);
 }
 
 function locateUser() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(pos => {
-    state.map?.setView([pos.coords.latitude, pos.coords.longitude], 12);
+    state.map?.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    state.map?.setZoom(12);
   });
 }
 
 function navigateTo(lat, lon) {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      pos => window.open(`https://www.openstreetmap.org/directions?from=${pos.coords.latitude},${pos.coords.longitude}&to=${lat},${lon}`),
-      ()  => window.open(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}`)
+      pos => window.open(`https://www.google.com/maps/dir/${pos.coords.latitude},${pos.coords.longitude}/${lat},${lon}`),
+      ()  => window.open(`https://www.google.com/maps?q=${lat},${lon}`)
     );
   } else {
-    window.open(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}`);
+    window.open(`https://www.google.com/maps?q=${lat},${lon}`);
   }
 }
 
@@ -879,7 +899,8 @@ function showOnMap(lat, lon) {
   switchTab('explore');
   setTimeout(() => {
     if (state.map) {
-      state.map.setView([lat, lon], 15);
+      state.map.setCenter({ lat, lng: lon });
+    state.map.setZoom(15);
     }
   }, 100);
 }
@@ -916,7 +937,10 @@ function switchTab(tabName) {
   if (navBtn) navBtn.classList.add('active');
 
   if (tabName === 'explore') {
-    setTimeout(() => { initMap(); state.map?.invalidateSize(); }, 50);
+    setTimeout(() => {
+      initMap();
+      if (state.map && window._gmapsReady) google.maps.event.trigger(state.map, 'resize');
+    }, 100);
   }
   if (tabName === 'list') {
     renderListTabs();
@@ -1011,7 +1035,11 @@ function setupDesktopFilters() {
     document.getElementById('mapSearchClear').classList.add('hidden');
     document.getElementById('nlpChipsRow').classList.add('hidden');
     document.getElementById('mapBotBar').classList.add('hidden');
-    if (state.map) { populateMapLayer('all'); state.map.setView([14.5, -14.5], 6); }
+    if (state.map) {
+      populateMapLayer('all');
+      state.map.setCenter({ lat: 14.5, lng: -14.5 });
+      state.map.setZoom(6);
+    }
     updateEpStats();
   });
 
@@ -1118,21 +1146,18 @@ function buildTypeChipsDt() {
 /* Extended map filter with region/milieu */
 function applyMapFilters() {
   const { layer, region, milieu } = state.mapFilters;
-  state.mapCluster.clearLayers();
-  let shown = 0;
+  state.mapCluster.clearMarkers();
+  const filtered = [];
   state.mapMarkers.forEach(({ marker, rec, isFormation }) => {
     const recRegion = (rec.REGION || '').toUpperCase();
     const recMilieu = (rec.MILIEU || '').toUpperCase();
     const layerOk = layer === 'all' || (layer === 'infrastructures' && !isFormation) || (layer === 'formations' && isFormation);
     const regionOk = !region || recRegion === region.toUpperCase();
     const milieuOk = !milieu || recMilieu === milieu;
-    if (layerOk && regionOk && milieuOk) {
-      state.mapCluster.addLayer(marker);
-      shown++;
-    }
+    if (layerOk && regionOk && milieuOk) filtered.push(marker);
   });
-  // Update chip counts
-  document.getElementById('chipAll').textContent = shown;
+  state.mapCluster.addMarkers(filtered);
+  document.getElementById('chipAll').textContent = filtered.length;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1244,10 +1269,21 @@ async function init() {
     navigator.geolocation?.getCurrentPosition(
       pos => {
         fab.classList.remove('locating');
-        state.map?.setView([pos.coords.latitude, pos.coords.longitude], 13);
-        L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
-          radius: 8, fillColor: '#00b4d8', color: 'white', weight: 3, fillOpacity: 1
-        }).addTo(state.map).bindPopup('📍 Vous êtes ici').openPopup();
+        const userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        state.map?.setCenter(userPos);
+        state.map?.setZoom(13);
+        const userMarker = new google.maps.Marker({
+          position: userPos,
+          map: state.map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: '#00b4d8', fillOpacity: 1,
+            strokeColor: 'white', strokeWeight: 3,
+          },
+        });
+        state.infoWindow.setContent('📍 Vous êtes ici');
+        state.infoWindow.open(state.map, userMarker);
       },
       () => { fab.classList.remove('locating'); }
     );

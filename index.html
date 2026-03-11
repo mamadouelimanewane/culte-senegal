@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Culte — Culture Sénégal</title>
   <link rel="stylesheet" href="css/style.css">
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 </head>
 <body>
 
@@ -338,9 +334,20 @@
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<!-- Google Maps MarkerClusterer (UMD) -->
+<script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.umd.min.js"></script>
+<!-- Google Maps API — remplacez YOUR_GOOGLE_MAPS_API_KEY par votre clé gratuite -->
+<script>
+function initGoogleMapsAPI() {
+  window._gmapsReady = true;
+  if (typeof window._pendingInitMap === 'function') {
+    var fn = window._pendingInitMap;
+    window._pendingInitMap = null;
+    fn();
+  }
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initGoogleMapsAPI&v=weekly&loading=async" async defer></script>
 <script src="js/app.js"></script>
 </body>
 </html>
