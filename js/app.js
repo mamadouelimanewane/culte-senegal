@@ -37,6 +37,37 @@ const REGION_EMOJIS = {
   'LOUGA':'🏜','MATAM':'🌵','default':'📍'
 };
 
+/* ── Default images par type (Unsplash) — remplaçables par le responsable ── */
+const TYPE_DEFAULT_IMAGES = {
+  'Centre culturel':      'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=700&q=75',
+  'Cinéma':               'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=700&q=75',
+  'Galerie':              'https://images.unsplash.com/photo-1578926375604-c5e560b1da2f?w=700&q=75',
+  'Musée':                'https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=700&q=75',
+  'Foyer des femmes':     'https://images.unsplash.com/photo-1607748851687-ba9a10438621?w=700&q=75',
+  'Foyer des jeunes':     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=700&q=75',
+  'Salle de spectacle':   'https://images.unsplash.com/photo-1503095396549-807759245b35?w=700&q=75',
+  'Salle des fêtes':      'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=700&q=75',
+  'Bibliothèque':         'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=700&q=75',
+  'Village artisanal':    'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=700&q=75',
+  'Maison de la culture': 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=700&q=75',
+  'default':              'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=700&q=75',
+};
+
+/* Retourne l'image à afficher : galerie approuvée > défaut par type */
+function getInfraImage(r, typeKey) {
+  if (r._id !== undefined) {
+    try {
+      const content = JSON.parse(localStorage.getItem('culte_site_content') || '{}');
+      const site = content[String(r._id)];
+      if (site?.gallery?.length) return site.gallery[0].url;
+    } catch(e) {}
+  }
+  for (const k of Object.keys(TYPE_DEFAULT_IMAGES)) {
+    if (k !== 'default' && (typeKey || '').toLowerCase().includes(k.toLowerCase())) return TYPE_DEFAULT_IMAGES[k];
+  }
+  return TYPE_DEFAULT_IMAGES.default;
+}
+
 const TAB_ORDER = ['home', 'explore', 'list', 'favorites'];
 
 /* ── State ──────────────────────────────────────────────────────── */
@@ -808,31 +839,44 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
 
   const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);
   const conf = getTypeConf(typeKey, isFormation);
-  const name = r.DESIGNATION || r.NOM_ETABLISSEMENT || 'Sans nom';
+  const name    = r.DESIGNATION || r.NOM_ETABLISSEMENT || 'Sans nom';
   const commune = r.COMMUNE || r.LOCALITE || '';
   const region  = r.REGION || '';
   const dept    = r.DEPARTEMENT || '';
   const lat     = parseFloat(r.LATITUDE);
   const lon     = parseFloat(r.LONGITUDE);
   const hasCoords = !isNaN(lat) && !isNaN(lon) && lat && lon;
+  const imgUrl    = !isFormation ? getInfraImage(r, typeKey) : '';
 
   const hero = document.getElementById('modalHero');
-  hero.style.background = `linear-gradient(135deg, ${conf.color}, #00b4d8)`;
-  hero.innerHTML = `
-    <div class="modal-hero-overlay"></div>
-    <div class="modal-hero-content">
-      <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
-      <div class="modal-hero-name">${name}</div>
-    </div>
-    <button class="modal-close" onclick="closeModal()">✕</button>
-  `;
+  /* Image-based hero pour les infrastructures, gradient pour les formations */
+  if (!isFormation && imgUrl) {
+    hero.style.background = '#0a1929';
+    hero.innerHTML = `
+      <img class="modal-hero-img" src="${imgUrl}" alt="${name}"
+           onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,${conf.color},#00b4d8)'">
+      <div class="modal-hero-overlay"></div>
+      <div class="modal-hero-content">
+        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
+        <div class="modal-hero-name">${name}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    `;
+  } else {
+    hero.style.background = `linear-gradient(135deg, ${conf.color}, #00b4d8)`;
+    hero.innerHTML = `
+      <div class="modal-hero-overlay"></div>
+      <div class="modal-hero-content">
+        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
+        <div class="modal-hero-name">${name}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    `;
+  }
 
   const rows = [
     { icon: '📍', label: 'Localisation', value: [commune, dept, region].filter(Boolean).join(' › ') },
-    r.LOCALITES ? { icon: '🏘', label: 'Localité', value: r.LOCALITES } : null,
-    r.MILIEU    ? { icon: '🌍', label: 'Milieu',    value: r.MILIEU   } : null,
-    r.BRANCHE   ? { icon: '🎓', label: 'Branche',   value: r.BRANCHE  } : null,
-    hasCoords   ? { icon: '🗺', label: 'Coordonnées', value: `${lat.toFixed(5)}, ${lon.toFixed(5)}` } : null,
+    r.BRANCHE ? { icon: '🎓', label: 'Branche', value: r.BRANCHE } : null,
   ].filter(Boolean);
 
   document.getElementById('modalBody').innerHTML = `
