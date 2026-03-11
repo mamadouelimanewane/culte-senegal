@@ -207,31 +207,101 @@ function switchView(name) {
 function renderDashboard() {
   const infras  = getMergedInfras();
   const forms   = getMergedForms();
-  const regions = new Set(infras.map(r => r.REGION).filter(Boolean));
   const regs    = getRegistrations();
   const pend    = getPending();
   const regsPending  = regs.filter(r => r.statut === 'pending').length;
   const contPending  = pend.filter(p => p.statut === 'pending').length;
   const respsCount   = getResponsables().filter(r => r.statut === 'active').length;
 
+  // ── Stat cards with trend arrows ──
   document.getElementById('dashStats').innerHTML = [
-    { icon: '🏛', num: infras.length.toLocaleString('fr-FR'), lbl: 'Infrastructures',       color: '#0d5fa0', border: '#0d5fa0' },
-    { icon: '🎓', num: forms.length.toLocaleString('fr-FR'),  lbl: 'Formations',             color: '#6a1b9a', border: '#6a1b9a' },
-    { icon: '👤', num: respsCount,                            lbl: 'Responsables actifs',    color: '#065f46', border: '#059669' },
-    { icon: '📝', num: regsPending,                           lbl: 'Inscriptions en attente',color: '#b45309', border: '#f59e0b' },
-    { icon: '✅', num: contPending,                           lbl: 'Contenus à valider',     color: '#991b1b', border: '#ef4444' },
+    {
+      icon: '🏛', num: infras.length.toLocaleString('fr-FR'),
+      lbl: 'Infrastructures', color: '#0d5fa0', border: '#0d5fa0',
+      gradient: 'linear-gradient(135deg,#e8f4ff 0%,#fff 100%)',
+      trend: '▲', trendColor: '#059669', trendTip: 'Base complète',
+    },
+    {
+      icon: '🎓', num: forms.length.toLocaleString('fr-FR'),
+      lbl: 'Formations', color: '#6a1b9a', border: '#6a1b9a',
+      gradient: 'linear-gradient(135deg,#f3e8ff 0%,#fff 100%)',
+      trend: '▲', trendColor: '#059669', trendTip: 'Base complète',
+    },
+    {
+      icon: '👤', num: respsCount,
+      lbl: 'Responsables actifs', color: '#065f46', border: '#059669',
+      gradient: 'linear-gradient(135deg,#d1fae5 0%,#fff 100%)',
+      trend: respsCount > 0 ? '▲' : '—', trendColor: respsCount > 0 ? '#059669' : '#94a3b8', trendTip: 'Comptes validés',
+    },
+    {
+      icon: '📝', num: regsPending,
+      lbl: 'Inscriptions en attente', color: '#b45309', border: '#f59e0b',
+      gradient: 'linear-gradient(135deg,#fef3c7 0%,#fff 100%)',
+      trend: regsPending > 0 ? '▲' : '✓', trendColor: regsPending > 0 ? '#d97706' : '#059669',
+      trendTip: regsPending > 0 ? 'Action requise' : 'Tout traité',
+    },
+    {
+      icon: '✅', num: contPending,
+      lbl: 'Contenus à valider', color: '#991b1b', border: '#ef4444',
+      gradient: 'linear-gradient(135deg,#fee2e2 0%,#fff 100%)',
+      trend: contPending > 0 ? '▲' : '✓', trendColor: contPending > 0 ? '#dc2626' : '#059669',
+      trendTip: contPending > 0 ? 'Action requise' : 'Tout traité',
+    },
   ].map(s => `
-    <div class="stat-card" style="border-left-color:${s.border}">
-      <div class="stat-icon">${s.icon}</div>
+    <div class="stat-card" style="border-left-color:${s.border};background:${s.gradient}">
+      <div class="stat-icon" style="font-size:32px">${s.icon}</div>
       <div class="stat-info">
         <div class="stat-num" style="color:${s.color}">${s.num}</div>
         <div class="stat-lbl">${s.lbl}</div>
       </div>
+      <div class="stat-trend" style="color:${s.trendColor}" title="${s.trendTip}">${s.trend}</div>
     </div>
   `).join('');
 
   document.getElementById('topbarBadge').textContent =
     (infras.length + forms.length).toLocaleString('fr-FR') + ' lieux';
+
+  // ── Quick action buttons ──
+  let quickEl = document.getElementById('dashQuickActions');
+  if (!quickEl) {
+    quickEl = document.createElement('div');
+    quickEl.id = 'dashQuickActions';
+    quickEl.className = 'dash-section';
+    quickEl.innerHTML = `
+      <h3 class="dash-section-title">Actions rapides</h3>
+      <div class="dash-quick-actions">
+        <button onclick="switchView('inscriptions')" class="quick-btn">
+          📝 <span>Gérer les inscriptions${regsPending > 0 ? ' <span class="quick-badge">'+regsPending+'</span>' : ''}</span>
+        </button>
+        <button onclick="switchView('contenus')" class="quick-btn">
+          ✅ <span>Valider les contenus${contPending > 0 ? ' <span class="quick-badge">'+contPending+'</span>' : ''}</span>
+        </button>
+        <button onclick="switchView('infrastructures')" class="quick-btn">
+          🏛 <span>Gérer les infrastructures</span>
+        </button>
+        <button onclick="switchView('formations')" class="quick-btn">
+          🎓 <span>Gérer les formations</span>
+        </button>
+      </div>
+    `;
+    document.getElementById('dashStats').after(quickEl);
+  } else {
+    // refresh badges
+    quickEl.querySelector('.dash-quick-actions').innerHTML = `
+      <button onclick="switchView('inscriptions')" class="quick-btn">
+        📝 <span>Gérer les inscriptions${regsPending > 0 ? ' <span class="quick-badge">'+regsPending+'</span>' : ''}</span>
+      </button>
+      <button onclick="switchView('contenus')" class="quick-btn">
+        ✅ <span>Valider les contenus${contPending > 0 ? ' <span class="quick-badge">'+contPending+'</span>' : ''}</span>
+      </button>
+      <button onclick="switchView('infrastructures')" class="quick-btn">
+        🏛 <span>Gérer les infrastructures</span>
+      </button>
+      <button onclick="switchView('formations')" class="quick-btn">
+        🎓 <span>Gérer les formations</span>
+      </button>
+    `;
+  }
 
   const regionCounts = {};
   infras.forEach(r => { const k = r.REGION || 'N/A'; regionCounts[k] = (regionCounts[k] || 0) + 1; });
@@ -241,8 +311,130 @@ function renderDashboard() {
   infras.forEach(r => { const k = getInfraType(r); typeCounts[k] = (typeCounts[k] || 0) + 1; });
   renderBarChart('chartTypes', typeCounts, 8);
 
-  renderRecentEdits();
+  // ── Répartition géographique (geo bar chart section) ──
+  let geoEl = document.getElementById('dashGeoChart');
+  if (!geoEl) {
+    geoEl = document.createElement('div');
+    geoEl.id = 'dashGeoChart';
+    geoEl.className = 'dash-section';
+    geoEl.innerHTML = `
+      <h3 class="dash-section-title">Répartition géographique</h3>
+      <div class="dash-card">
+        <div id="geoBarChart" class="geo-bar-chart"></div>
+      </div>
+    `;
+    document.getElementById('dashQuickActions').after(geoEl);
+  }
+  // Render geo bar chart
+  const sortedRegions = Object.entries(regionCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const maxGeo = sortedRegions[0]?.[1] || 1;
+  const geoBarEl = document.getElementById('geoBarChart');
+  if (geoBarEl) {
+    geoBarEl.innerHTML = sortedRegions.length ? sortedRegions.map(([region, count]) => `
+      <div class="geo-bar-row">
+        <div class="geo-bar-label" title="${region}">${region.charAt(0) + region.slice(1).toLowerCase()}</div>
+        <div class="geo-bar-track"><div class="geo-bar-fill" style="width:${(count/maxGeo*100).toFixed(1)}%"></div></div>
+        <div class="geo-bar-count">${count}</div>
+      </div>
+    `).join('') : '<p style="font-size:13px;color:var(--text-sm);padding:8px 0;text-align:center">Chargement…</p>';
+  }
+
+  renderActivityTimeline();
   updateNotifBadges();
+}
+
+function renderActivityTimeline() {
+  const pending = getPending();
+  const regs    = getRegistrations();
+
+  const typeIconMap = {
+    profile: '📋', gallery_add: '📸', event: '📅', actu: '📰',
+  };
+  const typeActionMap = {
+    profile: 'a soumis une mise à jour du profil',
+    gallery_add: 'a soumis une photo',
+    event: 'a soumis un événement',
+    actu: 'a soumis une actualité',
+  };
+
+  const combined = [
+    ...pending.map(p => ({
+      icon: typeIconMap[p.type] || '📄',
+      actor: p.respNom || 'Responsable',
+      action: typeActionMap[p.type] || 'a soumis un contenu',
+      infra: p.infraNom || '',
+      ts: p.dateSubmit,
+      statut: p.statut,
+    })),
+    ...regs.map(r => ({
+      icon: '👤',
+      actor: r.nom || r.email,
+      action: 'a demandé un accès responsable',
+      infra: r.infraNom || '',
+      ts: r.dateSubmit || r.date,
+      statut: r.statut,
+    })),
+  ].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 8);
+
+  // Ensure activity section exists in dashboard view
+  let actSection = document.getElementById('dashActivitySection');
+  if (!actSection) {
+    actSection = document.createElement('div');
+    actSection.id = 'dashActivitySection';
+    actSection.className = 'dash-section';
+    actSection.innerHTML = `
+      <h3 class="dash-section-title">Activité récente</h3>
+      <div class="dash-card">
+        <div id="activityTimeline" class="activity-timeline"></div>
+      </div>
+    `;
+    // Append after geo chart section (or at end of dashboard view)
+    const geoEl2 = document.getElementById('dashGeoChart');
+    if (geoEl2) geoEl2.after(actSection);
+    else document.getElementById('view-dashboard').appendChild(actSection);
+  }
+
+  const el = document.getElementById('activityTimeline');
+  if (!el) return;
+
+  if (!combined.length) {
+    el.innerHTML = '<p style="font-size:13px;color:var(--text-sm);padding:8px 0;text-align:center">Aucune activité récente.</p>';
+    return;
+  }
+
+  el.innerHTML = combined.map(item => {
+    const statusMap = { pending: 'pending', approved: 'approved', rejected: 'rejected' };
+    const statusLbl = { pending: 'En attente', approved: 'Approuvé', rejected: 'Rejeté' };
+    const cls = statusMap[item.statut] || 'pending';
+    const lbl = statusLbl[item.statut] || item.statut;
+    const ago = relativeTime(item.ts);
+    const infoPart = item.infra ? ` · ${item.infra}` : '';
+    return `<div class="activity-item">
+      <div class="act-icon">${item.icon}</div>
+      <div class="act-body">
+        <div class="act-title">${escHtml(item.actor)} ${escHtml(item.action)}</div>
+        <div class="act-sub">${escHtml(item.infra)}${ago ? ' · ' + ago : ''}</div>
+      </div>
+      <div class="act-status ${cls}">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+function relativeTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 1)   return 'à l\'instant';
+  if (mins < 60)  return `il y a ${mins} min`;
+  if (hours < 24) return `il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+  if (days < 30)  return `il y a ${days} jour${days > 1 ? 's' : ''}`;
+  return new Date(ts).toLocaleDateString('fr-FR');
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function renderBarChart(id, counts, limit) {

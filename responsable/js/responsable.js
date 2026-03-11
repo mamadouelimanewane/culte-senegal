@@ -89,6 +89,10 @@ function showApp() {
       switchView(btn.dataset.view);
     });
   });
+  // Mobile bottom nav
+  document.querySelectorAll('.mbn-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
   document.getElementById('btnLogout').addEventListener('click', () => {
     sessionStorage.removeItem(LS_SESSION);
     location.reload();
@@ -104,6 +108,7 @@ function showApp() {
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.sb-btn').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  document.querySelectorAll('.mbn-btn').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   document.getElementById('view-' + name)?.classList.add('active');
   document.getElementById('topbarTitle').textContent = {
     dashboard: 'Tableau de bord', profil: 'Profil du site',

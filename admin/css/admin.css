@@ -492,6 +492,89 @@ a { color: inherit; }
 }
 .btn-reject:hover { opacity: .88; }
 
+/* ── Stat trend indicator ────────────────────────────────────────── */
+.stat-trend {
+  font-size: 16px; font-weight: 800; flex-shrink: 0; align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ── Activity Timeline ───────────────────────────────────────────── */
+.activity-timeline { display: flex; flex-direction: column; gap: 0; }
+.activity-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid #f0f4f8;
+}
+.activity-item:last-child { border-bottom: none; }
+.act-icon {
+  width: 40px; height: 40px; border-radius: 50%; background: #e8f4ff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.act-body { flex: 1; min-width: 0; }
+.act-title { font-size: 14px; font-weight: 600; color: var(--navy); }
+.act-sub { font-size: 12px; color: var(--text-sm); margin-top: 2px; }
+.act-status {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 12px; white-space: nowrap; flex-shrink: 0;
+}
+.act-status.pending  { background: #fff3cd; color: #856404; }
+.act-status.approved { background: #d1fae5; color: #065f46; }
+.act-status.rejected { background: #fee2e2; color: #991b1b; }
+
+/* ── Geo bar chart ───────────────────────────────────────────────── */
+.geo-bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.geo-bar-row { display: flex; align-items: center; gap: 10px; }
+.geo-bar-label {
+  width: 120px; font-size: 12px; color: var(--text-md);
+  text-align: right; flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.geo-bar-track {
+  flex: 1; height: 12px; background: var(--bg);
+  border-radius: 6px; overflow: hidden;
+}
+.geo-bar-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--ocean), var(--teal));
+  transition: width .6s ease;
+}
+.geo-bar-count {
+  width: 36px; font-size: 12px; font-weight: 700;
+  color: var(--ocean); text-align: right; flex-shrink: 0;
+}
+
+/* ── Quick action buttons ────────────────────────────────────────── */
+.dash-quick-actions {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px;
+}
+.quick-btn {
+  flex: 1; min-width: 160px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; border-radius: 12px;
+  background: var(--card); border: 1.5px solid var(--border);
+  font-size: 14px; font-weight: 600; color: var(--navy); cursor: pointer;
+  transition: all .18s ease; text-align: left;
+}
+.quick-btn:hover {
+  background: #f0f8ff; border-color: var(--ocean); color: var(--ocean);
+  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,95,160,.12);
+}
+.quick-btn span { font-size: 13px; }
+.quick-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gold); color: white; font-size: 10px; font-weight: 800;
+  min-width: 18px; height: 18px; border-radius: 9px; padding: 0 4px;
+  margin-left: 4px; vertical-align: middle;
+}
+
+/* ── Dash sections (new) ─────────────────────────────────────────── */
+.dash-section { margin-top: 24px; }
+.dash-section-title {
+  font-size: 16px; font-weight: 700; color: var(--navy);
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 2px solid #e8f0fa;
+}
+
 /* ── Leaflet overrides ───────────────────────────────────────────── */
 .leaflet-control-zoom { border: none !important; box-shadow: var(--shadow-md) !important; border-radius: 11px !important; overflow: hidden; }
 .leaflet-control-zoom a { width: 36px !important; height: 36px !important; line-height: 36px !important; font-size: 18px !important; }

@@ -260,18 +260,129 @@ textarea { resize: vertical; }
 .modal-intro { font-size: 13px; color: var(--text-sm); margin-bottom: 20px; line-height: 1.6; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; }
 
+/* ── Mobile Bottom Navigation ────────────────────────────────────── */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  background: var(--card); border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(10,25,41,.10);
+  padding: 0; height: 60px;
+}
+.mbn-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 8px 4px; border: none; background: none; cursor: pointer;
+  color: var(--text-sm); transition: color var(--transition), background var(--transition);
+  min-height: 44px;
+}
+.mbn-btn:hover { background: var(--bg); color: var(--ocean); }
+.mbn-btn.active { color: var(--green); }
+.mbn-btn.active .mbn-icon { transform: scale(1.15); }
+.mbn-icon { font-size: 20px; line-height: 1; display: block; transition: transform var(--transition); }
+.mbn-label { font-size: 10px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 680px) {
-  .sidebar { transform: translateX(-100%); }
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar {
+    transform: translateX(-100%);
+    width: 260px !important;
+    box-shadow: 6px 0 30px rgba(0,0,0,.30);
+  }
   .sidebar.open { transform: translateX(0); }
-  .hamburger, .topbar-ham { display: block; }
-  .resp-main { margin-left: 0; }
+  .hamburger, .topbar-ham { display: block !important; }
+  .resp-main {
+    margin-left: 0;
+    /* leave room for bottom nav */
+    padding-bottom: 60px;
+  }
   .view { padding: 16px; }
+
+  /* Stats: 2 per row on mobile */
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-card { padding: 18px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-num { font-size: 22px; }
+  .stat-icon { font-size: 22px; }
+
+  /* Form improvements */
+  .form-card { padding: 16px; gap: 16px; }
   .edit-grid { grid-template-columns: 1fr; }
-  .modal-dialog { max-width: 100%; margin: 0; border-radius: var(--radius) var(--radius) 0 0; align-self: flex-end; max-height: 92vh; }
+  .form-group label { font-size: 11px; }
+  input, select, textarea { font-size: 16px; /* prevent zoom on iOS */ }
+  .btn-primary, .btn-secondary { min-height: 44px; padding: 12px 18px; font-size: 14px; }
+
+  /* Gallery: 2 columns on mobile */
+  .gal-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .gal-item img { height: 110px; }
+
+  /* Responsive topbar */
+  .topbar-right { gap: 6px; }
+  .topbar-link { padding: 5px 8px; font-size: 12px; }
+  .topbar-title { font-size: 15px; }
+
+  /* Show mobile bottom nav */
+  .mobile-bottom-nav { display: flex; }
+
+  /* Hero adjustments */
+  .infra-hero { padding: 16px; }
+  .infra-hero .hero-name { font-size: 18px; }
+  .infra-hero .hero-actions { gap: 8px; }
+  .hero-btn { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+
+  /* Modal as bottom sheet */
+  .modal-dialog {
+    max-width: 100%; margin: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+    align-self: flex-end; max-height: 92vh;
+  }
+  .modal { align-items: flex-end; padding: 0; }
+
+  /* Recent list */
+  .recent-name { font-size: 12px; }
+
+  /* Submission cards */
+  .submission-card { flex-wrap: wrap; }
+  .sub-status { margin-left: 0; margin-top: 4px; }
+
+  /* Photo previews */
+  .photo-previews img { max-width: 100px; max-height: 80px; }
 }
+
 @media (max-width: 420px) {
-  .stats-grid { grid-template-columns: 1fr; }
+  /* On very small screens, keep 2-column stats */
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .view-header h1 { font-size: 20px; }
+  .login-card { padding: 28px 20px; }
+  .form-card { padding: 14px; }
+}
+
+/* ── Active sidebar state improvements ───────────────────────────── */
+.sb-btn { position: relative; }
+.sb-btn.active::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--green-lt);
+}
+
+/* ── Form focus styles ───────────────────────────────────────────── */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--ocean);
+  box-shadow: 0 0 0 3px rgba(13,95,160,.1);
+  outline: none;
+}
+
+/* ── Photo preview improvements ──────────────────────────────────── */
+.photo-preview img, .photo-previews img {
+  border: 2px solid var(--border);
+  display: block;
+}
+
+/* ── Touch-friendly interactive buttons (desktop + mobile) ───────── */
+.hero-btn, .btn-primary, .btn-secondary { min-height: 40px; }
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices: enlarge tap targets */
+  .btn-primary, .btn-secondary { min-height: 48px; }
+  .hero-btn { min-height: 48px; }
+  .sb-btn { min-height: 46px; }
+  .sb-logout, .sb-site-link { min-height: 46px; }
+  .mbn-btn { min-height: 54px; }
 }
