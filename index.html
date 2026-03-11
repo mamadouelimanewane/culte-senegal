@@ -8,6 +8,12 @@
 </head>
 <body>
 
+<!-- Banni\u00e8re fallback OSM (masqu\u00e9e par d\u00e9faut) -->
+<div id="mapFallbackBanner" class="hidden map-fallback-banner">
+  🗺 Google Maps indisponible — OpenStreetMap utilisé automatiquement
+  <button class="mfb-close" onclick="this.parentElement.classList.add('hidden')" aria-label="Fermer">✕</button>
+</div>
+
 <!-- ═══════════════════════════════════ SPLASH ═══════════════════ -->
 <div id="splash">
   <div class="splash-inner">
@@ -44,6 +50,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="dtSearch" type="text" placeholder="Rechercher musées, cinémas, formations, régions…" autocomplete="off">
     </div>
+    <a href="admin/" class="dt-admin-link desktop-only" title="Backoffice">⚙ Admin</a>
     <div class="dt-topbar-right desktop-only">
       <span class="dt-count-badge">🗺 <span id="dtTotalCount">—</span> lieux</span>
       <button class="btn-notif dt-notif" aria-label="Notifications">
@@ -336,9 +343,27 @@
 
 <!-- Google Maps MarkerClusterer (UMD) -->
 <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.umd.min.js"></script>
-<!-- Google Maps API — remplacez YOUR_GOOGLE_MAPS_API_KEY par votre clé gratuite -->
+<!-- Google Maps — détection d'échec + fallback OpenStreetMap automatique -->
 <script>
+/* Déclenché si clé invalide / quota dépassé / facturation non activée */
+window.gm_authFailure = function() {
+  clearTimeout(window._gmLoadTimeout);
+  if (window._mapUseFallback) return;
+  window._mapUseFallback = true;
+  var banner = document.getElementById('mapFallbackBanner');
+  if (banner) banner.classList.remove('hidden');
+  var fn = window._pendingInitMap;
+  window._pendingInitMap = null;
+  loadLeafletFallback(fn);
+};
+
+/* Timeout 8s : si l'API Google Maps ne répond pas */
+window._gmLoadTimeout = setTimeout(function() {
+  if (!window._gmapsReady && !window._mapUseFallback) window.gm_authFailure();
+}, 8000);
+
 function initGoogleMapsAPI() {
+  clearTimeout(window._gmLoadTimeout);
   window._gmapsReady = true;
   if (typeof window._pendingInitMap === 'function') {
     var fn = window._pendingInitMap;
@@ -346,8 +371,26 @@ function initGoogleMapsAPI() {
     fn();
   }
 }
+
+/* Chargement dynamique de Leaflet en fallback */
+function loadLeafletFallback(callback) {
+  if (window._leafletReady) { if (callback) callback(); return; }
+  var h = document.head;
+  function css(href) { var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; h.appendChild(l); }
+  css('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+  css('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css');
+  var s1 = document.createElement('script');
+  s1.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s1.onload = function() {
+    var s2 = document.createElement('script');
+    s2.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+    s2.onload = function() { window._leafletReady = true; if (callback) callback(); };
+    h.appendChild(s2);
+  };
+  h.appendChild(s1);
+}
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initGoogleMapsAPI&v=weekly&loading=async" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAK3BjGZQy70ogTMi1yr8W8Yw4YeeZ2PK8&callback=initGoogleMapsAPI&v=weekly&loading=async" async defer></script>
 <script src="js/app.js"></script>
 </body>
 </html>

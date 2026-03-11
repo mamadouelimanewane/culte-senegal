@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Culte Culture Sénégal</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+</head>
+<body class="admin-body">
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-icon">🌊</span>
+      <div>
+        <div class="login-brand">Culte Admin</div>
+        <div class="login-sub">Culture Sénégal — Backoffice</div>
+      </div>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <div class="form-group">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="admin@culte.sn" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input id="loginPwd" type="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <p class="login-error hidden" id="loginError">Identifiants incorrects.</p>
+      <button type="submit" class="btn-primary btn-full">Se connecter</button>
+    </form>
+    <a href="../" class="login-back">← Retour à l'application</a>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="adminApp" class="admin-app hidden">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <div class="sb-brand">
+        <span>🌊</span>
+        <div>
+          <div class="sb-name">Culte Admin</div>
+          <div class="sb-sub" id="sbUserName">—</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-btn active" data-view="dashboard">
+        <span class="sb-icon">📊</span><span class="sb-label">Tableau de bord</span>
+      </button>
+      <button class="sb-btn" data-view="infrastructures">
+        <span class="sb-icon">🏛</span><span class="sb-label">Infrastructures</span>
+      </button>
+      <button class="sb-btn" data-view="formations">
+        <span class="sb-icon">🎓</span><span class="sb-label">Formations</span>
+      </button>
+      <button class="sb-btn" data-view="carte">
+        <span class="sb-icon">🗺</span><span class="sb-label">Carte</span>
+      </button>
+      <button class="sb-btn" data-view="parametres">
+        <span class="sb-icon">⚙</span><span class="sb-label">Paramètres</span>
+      </button>
+    </nav>
+    <div class="sb-footer">
+      <button class="sb-logout" id="btnLogout">🚪 Déconnexion</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main" id="adminMain">
+
+    <!-- Topbar -->
+    <div class="admin-topbar">
+      <button class="hamburger topbar-ham" id="hamburger2" aria-label="Menu">☰</button>
+      <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      <div class="topbar-right">
+        <span class="topbar-badge" id="topbarBadge">—</span>
+        <a href="../" class="topbar-link" target="_blank">↗ Voir l'app</a>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ───────────────────────────────────────────── -->
+    <section class="view active" id="view-dashboard">
+      <div class="view-header">
+        <h1>Tableau de bord</h1>
+        <p class="view-sub">Vue d'ensemble des données culturelles</p>
+      </div>
+      <div class="stats-grid" id="dashStats"></div>
+      <div class="dash-charts">
+        <div class="dash-card">
+          <h3 class="card-title">Infrastructures par région</h3>
+          <div id="chartRegions" class="chart-bars"></div>
+        </div>
+        <div class="dash-card">
+          <h3 class="card-title">Répartition par type</h3>
+          <div id="chartTypes" class="chart-bars"></div>
+        </div>
+      </div>
+      <div class="dash-card" style="margin-top:20px">
+        <h3 class="card-title">Modifications locales récentes</h3>
+        <div id="recentEdits" class="recent-list"></div>
+      </div>
+    </section>
+
+    <!-- ── INFRASTRUCTURES ────────────────────────────────────── -->
+    <section class="view" id="view-infrastructures">
+      <div class="view-header">
+        <h1>Infrastructures</h1>
+        <div class="view-actions">
+          <button class="btn-primary" id="btnAddInfra">+ Ajouter</button>
+          <button class="btn-secondary" id="btnExportInfra">↓ CSV</button>
+        </div>
+      </div>
+      <div class="table-toolbar">
+        <div class="tb-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="infraSearch" type="text" placeholder="Rechercher…" autocomplete="off">
+        </div>
+        <select id="infraRegionFilter" class="tb-select">
+          <option value="">Toutes les régions</option>
+        </select>
+        <select id="infraTypeFilter" class="tb-select">
+          <option value="">Tous les types</option>
+        </select>
+      </div>
+      <div class="table-wrap" id="infraTableWrap">
+        <table class="data-table" id="infraTable">
+          <thead><tr>
+            <th>Désignation</th><th>Type</th><th>Région</th><th>Commune</th><th>Milieu</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="infraTbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="infraPag"></div>
+      <!-- Mobile cards -->
+      <div class="mobile-cards hidden" id="infraMobileCards"></div>
+    </section>
+
+    <!-- ── FORMATIONS ─────────────────────────────────────────── -->
+    <section class="view" id="view-formations">
+      <div class="view-header">
+        <h1>Formations</h1>
+        <div class="view-actions">
+          <button class="btn-primary" id="btnAddForm">+ Ajouter</button>
+          <button class="btn-secondary" id="btnExportForm">↓ CSV</button>
+        </div>
+      </div>
+      <div class="table-toolbar">
+        <div class="tb-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="formSearch" type="text" placeholder="Rechercher…" autocomplete="off">
+        </div>
+        <select id="formRegionFilter" class="tb-select">
+          <option value="">Toutes les régions</option>
+        </select>
+        <select id="formBrancheFilter" class="tb-select">
+          <option value="">Toutes les branches</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="formTable">
+          <thead><tr>
+            <th>Établissement</th><th>Branche</th><th>Région</th><th>Commune</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="formTbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="formPag"></div>
+      <div class="mobile-cards hidden" id="formMobileCards"></div>
+    </section>
+
+    <!-- ── CARTE ──────────────────────────────────────────────── -->
+    <section class="view" id="view-carte">
+      <div class="view-header">
+        <h1>Carte</h1>
+        <div class="view-actions">
+          <button class="map-layer-btn active" data-layer="all">Tout</button>
+          <button class="map-layer-btn" data-layer="infra">Infras</button>
+          <button class="map-layer-btn" data-layer="form">Formations</button>
+        </div>
+      </div>
+      <div class="admin-map-wrap">
+        <div id="adminMap"></div>
+        <div class="map-legend">
+          <div class="legend-item"><span class="dot" style="background:#0d5fa0"></span>Infrastructure</div>
+          <div class="legend-item"><span class="dot" style="background:#6a1b9a"></span>Formation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PARAMÈTRES ─────────────────────────────────────────── -->
+    <section class="view" id="view-parametres">
+      <div class="view-header"><h1>Paramètres</h1></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Compte</h3>
+          <p class="settings-info" id="settingsUser">—</p>
+          <div class="form-group" style="margin-top:16px">
+            <label>Nouveau mot de passe</label>
+            <input id="newPwd" type="password" placeholder="Laisser vide pour ne pas changer" autocomplete="new-password">
+          </div>
+          <button class="btn-primary" id="btnSavePwd" style="margin-top:12px">Enregistrer</button>
+        </div>
+        <div class="settings-card">
+          <h3>Données</h3>
+          <p class="settings-desc">Exportez ou réinitialisez les données de modification locale.</p>
+          <div class="settings-actions">
+            <button class="btn-secondary" id="btnExportAll">↓ Exporter tout (JSON)</button>
+            <button class="btn-danger" id="btnClearEdits">🗑 Effacer les modifications locales</button>
+          </div>
+          <div class="settings-stats" id="settingsStats"></div>
+        </div>
+        <div class="settings-card">
+          <h3>Journal d'activité</h3>
+          <div id="activityLog" class="activity-log"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══ MODAL EDIT/ADD ═════════════════════════════════════════════ -->
+<div id="editModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-backdrop" id="editModalBackdrop"></div>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h2 id="editModalTitle">Modifier</h2>
+      <button class="modal-x" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body" id="editModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditModal()">Annuler</button>
+      <button class="btn-primary" id="btnSaveEdit">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DELETE ════════════════════════════════════════════ -->
+<div id="confirmModal" class="modal hidden" role="dialog">
+  <div class="modal-backdrop" id="confirmBackdrop"></div>
+  <div class="modal-dialog confirm-dialog">
+    <div class="modal-header">
+      <h2>Confirmer la suppression</h2>
+      <button class="modal-x" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg">Supprimer cet enregistrement ?</p>
+      <p class="confirm-warn">⚠️ Cette action sera uniquement locale (réinitialisable dans Paramètres).</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeConfirm()">Annuler</button>
+      <button class="btn-danger" id="btnConfirmDelete">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
