@@ -1219,6 +1219,27 @@ input { outline: none; }
   margin: 4px 12px;
 }
 
+/* ── IA Suggestions Badge ─────────────────────────────────────── */
+.nlp-ai-suggest {
+  border-left: 3px solid #48cae4;
+  padding-left: 11px !important;
+}
+.nlp-ai-suggest:hover {
+  background: #e8f4ff !important;
+}
+.nlp-sug-badge {
+  font-size: 9px;
+  background: #0d5fa0;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
 /* ── Bot bar animation ────────────────────────────────────────── */
 @keyframes botSlideIn {
   from { transform: translateY(10px); opacity: 0; }

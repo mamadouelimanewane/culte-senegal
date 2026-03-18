@@ -181,6 +181,11 @@ async function loadData() {
   const formSheet  = formJson.sheets?.CENTRE_FORMATION_CULTURE || {};
   state.data.infrastructures = (infraSheet.records || []).map((r, i) => ({ ...r, _id: i }));
   state.data.formations      = (formSheet.records  || []).map((r, i) => ({ ...r, _id: i }));
+
+  // Construire l'index du moteur de recherche IA
+  if (typeof SearchEngine !== 'undefined') {
+    SearchEngine.buildIndex(state.data.infrastructures, state.data.formations);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -479,20 +484,46 @@ function applyListFilters(resetPage) {
   const { search, region, type, milieu } = state.listFilters;
   const sNorm = norm(search);
 
-  state.filtered = records.filter(r => {
-    const name = norm(r.DESIGNATION || r.NOM_ETABLISSEMENT || '');
-    const commune = norm(r.COMMUNE || '');
-    const loc = norm(r.LOCALITES || r.LOCALITE || '');
-    const reg = (r.REGION || '').toUpperCase();
-    const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);
-    const mil = (r.MILIEU || '').toUpperCase();
+  // Utiliser le SearchEngine IA si disponible et qu'il y a une recherche texte
+  if (typeof SearchEngine !== 'undefined' && SearchEngine.ready && sNorm && sNorm.length >= 2) {
+    const result = SearchEngine.search(search, { limit: 500 });
+    // Filtrer par dataset actif (infra/formation) et appliquer les filtres supplémentaires
+    state.filtered = result.results
+      .map(r => r.doc.rec)
+      .filter(r => {
+        // Filtrer par dataset
+        const recIsFormation = !!r.NOM_ETABLISSEMENT && !r.DESIGNATION;
+        if (isFormation !== recIsFormation) {
+          // Vérifier aussi via les listes source
+          if (isFormation && !state.data.formations.includes(r)) return false;
+          if (!isFormation && !state.data.infrastructures.includes(r)) return false;
+        }
+        // Filtres dropdown
+        const reg = (r.REGION || '').toUpperCase();
+        const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);
+        const mil = (r.MILIEU || '').toUpperCase();
+        if (region && reg !== region.toUpperCase()) return false;
+        if (type && !norm(typeKey).includes(norm(type))) return false;
+        if (milieu && mil !== milieu.toUpperCase()) return false;
+        return true;
+      });
+  } else {
+    // Fallback: filtrage classique sans recherche texte
+    state.filtered = records.filter(r => {
+      const name = norm(r.DESIGNATION || r.NOM_ETABLISSEMENT || '');
+      const commune = norm(r.COMMUNE || '');
+      const loc = norm(r.LOCALITES || r.LOCALITE || '');
+      const reg = (r.REGION || '').toUpperCase();
+      const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);
+      const mil = (r.MILIEU || '').toUpperCase();
 
-    if (sNorm && !name.includes(sNorm) && !commune.includes(sNorm) && !loc.includes(sNorm) && !norm(reg).includes(sNorm)) return false;
-    if (region && reg !== region.toUpperCase()) return false;
-    if (type && !norm(typeKey).includes(norm(type))) return false;
-    if (milieu && mil !== milieu.toUpperCase()) return false;
-    return true;
-  });
+      if (sNorm && !name.includes(sNorm) && !commune.includes(sNorm) && !loc.includes(sNorm) && !norm(reg).includes(sNorm)) return false;
+      if (region && reg !== region.toUpperCase()) return false;
+      if (type && !norm(typeKey).includes(norm(type))) return false;
+      if (milieu && mil !== milieu.toUpperCase()) return false;
+      return true;
+    });
+  }
 
   // Update counts
   document.getElementById('listInfraCount').textContent = !isFormation ? `(${state.filtered.length})` : `(${state.data.infrastructures.length})`;
@@ -732,12 +763,46 @@ function setupMapSearch() {
   const input = document.getElementById('mapSearch');
   const clearBtn = document.getElementById('mapSearchClear');
   let timer;
+  let sugTimer;
+
   input.addEventListener('input', () => {
     clearTimeout(timer);
+    clearTimeout(sugTimer);
     const val = input.value.trim();
     clearBtn.classList.toggle('hidden', !val);
-    timer = setTimeout(() => runNlpSearch(val), 320);
+
+    // Autocomplétion en temps réel
+    sugTimer = setTimeout(() => {
+      if (val.length >= 2) {
+        NLP.showSuggestionsPanel(input);
+      } else {
+        const panel = document.getElementById('nlpSuggestPanel');
+        if (panel) panel.style.display = 'none';
+      }
+    }, 120);
+
+    timer = setTimeout(() => {
+      if (val) runNlpSearch(val);
+    }, 350);
   });
+
+  input.addEventListener('focus', () => {
+    NLP.showSuggestionsPanel(input);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const panel = document.getElementById('nlpSuggestPanel');
+      if (panel) panel.style.display = 'none';
+      const val = input.value.trim();
+      if (val) runNlpSearch(val);
+    }
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('nlpSuggestPanel');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+
   clearBtn.onclick = () => {
     input.value = '';
     clearBtn.classList.add('hidden');
@@ -820,16 +885,51 @@ function parseQuery(raw) {
 
 function runNlpSearch(raw) {
   if (!raw) return;
+
+  // Utiliser le SearchEngine IA
+  if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+    const result = SearchEngine.search(raw, { limit: MAX_RESULTS || 200 });
+    const intent = result.intent;
+
+    // Trouver les markers correspondants aux résultats
+    const matchedRecs = new Set(result.results.map(r => r.doc.rec));
+    const matches = state.mapMarkers.filter(({ rec }) => matchedRecs.has(rec));
+
+    MAP.clearMarkers();
+    MAP.addMarkers(matches.map(m => m.marker));
+
+    // Chips avec le nouvel intent
+    const chipIntent = {
+      types: intent.types || [],
+      regions: intent.regions || [],
+      milieu: intent.milieu || '',
+    };
+    if (intent.wantFormations) chipIntent.types.push('Formations');
+    NLP.showChips(chipIntent);
+
+    // Bot message IA
+    NLP.showBot(result.message);
+
+    // Auto zoom
+    if (matches.length) {
+      const pts = matches
+        .map(m => [parseFloat(m.rec.LATITUDE), parseFloat(m.rec.LONGITUDE)])
+        .filter(([la, lo]) => !isNaN(la) && !isNaN(lo) && (la || lo));
+      if (pts.length) MAP.fitBounds(pts);
+    }
+
+    NLP.saveHistory(raw);
+    return;
+  }
+
+  // Fallback: ancien système
   const intent = parseQuery(raw);
   const sNorm  = norm(raw);
-
-  // Filter markers
   const matches = state.mapMarkers.filter(({ rec, isFormation, typeKey }) => {
     const name    = norm(rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '');
     const commune = norm(rec.COMMUNE || rec.LOCALITE || '');
     const region  = (rec.REGION || '').toUpperCase();
     const mil     = (rec.MILIEU || '').toUpperCase();
-
     if (intent.regions.length && !intent.regions.includes(region)) return false;
     if (intent.milieu && mil !== intent.milieu) return false;
     if (intent.types.length) {
@@ -844,11 +944,8 @@ function runNlpSearch(raw) {
 
   MAP.clearMarkers();
   MAP.addMarkers(matches.map(m => m.marker));
-
-  // Chips
   NLP.showChips(intent);
 
-  // Bot bar with typewriter effect
   const n = matches.length;
   const infraTypes = intent.types.filter(t => t !== 'formations');
   const regStr = intent.regions.map(r => r.charAt(0) + r.slice(1).toLowerCase()).join(', ');
@@ -864,15 +961,12 @@ function runNlpSearch(raw) {
   }
   NLP.showBot(msg);
 
-  // Auto zoom
   if (matches.length) {
     const pts = matches
       .map(m => [parseFloat(m.rec.LATITUDE), parseFloat(m.rec.LONGITUDE)])
       .filter(([la, lo]) => !isNaN(la) && !isNaN(lo) && (la || lo));
     if (pts.length) MAP.fitBounds(pts);
   }
-
-  // Save history
   NLP.saveHistory(raw);
 }
 
@@ -948,11 +1042,28 @@ const NLP = {
       panel.id = 'nlpSuggestPanel';
       panel.className = 'nlp-suggest-panel';
       document.body.appendChild(panel);
-      panel.addEventListener('mousedown', e => e.preventDefault()); // keep input focus
+      panel.addEventListener('mousedown', e => e.preventDefault());
     }
 
+    const val = (inputEl.value || '').trim();
     const hist = this.getHistory();
     let html = '';
+
+    // Autocomplétion IA si l'utilisateur tape quelque chose
+    if (val.length >= 2 && typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+      const completions = SearchEngine.autocomplete(val, 6);
+      if (completions.length) {
+        html += '<div class="nlp-suggest-sec"><span style="color:#48cae4">🤖</span> Suggestions IA</div>';
+        html += completions.map(c => {
+          const icon = c.type === 'formation' ? '🎓' : c.type === 'region' ? '📍' : c.type === 'categorie' ? '🏛' : c.type === 'lieu' ? '🗺' : '🔍';
+          const badge = c.typeKey ? `<span class="nlp-sug-badge">${c.typeKey}</span>` : (c.region ? `<span class="nlp-sug-badge">${c.region}</span>` : '');
+          return `<div class="nlp-suggest-item nlp-ai-suggest" data-q="${escAttr(c.query || c.label)}"><span class="nlp-sug-icon">${icon}</span><span>${escAttr(c.label)}</span>${badge}</div>`;
+        }).join('');
+        html += '<div class="nlp-suggest-divider"></div>';
+      }
+    }
+
+    // Recherches récentes
     if (hist.length) {
       html += '<div class="nlp-suggest-sec">Recherches récentes</div>';
       html += hist.map(h =>
@@ -960,7 +1071,9 @@ const NLP = {
       ).join('');
       html += '<div class="nlp-suggest-divider"></div>';
     }
-    html += '<div class="nlp-suggest-sec">Suggestions</div>';
+
+    // Suggestions curated
+    html += '<div class="nlp-suggest-sec">Explorer</div>';
     html += this.suggestions.map(s =>
       `<div class="nlp-suggest-item" data-q="${escAttr(s.q)}">${s.label}</div>`
     ).join('');
@@ -985,7 +1098,7 @@ const NLP = {
     const rect = inputEl.getBoundingClientRect();
     panel.style.left    = rect.left + 'px';
     panel.style.top     = (rect.bottom + window.scrollY + 4) + 'px';
-    panel.style.width   = Math.max(rect.width, 260) + 'px';
+    panel.style.width   = Math.max(rect.width, 280) + 'px';
     panel.style.display = 'block';
 
     const closePanel = e => {
@@ -1002,17 +1115,33 @@ const NLP = {
   },
 
   applyToListTab(raw) {
-    const intent = parseQuery(raw);
+    // Utiliser le SearchEngine IA pour comprendre l'intention
+    let intent;
+    if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+      intent = SearchEngine.parseIntent(raw);
+    } else {
+      intent = parseQuery(raw);
+    }
+
     state.listFilters.search = raw;
-    if (intent.regions.length) {
+    if (intent.regions && intent.regions.length) {
       state.listFilters.region = intent.regions[0];
       const sel = document.getElementById('regionSelect');
       if (sel) sel.value = intent.regions[0];
     }
-    const infraTypes = intent.types.filter(t => t !== 'formations');
+    const infraTypes = (intent.types || []).filter(t => t !== 'formations');
     if (infraTypes.length) state.listFilters.type = infraTypes[0];
     if (intent.milieu) state.listFilters.milieu = intent.milieu;
-    if (intent.types.includes('formations')) { state.listSet = 'formations'; renderListTabs(); }
+
+    // Détection intelligente du dataset
+    if (intent.wantFormations && !intent.wantInfra) {
+      state.listSet = 'formations';
+      renderListTabs();
+    } else if (intent.types && intent.types.includes('formations')) {
+      state.listSet = 'formations';
+      renderListTabs();
+    }
+
     const listSearch = document.getElementById('listSearch');
     if (listSearch) listSearch.value = raw;
     applyListFilters(true);
@@ -1236,25 +1365,43 @@ function switchTab(tabName) {
 function setupHomeSearch() {
   const input = document.getElementById('homeSearch');
   let timer;
+  let sugTimer;
+
   input.addEventListener('input', () => {
     clearTimeout(timer);
+    clearTimeout(sugTimer);
+    const val = input.value.trim();
+
+    // Autocomplétion en temps réel
+    sugTimer = setTimeout(() => {
+      if (val.length >= 2) {
+        NLP.showSuggestionsPanel(input);
+      }
+    }, 150);
+
     timer = setTimeout(() => {
-      const val = input.value.trim();
       if (!val) return;
       switchTab('list');
-      state.listFilters.search = val;
-      document.getElementById('listSearch').value = val;
-      applyListFilters(true);
-    }, 400);
+      NLP.applyToListTab(val);
+    }, 500);
   });
+
+  input.addEventListener('focus', () => {
+    NLP.showSuggestionsPanel(input);
+  });
+
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = input.value.trim();
       if (!val) return;
+      const panel = document.getElementById('nlpSuggestPanel');
+      if (panel) panel.style.display = 'none';
       switchTab('list');
-      state.listFilters.search = val;
-      document.getElementById('listSearch').value = val;
-      applyListFilters(true);
+      NLP.applyToListTab(val);
+    }
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('nlpSuggestPanel');
+      if (panel) panel.style.display = 'none';
     }
   });
 }
@@ -1479,13 +1626,31 @@ async function init() {
     });
   });
 
-  // List search
+  // List search — avec autocomplétion IA
   const listSearch = document.getElementById('listSearch');
   let listTimer;
+  let listSugTimer;
   listSearch.addEventListener('input', () => {
     clearTimeout(listTimer);
+    clearTimeout(listSugTimer);
     state.listFilters.search = listSearch.value;
+
+    // Autocomplétion temps réel
+    listSugTimer = setTimeout(() => {
+      const val = listSearch.value.trim();
+      if (val.length >= 2) NLP.showSuggestionsPanel(listSearch);
+    }, 150);
+
     listTimer = setTimeout(() => applyListFilters(true), 280);
+  });
+  listSearch.addEventListener('focus', () => {
+    NLP.showSuggestionsPanel(listSearch);
+  });
+  listSearch.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('nlpSuggestPanel');
+      if (panel) panel.style.display = 'none';
+    }
   });
 
   // Region select (mobile drawer)
