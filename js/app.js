@@ -70,6 +70,46 @@ function getInfraImage(r, typeKey) {
 
 const TAB_ORDER = ['home', 'explore', 'list', 'favorites'];
 
+/* ── Navigation History (pour le retour arrière mobile) ────────── */
+const navHistory = [];
+let handlingPopState = false;
+
+function navPush(entry) {
+  navHistory.push(entry);
+  if (!handlingPopState) {
+    history.pushState(entry, '', null);
+  }
+}
+
+function navHandleBack() {
+  if (!document.getElementById('modal').classList.contains('hidden')) {
+    closeModal();
+    return true;
+  }
+  if (navHistory.length > 0) {
+    const prev = navHistory.pop();
+    if (prev && prev.tab && prev.tab !== state.activeTab) {
+      handlingPopState = true;
+      switchTab(prev.tab);
+      handlingPopState = false;
+      return true;
+    }
+  }
+  if (state.activeTab !== 'home') {
+    handlingPopState = true;
+    switchTab('home');
+    handlingPopState = false;
+    return true;
+  }
+  return false;
+}
+
+window.addEventListener('popstate', (e) => {
+  handlingPopState = true;
+  navHandleBack();
+  handlingPopState = false;
+});
+
 /* ── State ──────────────────────────────────────────────────────── */
 const state = {
   data: { infrastructures: [], formations: [] },
@@ -1083,6 +1123,7 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
 
   const modal = document.getElementById('modal');
   modal.classList.remove('hidden');
+  navPush({ modal: true, tab: state.activeTab });
   setupModalSwipe();
 }
 
@@ -1124,6 +1165,10 @@ function setupModalSwipe() {
 
 function closeModal() {
   document.getElementById('modal').classList.add('hidden');
+  // Retirer l'entrée modal de l'historique
+  if (navHistory.length && navHistory[navHistory.length - 1].modal) {
+    navHistory.pop();
+  }
 }
 
 function showOnMap(lat, lon) {
@@ -1141,6 +1186,11 @@ function showOnMap(lat, lon) {
    ════════════════════════════════════════════════════════════════ */
 function switchTab(tabName) {
   if (tabName === state.activeTab) return;
+
+  // Enregistrer le tab précédent dans l'historique pour retour arrière
+  if (!handlingPopState) {
+    navPush({ tab: state.activeTab });
+  }
 
   const prevIdx = TAB_ORDER.indexOf(state.activeTab);
   const nextIdx = TAB_ORDER.indexOf(tabName);
