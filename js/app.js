@@ -888,7 +888,7 @@ function runNlpSearch(raw) {
 
   // Utiliser le SearchEngine IA
   if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
-    const result = SearchEngine.search(raw, { limit: MAX_RESULTS || 200 });
+    const result = SearchEngine.search(raw, { limit: 200 });
     const intent = result.intent;
 
     // Trouver les markers correspondants aux résultats
