@@ -112,6 +112,7 @@ const VoiceSearch = (() => {
     'nata':         'combien',
     'nata lay':     'combien y en a',
     'fu nekk':      'partout',
+    'ci':           'à',
     'ci biir':      'à l\'intérieur',
     'ci biti':      'à l\'extérieur',
     'dees':         'chercher',
