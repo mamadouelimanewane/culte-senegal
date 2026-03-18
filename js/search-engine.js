@@ -259,22 +259,19 @@ const SearchEngine = (() => {
     const desc = (r.DESCRIPTIF || r.THEMATIQUE || '').toLowerCase();
     const name = (r.DESIGNATION || '').toLowerCase();
     const combined = desc + ' ' + name;
-    const types = ['Cinéma','Galerie','Musée','Foyer des femmes','Foyer des jeunes',
-      'Salle de spectacle','Salle des fêtes','Bibliothèque','Village artisanal',
-      'Maison de la culture','Centre culturel'];
-    for (const t of types) {
-      if (combined.includes(t.toLowerCase())) return t;
-    }
-    if (combined.includes('cinema') || combined.includes('ciné')) return 'Cinéma';
+
+    // Priorité haute: mots-clés spécifiques AVANT "Centre culturel" (catch-all)
+    if (combined.includes('biblioth') || combined.includes('lecture') || combined.includes('mediatheque') || combined.includes('médiathèque')) return 'Bibliothèque';
+    if (combined.includes('cinema') || combined.includes('cinéma') || combined.includes('ciné')) return 'Cinéma';
     if (combined.includes('musée') || combined.includes('musee')) return 'Musée';
     if (combined.includes('galeri')) return 'Galerie';
-    if (combined.includes('biblioth') || combined.includes('lecture')) return 'Bibliothèque';
     if (combined.includes('spectacl') || combined.includes('théâtre') || combined.includes('theatre')) return 'Salle de spectacle';
-    if (combined.includes('fête') || combined.includes('fete')) return 'Salle des fêtes';
-    if (combined.includes('jeune')) return 'Foyer des jeunes';
-    if (combined.includes('femme')) return 'Foyer des femmes';
+    if (combined.includes('fête') || combined.includes('fete') || combined.includes('salle des f')) return 'Salle des fêtes';
+    if (combined.includes('foyer des femme') || (combined.includes('foyer') && combined.includes('femme'))) return 'Foyer des femmes';
+    if (combined.includes('foyer des jeune') || (combined.includes('foyer') && combined.includes('jeune'))) return 'Foyer des jeunes';
     if (combined.includes('artisan')) return 'Village artisanal';
-    if (combined.includes('maison')) return 'Maison de la culture';
+    if (combined.includes('maison de la culture') || combined.includes('maison culture')) return 'Maison de la culture';
+    // Fallback: Centre culturel
     return 'Centre culturel';
   }
 
@@ -298,7 +295,7 @@ const SearchEngine = (() => {
     };
 
     // Détection questions
-    const questionWords = ['combien', 'ou', 'quel', 'quelle', 'quels', 'quelles', 'est-ce', 'y a-t-il', 'existe', 'trouver', 'cherche', 'je veux', 'montre', 'affiche', 'liste'];
+    const questionWords = ['combien', 'ou est', 'ou se trouve', 'ou sont', 'quel', 'quelle', 'quels', 'quelles', 'est-ce', 'y a-t-il', 'existe', 'trouver', 'cherche', 'je veux', 'montre', 'affiche', 'liste'];
     for (const qw of questionWords) {
       if (normalized.includes(qw)) {
         intent.isQuestion = true;
@@ -348,12 +345,32 @@ const SearchEngine = (() => {
       }
     });
 
-    // Région matching (exact + fuzzy)
+    // Région matching — multi-token d'abord ("saint louis") puis single token
+    // Pass 1: multi-token region matching (2-3 words)
+    for (let i = 0; i < tokens.length; i++) {
+      if (usedTokens.has(i)) continue;
+      for (let len = Math.min(3, tokens.length - i); len >= 2; len--) {
+        const phrase = tokens.slice(i, i + len).join(' ');
+        let found = false;
+        for (const [alias, region] of Object.entries(REGION_ALIASES)) {
+          const aNorm = normalize(alias);
+          if (aNorm === phrase || aNorm.replace(/[-]/g, ' ') === phrase) {
+            intent.regions.push(region);
+            for (let j = i; j < i + len; j++) usedTokens.add(j);
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+    // Pass 2: single-token region matching (exact + fuzzy)
     tokens.forEach((t, idx) => {
       if (usedTokens.has(idx)) return;
       // Exact alias
       for (const [alias, region] of Object.entries(REGION_ALIASES)) {
-        if (normalize(alias) === t || (t.length >= 4 && normalize(alias).startsWith(t))) {
+        const aNorm = normalize(alias);
+        if (aNorm === t || (t.length >= 4 && aNorm.startsWith(t))) {
           intent.regions.push(region);
           usedTokens.add(idx);
           return;
@@ -454,8 +471,27 @@ const SearchEngine = (() => {
       }
       if (intent.types.length && !doc.isFormation) {
         const typeMatch = intent.types.some(t => normalize(t) === doc._typeNorm || doc._typeNorm.includes(normalize(t)));
-        if (typeMatch) scores[i] += BOOST.typeMatch;
-        else scores[i] *= 0.15;
+        if (typeMatch) {
+          scores[i] += BOOST.typeMatch;
+        } else {
+          // Vérifier aussi si le NOM contient des mots-clés du type cherché
+          // Ex: "CENTRE DE LECTURE" doit matcher quand on cherche "Bibliothèque"
+          const synonymsForTypes = intent.types.flatMap(t => {
+            const tNorm = normalize(t);
+            for (const [cat, realTypes] of Object.entries(CAT_TO_TYPE)) {
+              if (realTypes.some(rt => normalize(rt) === tNorm)) {
+                return SYNONYMS[cat] || [];
+              }
+            }
+            return [tNorm];
+          });
+          const nameHasSynonym = synonymsForTypes.some(syn => doc._nameNorm.includes(normalize(syn)));
+          if (nameHasSynonym) {
+            scores[i] += BOOST.typeMatch * 0.7; // Bonus réduit mais significatif
+          } else {
+            scores[i] *= 0.15;
+          }
+        }
       }
       if (intent.wantFormations && !intent.wantInfra && !doc.isFormation) {
         scores[i] *= 0.05;
@@ -521,7 +557,7 @@ const SearchEngine = (() => {
     const results = ranked.slice(0, options.limit || MAX_RESULTS);
 
     // 5. Générer message IA
-    const msg = generateMessage(intent, results.length, raw);
+    const msg = generateMessage(intent, ranked.length, raw);
 
     return { results, intent, message: msg, total: ranked.length };
   }
