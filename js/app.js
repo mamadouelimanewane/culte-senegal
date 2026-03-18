@@ -1739,64 +1739,45 @@ async function init() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   NLP SEARCH INIT — voix, suggestions, historique
+   NLP SEARCH INIT — voix IA multilingue, suggestions, historique
    ════════════════════════════════════════════════════════════════ */
 function initNlpSearch() {
-  // ── Mic button — routes to map or list based on active tab
-  const micBtn = document.getElementById('micBtn');
-  if (micBtn) {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      micBtn.addEventListener('click', () => {
-        const rec = new SR();
-        rec.lang = 'fr-FR';
-        micBtn.classList.add('mic-active');
-        rec.onend   = () => micBtn.classList.remove('mic-active');
-        rec.onerror = () => micBtn.classList.remove('mic-active');
-        rec.onresult = e => {
-          const text = e.results[0][0].transcript;
-          micBtn.classList.remove('mic-active');
-          NLP.saveHistory(text);
-          if (state.activeTab === 'explore') {
-            const ms = document.getElementById('mapSearch');
-            ms.value = text;
-            document.getElementById('mapSearchClear').classList.remove('hidden');
-            runNlpSearch(text);
-          } else {
-            document.getElementById('homeSearch').value = text;
-            switchTab('list');
-            NLP.applyToListTab(text);
-          }
-        };
-        rec.start();
-      });
-    } else {
-      micBtn.style.opacity = '.35';
-      micBtn.title = 'Votre navigateur ne supporte pas la reconnaissance vocale';
-    }
-  }
-
-  // ── mapSearch — suggestions on focus
-  const mapSearch = document.getElementById('mapSearch');
-  if (mapSearch) {
-    mapSearch.addEventListener('focus', () => NLP.showSuggestionsPanel(mapSearch));
-  }
-
-  // ── homeSearch — suggestions on focus
-  const homeSearch = document.getElementById('homeSearch');
-  if (homeSearch) {
-    homeSearch.addEventListener('focus', () => NLP.showSuggestionsPanel(homeSearch));
-    // Override Enter to use NLP-aware list routing
-    homeSearch.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const val = homeSearch.value.trim();
-        if (!val) return;
-        NLP.hideSuggestionsPanel();
-        NLP.saveHistory(val);
-        switchTab('list');
-        NLP.applyToListTab(val);
+  // ── Initialiser la recherche vocale IA (Français + Wolof) ──
+  if (typeof VoiceSearch !== 'undefined') {
+    VoiceSearch.init();
+  } else {
+    // Fallback si voice-search.js n'est pas chargé
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn) {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        micBtn.addEventListener('click', () => {
+          const rec = new SR();
+          rec.lang = 'fr-FR';
+          micBtn.classList.add('mic-active');
+          rec.onend   = () => micBtn.classList.remove('mic-active');
+          rec.onerror = () => micBtn.classList.remove('mic-active');
+          rec.onresult = e => {
+            const text = e.results[0][0].transcript;
+            micBtn.classList.remove('mic-active');
+            NLP.saveHistory(text);
+            if (state.activeTab === 'explore') {
+              const ms = document.getElementById('mapSearch');
+              ms.value = text;
+              document.getElementById('mapSearchClear').classList.remove('hidden');
+              runNlpSearch(text);
+            } else {
+              document.getElementById('homeSearch').value = text;
+              switchTab('list');
+              NLP.applyToListTab(text);
+            }
+          };
+          rec.start();
+        });
+      } else {
+        micBtn.style.opacity = '.35';
       }
-    });
+    }
   }
 
   // ── dtSearch (desktop topbar) — suggestions on focus

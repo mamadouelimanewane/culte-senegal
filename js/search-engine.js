@@ -86,11 +86,17 @@ const SearchEngine = (() => {
     'theatre_form': ['theatre', 'comedien', 'comedie', 'acteur', 'dramatique', 'scenique'],
     'serigraphie':  ['serigraphie', 'impression', 'textile', 'imprimerie', 'print'],
     'infographie':  ['infographie', 'graphisme', 'graphique', 'design', 'web', 'numerique', 'digital', 'informatique', 'pao'],
-    // Wolof / langues locales
-    'wolof_culture':['tey', 'cosaan', 'diom', 'xam-xam', 'liggey', 'ndaje'],
+    // Wolof / langues locales — enrichi
+    'wolof_culture':['tey', 'cosaan', 'diom', 'xam-xam', 'liggey', 'ndaje', 'teranga', 'gewel', 'griot'],
+    'musique':      ['musique', 'musical', 'musicien', 'instrument', 'chant', 'chanter', 'melodie', 'rythme', 'djembe', 'kora', 'sabar', 'tama', 'xalam', 'mbalax', 'woykat', 'tabala', 'ndawrabine'],
+    'spectacle':    ['spectacle', 'spectacles', 'theatre', 'theatres', 'scene', 'concert', 'concerts', 'festival', 'festivals', 'danse', 'danses', 'representation', 'show', 'salle de spectacle', 'fecc', 'fecckat', 'yengu'],
+    'bibliotheque': ['bibliotheque', 'bibliotheques', 'biblio', 'livre', 'livres', 'lecture', 'lire', 'documentation', 'mediatheque', 'teere', 'jang', 'bind', 'bindkat'],
+    'formation':    ['formation', 'formations', 'ecole', 'ecoles', 'cours', 'apprentissage', 'enseignement', 'etude', 'etudes', 'academie', 'institut', 'daara', 'jangat', 'jangatkat', 'ekol'],
+    'artisanal':    ['artisan', 'artisanal', 'artisanat', 'village artisanal', 'craft', 'metier', 'tapisserie', 'poterie', 'bijoux', 'mbay', 'rabb', 'rabbkat', 'wudd'],
+    'cinema':       ['cinema', 'cinemas', 'film', 'films', 'projection', 'ecran', 'salle obscure', 'movie', 'tele', 'filme'],
     // Milieu
     'urbain':       ['urbain', 'ville', 'cite', 'urban', 'metropole', 'centre-ville', 'centre ville', 'downtown'],
-    'rural':        ['rural', 'campagne', 'village', 'brousse', 'rurale'],
+    'rural':        ['rural', 'campagne', 'village', 'brousse', 'rurale', 'dek'],
   };
 
   /* Dictionnaire inversé synonyme → catégorie */
@@ -136,6 +142,7 @@ const SearchEngine = (() => {
   /* ── Régions avec alias ─────────────────────────────────────── */
   const REGION_ALIASES = {
     'dakar':          'DAKAR',
+    'ndakaaru':       'DAKAR',
     'ndar':           'SAINT-LOUIS',
     'saint louis':    'SAINT-LOUIS',
     'saint-louis':    'SAINT-LOUIS',
@@ -143,22 +150,29 @@ const SearchEngine = (() => {
     'st louis':       'SAINT-LOUIS',
     'thies':          'THIES',
     'thiess':         'THIES',
+    'kajoor':         'THIES',
     'diourbel':       'DIOURBEL',
     'touba':          'DIOURBEL',
+    'baol':           'DIOURBEL',
     'fatick':         'FATICK',
+    'siin':           'FATICK',
     'kaolack':        'KAOLACK',
+    'saloum':         'KAOLACK',
     'kaffrine':       'KAFFRINE',
     'ziguinchor':     'ZIGUINCHOR',
     'ziguin':         'ZIGUINCHOR',
     'casa':           'ZIGUINCHOR',
     'casamance':      'ZIGUINCHOR',
     'kolda':          'KOLDA',
+    'pakao':          'KOLDA',
     'sedhiou':        'SEDHIOU',
     'tambacounda':    'TAMBACOUNDA',
     'tamba':          'TAMBACOUNDA',
     'kedougou':       'KEDOUGOU',
     'louga':          'LOUGA',
+    'jolof':          'LOUGA',
     'matam':          'MATAM',
+    'fuuta':          'MATAM',
   };
 
   /* ── Index inversé & TF-IDF ─────────────────────────────────── */
