@@ -186,7 +186,267 @@ async function loadData() {
   if (typeof SearchEngine !== 'undefined') {
     SearchEngine.buildIndex(state.data.infrastructures, state.data.formations);
   }
+
+  // Charger et indexer les données temps réel (ajouts utilisateur / API)
+  LiveIndex.loadStoredRecords();
 }
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE INDEX — Indexation temps réel
+   Permet d'ajouter, modifier, supprimer des enregistrements
+   qui sont immédiatement recherchables dans le SearchEngine.
+   Persiste via localStorage + synchronise entre onglets.
+   ════════════════════════════════════════════════════════════════ */
+const LiveIndex = (() => {
+
+  const STORAGE_KEY = 'culte_live_records';
+
+  /* ── Persister les records ajoutés dynamiquement ───────────── */
+  function _loadStored() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch(e) { return []; }
+  }
+
+  function _saveStored(records) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch(e) { console.warn('[LiveIndex] Save error:', e); }
+  }
+
+  /**
+   * Charger les records stockés localement et les indexer.
+   * Appelé une fois après buildIndex() dans loadData().
+   */
+  function loadStoredRecords() {
+    if (typeof SearchEngine === 'undefined' || !SearchEngine.ready) return;
+    const stored = _loadStored();
+    if (!stored.length) return;
+
+    let infraCount = 0, formCount = 0;
+    for (const entry of stored) {
+      const isForm = entry.isFormation || false;
+      const rec = entry.record;
+      // Ajouter au state.data pour que les vues (carte, liste) les voient
+      if (isForm) {
+        rec._id = state.data.formations.length;
+        rec._live = true;  // marqueur données temps réel
+        rec._liveId = entry.id;
+        state.data.formations.push(rec);
+        formCount++;
+      } else {
+        rec._id = state.data.infrastructures.length;
+        rec._live = true;
+        rec._liveId = entry.id;
+        state.data.infrastructures.push(rec);
+        infraCount++;
+      }
+      // Indexer dans le SearchEngine
+      SearchEngine.indexOne(rec, isForm, 'stored');
+    }
+    if (infraCount + formCount > 0) {
+      console.log(`[LiveIndex] ${infraCount} infras + ${formCount} formations restaurés depuis localStorage`);
+    }
+  }
+
+  /**
+   * Ajouter un nouvel enregistrement en temps réel.
+   * Persisté en localStorage et indexé immédiatement.
+   * @param {object}  record       — Objet brut (DESIGNATION, REGION, etc.)
+   * @param {boolean} isFormation  — true si formation
+   * @param {string}  [source]     — 'user' | 'api' | 'event'
+   * @returns {object} L'entrée créée { id, record, isFormation, createdAt }
+   */
+  function add(record, isFormation, source) {
+    const entry = {
+      id: 'live_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      record: { ...record },
+      isFormation: isFormation || false,
+      source: source || 'user',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Persister
+    const stored = _loadStored();
+    stored.push(entry);
+    _saveStored(stored);
+
+    // Ajouter au state.data
+    const rec = entry.record;
+    rec._live = true;
+    rec._liveId = entry.id;
+
+    if (isFormation) {
+      rec._id = state.data.formations.length;
+      state.data.formations.push(rec);
+    } else {
+      rec._id = state.data.infrastructures.length;
+      state.data.infrastructures.push(rec);
+    }
+
+    // Indexer dans le SearchEngine
+    if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+      SearchEngine.indexOne(rec, isFormation, source);
+    }
+
+    console.log(`[LiveIndex] ➕ Ajouté: "${rec.DESIGNATION || rec.NOM_ETABLISSEMENT}" (${entry.id})`);
+    return entry;
+  }
+
+  /**
+   * Ajouter plusieurs enregistrements en batch.
+   * @param {Array}   records
+   * @param {boolean} isFormation
+   * @param {string}  [source]
+   * @returns {number} Nombre ajouté
+   */
+  function addBatch(records, isFormation, source) {
+    if (!records || !records.length) return 0;
+    const stored = _loadStored();
+    const newRecs = [];
+
+    for (const record of records) {
+      const entry = {
+        id: 'live_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        record: { ...record },
+        isFormation: isFormation || false,
+        source: source || 'batch',
+        createdAt: new Date().toISOString(),
+      };
+      stored.push(entry);
+
+      const rec = entry.record;
+      rec._live = true;
+      rec._liveId = entry.id;
+
+      if (isFormation) {
+        rec._id = state.data.formations.length;
+        state.data.formations.push(rec);
+      } else {
+        rec._id = state.data.infrastructures.length;
+        state.data.infrastructures.push(rec);
+      }
+      newRecs.push(rec);
+    }
+
+    _saveStored(stored);
+
+    // Index batch
+    if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+      SearchEngine.indexBatch(newRecs, isFormation, source);
+    }
+
+    console.log(`[LiveIndex] ➕ Batch: ${records.length} enregistrements ajoutés`);
+    return records.length;
+  }
+
+  /**
+   * Mettre à jour un enregistrement live.
+   * @param {string} liveId      — L'ID live (entry.id)
+   * @param {object} newFields   — Champs à mettre à jour (merge)
+   * @returns {boolean}
+   */
+  function update(liveId, newFields) {
+    const stored = _loadStored();
+    const idx = stored.findIndex(e => e.id === liveId);
+    if (idx === -1) return false;
+
+    // Merge les champs
+    Object.assign(stored[idx].record, newFields);
+    stored[idx].updatedAt = new Date().toISOString();
+    _saveStored(stored);
+
+    // Mettre à jour dans state.data
+    const isForm = stored[idx].isFormation;
+    const dataArr = isForm ? state.data.formations : state.data.infrastructures;
+    const rec = dataArr.find(r => r._liveId === liveId);
+    if (rec) {
+      Object.assign(rec, newFields);
+      // Mettre à jour dans SearchEngine
+      if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+        SearchEngine.updateOne(doc => doc.rec._liveId === liveId, rec, isForm);
+      }
+    }
+
+    console.log(`[LiveIndex] ✏️ Mis à jour: ${liveId}`);
+    return true;
+  }
+
+  /**
+   * Supprimer un enregistrement live.
+   * @param {string} liveId
+   * @returns {boolean}
+   */
+  function remove(liveId) {
+    const stored = _loadStored();
+    const idx = stored.findIndex(e => e.id === liveId);
+    if (idx === -1) return false;
+
+    const entry = stored[idx];
+    stored.splice(idx, 1);
+    _saveStored(stored);
+
+    // Retirer de state.data
+    const isForm = entry.isFormation;
+    const dataArr = isForm ? state.data.formations : state.data.infrastructures;
+    const dataIdx = dataArr.findIndex(r => r._liveId === liveId);
+    if (dataIdx !== -1) dataArr.splice(dataIdx, 1);
+
+    // Retirer du SearchEngine
+    if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+      SearchEngine.removeOne(doc => doc.rec._liveId === liveId);
+    }
+
+    console.log(`[LiveIndex] 🗑 Supprimé: ${liveId}`);
+    return true;
+  }
+
+  /**
+   * Obtenir tous les enregistrements live.
+   * @returns {Array}
+   */
+  function getAll() { return _loadStored(); }
+
+  /**
+   * Nombre d'enregistrements live.
+   */
+  function count() { return _loadStored().length; }
+
+  /**
+   * Écouter les changements d'autres onglets (storage event).
+   */
+  function _initCrossTabSync() {
+    window.addEventListener('storage', (e) => {
+      if (e.key !== STORAGE_KEY) return;
+      // Un autre onglet a modifié les données live → reconstruire l'index
+      console.log('[LiveIndex] Sync inter-onglets détecté, reconstruction...');
+      if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+        SearchEngine.buildIndex(state.data.infrastructures, state.data.formations);
+        // Ré-indexer les données live fraîches
+        const freshStored = _loadStored();
+        for (const entry of freshStored) {
+          const rec = entry.record;
+          // Vérifier si déjà dans state.data
+          const arr = entry.isFormation ? state.data.formations : state.data.infrastructures;
+          if (!arr.find(r => r._liveId === entry.id)) {
+            rec._live = true;
+            rec._liveId = entry.id;
+            rec._id = arr.length;
+            arr.push(rec);
+            SearchEngine.indexOne(rec, entry.isFormation, 'sync');
+          }
+        }
+      }
+    });
+  }
+
+  // Init sync au chargement
+  if (typeof window !== 'undefined') {
+    _initCrossTabSync();
+  }
+
+  return { loadStoredRecords, add, addBatch, update, remove, getAll, count };
+})();
 
 /* ════════════════════════════════════════════════════════════════
    HOME TAB
@@ -1727,6 +1987,33 @@ async function init() {
   // NLP enhanced search — mic, suggestions, history
   initNlpSearch();
 
+  // Panneau ajout temps réel
+  initLiveAddPanel();
+
+  // Écouter les changements d'index en temps réel
+  if (typeof SearchEngine !== 'undefined') {
+    SearchEngine.onChange(evt => {
+      // Mettre à jour les compteurs UI
+      const stats = SearchEngine.getStats();
+      if (stats) {
+        const el1 = document.getElementById('statInfra');
+        const el2 = document.getElementById('statFormations');
+        if (el1) el1.textContent = stats.infraCount;
+        if (el2) el2.textContent = stats.formCount;
+        const chipAll = document.getElementById('chipAll');
+        const chipInfra = document.getElementById('chipInfra');
+        const chipForm = document.getElementById('chipFormation');
+        if (chipAll) chipAll.textContent = stats.totalDocs;
+        if (chipInfra) chipInfra.textContent = stats.infraCount;
+        if (chipForm) chipForm.textContent = stats.formCount;
+      }
+      // Rafraîchir la liste si on est dans l'onglet list
+      if (state.activeTab === 'list') {
+        applyListFilters(false);
+      }
+    });
+  }
+
   // Hide splash
   setTimeout(() => {
     document.getElementById('splash').style.opacity = '0';
@@ -1796,6 +2083,34 @@ function initNlpSearch() {
       }
     });
   }
+
+  // ── Dialogue de recherche multicritères ──
+  if (typeof SearchDialog !== 'undefined') {
+    // Bouton Home
+    const trigHome = document.getElementById('dialogTriggerHome');
+    if (trigHome) {
+      trigHome.addEventListener('click', () => {
+        const hs = document.getElementById('homeSearch');
+        SearchDialog.open(hs ? hs.value.trim() : '');
+      });
+    }
+    // Bouton Explore (map)
+    const trigMap = document.getElementById('dialogTriggerMap');
+    if (trigMap) {
+      trigMap.addEventListener('click', () => {
+        const ms = document.getElementById('mapSearch');
+        SearchDialog.open(ms ? ms.value.trim() : '');
+      });
+    }
+    // Bouton List
+    const trigList = document.getElementById('dialogTriggerList');
+    if (trigList) {
+      trigList.addEventListener('click', () => {
+        const ls = document.getElementById('listSearch');
+        SearchDialog.open(ls ? ls.value.trim() : '');
+      });
+    }
+  }
 }
 
 /* Helper: hide the suggestions panel */
@@ -1803,5 +2118,174 @@ NLP.hideSuggestionsPanel = function() {
   const panel = document.getElementById('nlpSuggestPanel');
   if (panel) panel.style.display = 'none';
 };
+
+/* ════════════════════════════════════════════════════════════════
+   PANNEAU AJOUT TEMPS RÉEL
+   ════════════════════════════════════════════════════════════════ */
+function initLiveAddPanel() {
+  const panel   = document.getElementById('liveAddPanel');
+  const fabBtn  = document.getElementById('fabAdd');
+  const closeBtn = document.getElementById('liveAddClose');
+  const backdrop = panel?.querySelector('.live-panel-backdrop');
+  const submitBtn = document.getElementById('liveSubmitBtn');
+
+  if (!panel || !fabBtn) return;
+
+  let currentSet = 'infra'; // 'infra' | 'formation' | 'event'
+  let currentMilieu = '';
+
+  // Ouvrir
+  fabBtn.addEventListener('click', () => {
+    panel.classList.remove('hidden');
+    _updateLivePreview();
+  });
+
+  // Fermer
+  function closePanel() { panel.classList.add('hidden'); }
+  closeBtn?.addEventListener('click', closePanel);
+  backdrop?.addEventListener('click', closePanel);
+
+  // Toggle set (infra / formation / event)
+  document.querySelectorAll('[data-set]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-set]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSet = btn.dataset.set;
+
+      // Montrer/cacher les champs selon le type
+      const typeField = document.getElementById('liveTypeField');
+      const brancheField = document.getElementById('liveBrancheField');
+      const dateField = document.getElementById('liveDateField');
+
+      if (currentSet === 'formation') {
+        typeField?.classList.add('hidden');
+        brancheField?.classList.remove('hidden');
+        dateField?.classList.add('hidden');
+      } else if (currentSet === 'event') {
+        typeField?.classList.remove('hidden');
+        brancheField?.classList.add('hidden');
+        dateField?.classList.remove('hidden');
+      } else {
+        typeField?.classList.remove('hidden');
+        brancheField?.classList.add('hidden');
+        dateField?.classList.add('hidden');
+      }
+    });
+  });
+
+  // Toggle milieu
+  document.querySelectorAll('[data-milieu]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-milieu]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMilieu = btn.dataset.milieu;
+    });
+  });
+
+  // GPS
+  const gpsBtn = document.getElementById('liveGpsBtn');
+  if (gpsBtn) {
+    gpsBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      gpsBtn.textContent = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('liveLat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('liveLon').value = pos.coords.longitude.toFixed(6);
+          gpsBtn.textContent = '✅';
+          setTimeout(() => { gpsBtn.textContent = '📍'; }, 1500);
+        },
+        () => {
+          gpsBtn.textContent = '❌';
+          setTimeout(() => { gpsBtn.textContent = '📍'; }, 1500);
+        }
+      );
+    });
+  }
+
+  // Preview count en temps réel
+  function _updateLivePreview() {
+    const el = document.getElementById('livePreview');
+    if (!el) return;
+    const liveCount = LiveIndex.count();
+    const totalDocs = (typeof SearchEngine !== 'undefined' && SearchEngine.ready)
+      ? SearchEngine.docs.length : '—';
+    el.innerHTML = `📊 ${totalDocs} dans l'index · <strong>${liveCount} ajouté${liveCount > 1 ? 's' : ''} manuellement</strong>`;
+  }
+
+  // Soumission
+  submitBtn?.addEventListener('click', () => {
+    const name = document.getElementById('liveName')?.value.trim();
+    const region = document.getElementById('liveRegion')?.value;
+
+    if (!name) {
+      document.getElementById('liveName')?.focus();
+      return;
+    }
+    if (!region) {
+      document.getElementById('liveRegion')?.focus();
+      return;
+    }
+
+    const isFormation = currentSet === 'formation';
+    const record = {};
+
+    if (isFormation) {
+      record.NOM_ETABLISSEMENT = name;
+      record.BRANCHE = document.getElementById('liveBranche')?.value || '';
+    } else {
+      record.DESIGNATION = name;
+      const typeVal = document.getElementById('liveType')?.value;
+      if (typeVal) {
+        record.DESCRIPTIF = typeVal;
+        record.THEMATIQUE = typeVal;
+      }
+    }
+
+    record.REGION = region;
+    record.COMMUNE = document.getElementById('liveCommune')?.value.trim() || '';
+    record.LOCALITE = record.COMMUNE;
+    record.DEPARTEMENT = document.getElementById('liveDept')?.value.trim() || '';
+    record.MILIEU = currentMilieu;
+    record.LATITUDE = document.getElementById('liveLat')?.value || '';
+    record.LONGITUDE = document.getElementById('liveLon')?.value || '';
+    record.DESCRIPTIF = record.DESCRIPTIF || document.getElementById('liveDesc')?.value.trim() || '';
+
+    // Champs événement
+    if (currentSet === 'event') {
+      record._eventDate = document.getElementById('liveDate')?.value || '';
+      record._isEvent = true;
+    }
+
+    // Ajouter via LiveIndex
+    const entry = LiveIndex.add(record, isFormation, 'user');
+
+    // Feedback visuel
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = '✅ Indexé avec succès !';
+    submitBtn.style.background = 'linear-gradient(135deg, #2e7d32, #4caf50)';
+
+    // Réinitialiser le formulaire
+    setTimeout(() => {
+      submitBtn.textContent = originalText;
+      submitBtn.style.background = '';
+      document.getElementById('liveName').value = '';
+      document.getElementById('liveCommune').value = '';
+      document.getElementById('liveDept').value = '';
+      document.getElementById('liveLat').value = '';
+      document.getElementById('liveLon').value = '';
+      document.getElementById('liveDesc').value = '';
+      _updateLivePreview();
+    }, 1500);
+
+    // Rafraîchir les vues si besoin
+    if (state.activeTab === 'list') {
+      applyListFilters(false);
+    }
+    if (state.map && state.activeTab === 'explore') {
+      populateMapLayer(state.mapFilters.layer);
+    }
+  });
+}
 
 document.addEventListener('DOMContentLoaded', init);

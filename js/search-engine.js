@@ -66,37 +66,31 @@ const SearchEngine = (() => {
 
   /* ── Synonymes enrichis (FR + Wolof + variantes) ─────────── */
   const SYNONYMS = {
-    // Types d'infrastructure
-    'musee':        ['musee', 'musees', 'museum', 'patrimoine', 'exposition', 'artefact'],
-    'galerie':      ['galerie', 'galeries', 'art', 'exposition', 'vernissage', 'gallery'],
-    'cinema':       ['cinema', 'cinemas', 'film', 'films', 'projection', 'ecran', 'salle obscure', 'movie'],
-    'bibliotheque': ['bibliotheque', 'bibliotheques', 'biblio', 'livre', 'livres', 'lecture', 'lire', 'documentation', 'mediatheque'],
-    'spectacle':    ['spectacle', 'spectacles', 'theatre', 'theatres', 'scene', 'concert', 'concerts', 'festival', 'festivals', 'danse', 'danses', 'representation', 'show', 'salle de spectacle'],
-    'fete':         ['fete', 'fetes', 'salle des fetes', 'celebration', 'evenement', 'reception', 'ceremonie'],
-    'jeunes':       ['jeunes', 'jeunesse', 'foyer des jeunes', 'ado', 'adolescent', 'youth'],
-    'femmes':       ['femmes', 'foyer des femmes', 'feminin', 'feminine', 'woman', 'women'],
-    'artisanal':    ['artisan', 'artisanal', 'artisanat', 'village artisanal', 'craft', 'metier', 'tapisserie', 'poterie', 'bijoux'],
-    'culture':      ['culture', 'culturel', 'culturelle', 'centre culturel', 'maison de la culture', 'maison culture'],
-    // Formations
-    'formation':    ['formation', 'formations', 'ecole', 'ecoles', 'cours', 'apprentissage', 'enseignement', 'etude', 'etudes', 'academie', 'institut'],
-    'arts':         ['arts', 'art', 'artistique', 'beaux-arts', 'creation'],
-    'audiovisuel':  ['audiovisuel', 'audio', 'video', 'son', 'image', 'multimedia', 'media'],
-    'peinture':     ['peinture', 'peindre', 'peintre', 'tableau', 'toile', 'dessin', 'aquarelle'],
-    'musique':      ['musique', 'musical', 'musicien', 'instrument', 'chant', 'chanter', 'melodie', 'rythme', 'djembe', 'kora', 'sabar', 'tama', 'xalam'],
-    'theatre_form': ['theatre', 'comedien', 'comedie', 'acteur', 'dramatique', 'scenique'],
-    'serigraphie':  ['serigraphie', 'impression', 'textile', 'imprimerie', 'print'],
-    'infographie':  ['infographie', 'graphisme', 'graphique', 'design', 'web', 'numerique', 'digital', 'informatique', 'pao'],
-    // Wolof / langues locales — enrichi
-    'wolof_culture':['tey', 'cosaan', 'diom', 'xam-xam', 'liggey', 'ndaje', 'teranga', 'gewel', 'griot'],
-    'musique':      ['musique', 'musical', 'musicien', 'instrument', 'chant', 'chanter', 'melodie', 'rythme', 'djembe', 'kora', 'sabar', 'tama', 'xalam', 'mbalax', 'woykat', 'tabala', 'ndawrabine'],
-    'spectacle':    ['spectacle', 'spectacles', 'theatre', 'theatres', 'scene', 'concert', 'concerts', 'festival', 'festivals', 'danse', 'danses', 'representation', 'show', 'salle de spectacle', 'fecc', 'fecckat', 'yengu'],
-    'bibliotheque': ['bibliotheque', 'bibliotheques', 'biblio', 'livre', 'livres', 'lecture', 'lire', 'documentation', 'mediatheque', 'teere', 'jang', 'bind', 'bindkat'],
-    'formation':    ['formation', 'formations', 'ecole', 'ecoles', 'cours', 'apprentissage', 'enseignement', 'etude', 'etudes', 'academie', 'institut', 'daara', 'jangat', 'jangatkat', 'ekol'],
-    'artisanal':    ['artisan', 'artisanal', 'artisanat', 'village artisanal', 'craft', 'metier', 'tapisserie', 'poterie', 'bijoux', 'mbay', 'rabb', 'rabbkat', 'wudd'],
-    'cinema':       ['cinema', 'cinemas', 'film', 'films', 'projection', 'ecran', 'salle obscure', 'movie', 'tele', 'filme'],
+    // Types d'infrastructure — FR complet
+    'musee':        ['musee', 'musees', 'muse', 'museum', 'patrimoine', 'exposition', 'expo', 'expos', 'artefact', 'monument', 'site historique', 'collection', 'antiquite'],
+    'galerie':      ['galerie', 'galeries', 'art', 'exposition', 'expo', 'vernissage', 'gallery', 'atelier', 'atelier artistique', 'studio', 'sculpture', 'sculpteur', 'ceramique'],
+    'cinema':       ['cinema', 'cinemas', 'cine', 'cine-club', 'film', 'films', 'projection', 'ecran', 'salle obscure', 'movie', 'tele', 'filme'],
+    'bibliotheque': ['bibliotheque', 'bibliotheques', 'biblio', 'bibliobus', 'livre', 'livres', 'lecture', 'lire', 'documentation', 'mediatheque', 'centre de lecture', 'salle de lecture', 'teere', 'jang', 'bind', 'bindkat'],
+    'spectacle':    ['spectacle', 'spectacles', 'theatre', 'theatres', 'scene', 'concert', 'concerts', 'festival', 'festivals', 'danse', 'danses', 'representation', 'show', 'salle de spectacle', 'salle de theatre', 'salle de concert', 'conservatoire', 'fecc', 'fecckat', 'yengu', 'taasu', 'bakk', 'slam', 'poesie', 'chorale'],
+    'fete':         ['fete', 'fetes', 'salle des fetes', 'salle polyvalente', 'salle communautaire', 'celebration', 'evenement', 'reception', 'ceremonie'],
+    'jeunes':       ['jeunes', 'jeunesse', 'foyer des jeunes', 'maison des jeunes', 'mjc', 'espace jeunes', 'ado', 'adolescent', 'youth'],
+    'femmes':       ['femmes', 'foyer des femmes', 'feminin', 'feminine', 'woman', 'women', 'espace femmes', 'jigeen', 'ndey'],
+    'artisanal':    ['artisan', 'artisanal', 'artisanat', 'village artisanal', 'craft', 'metier', 'tapisserie', 'poterie', 'bijoux', 'couture', 'broderie', 'teinture', 'vannerie', 'tissage', 'forge', 'orfevrer', 'maroquinerie', 'cuir', 'bois', 'mbay', 'rabb', 'rabbkat', 'wudd'],
+    // Formations — FR complet
+    'formation':    ['formation', 'formations', 'ecole', 'ecoles', 'cours', 'apprentissage', 'enseignement', 'etude', 'etudes', 'academie', 'institut', 'conservatoire', 'atelier de', 'stage', 'daara', 'jangat', 'jangatkat', 'ekol', 'taalib', 'talibe'],
+    'arts':         ['arts', 'art', 'artistique', 'beaux-arts', 'creation', 'creatif'],
+    'audiovisuel':  ['audiovisuel', 'audio', 'video', 'son', 'image', 'multimedia', 'media', 'studio d\'enregistrement', 'studio de musique', 'montage', 'realisation', 'reportage'],
+    'peinture':     ['peinture', 'peindre', 'peintre', 'tableau', 'toile', 'dessin', 'aquarelle', 'fresque', 'murale', 'huile', 'acrylique', 'nataal'],
+    'musique':      ['musique', 'musical', 'musicien', 'instrument', 'chant', 'chanter', 'melodie', 'rythme', 'djembe', 'kora', 'sabar', 'tama', 'xalam', 'mbalax', 'woykat', 'tabala', 'ndawrabine', 'guitare', 'percussion', 'balafon', 'harmonie', 'chorale'],
+    'theatre_form': ['theatre', 'comedien', 'comedie', 'acteur', 'dramatique', 'scenique', 'mise en scene', 'improvisation', 'marionnette'],
+    'serigraphie':  ['serigraphie', 'impression', 'textile', 'imprimerie', 'print', 'estampe', 'gravure', 'teinture'],
+    'infographie':  ['infographie', 'graphisme', 'graphique', 'design', 'web', 'numerique', 'digital', 'informatique', 'pao', 'illustration', 'logo'],
+    // Wolof / langues locales — enrichi massivement
+    'wolof_culture':['tey', 'cosaan', 'thiossane', 'diom', 'xam-xam', 'xam xam', 'liggey', 'ndaje', 'teranga', 'gewel', 'griot', 'nguewel', 'ndigel', 'baye fall'],
+    'culture':      ['culture', 'culturel', 'culturelle', 'centre culturel', 'maison de la culture', 'maison culture', 'espace culturel', 'socioculturel', 'socio-culturel', 'complexe culturel', 'asso culturelle', 'association culturelle', 'marabout', 'serin', 'dahira', 'gamou', 'magal', 'ziarra', 'xam xam', 'xam-xam'],
     // Milieu
-    'urbain':       ['urbain', 'ville', 'cite', 'urban', 'metropole', 'centre-ville', 'centre ville', 'downtown'],
-    'rural':        ['rural', 'campagne', 'village', 'brousse', 'rurale', 'dek'],
+    'urbain':       ['urbain', 'ville', 'cite', 'urban', 'metropole', 'centre-ville', 'centre ville', 'downtown', 'quartier'],
+    'rural':        ['rural', 'campagne', 'village', 'brousse', 'rurale', 'dek', 'terroir'],
   };
 
   /* Dictionnaire inversé synonyme → catégorie */
@@ -143,11 +137,11 @@ const SearchEngine = (() => {
   const REGION_ALIASES = {
     'dakar':          'DAKAR',
     'ndakaaru':       'DAKAR',
-    'ndar':           'SAINT-LOUIS',
-    'saint louis':    'SAINT-LOUIS',
-    'saint-louis':    'SAINT-LOUIS',
-    'saintlouis':     'SAINT-LOUIS',
-    'st louis':       'SAINT-LOUIS',
+    'ndar':           'SAINT LOUIS',
+    'saint louis':    'SAINT LOUIS',
+    'saint-louis':    'SAINT LOUIS',
+    'saintlouis':     'SAINT LOUIS',
+    'st louis':       'SAINT LOUIS',
     'thies':          'THIES',
     'thiess':         'THIES',
     'kajoor':         'THIES',
@@ -173,6 +167,57 @@ const SearchEngine = (() => {
     'jolof':          'LOUGA',
     'matam':          'MATAM',
     'fuuta':          'MATAM',
+    // Villes / localités connues → région correspondante
+    'goree':          'DAKAR',
+    'ile de goree':   'DAKAR',
+    'mbour':          'THIES',
+    'saly':           'THIES',
+    'joal':           'FATICK',
+    'joal fadiouth':  'FATICK',
+    'podor':          'SAINT LOUIS',
+    'dagana':         'SAINT LOUIS',
+    'richard-toll':   'SAINT LOUIS',
+    'richard toll':   'SAINT LOUIS',
+    'tivaouane':      'THIES',
+    'oussouye':       'ZIGUINCHOR',
+    'cap skirring':   'ZIGUINCHOR',
+    'bignona':        'ZIGUINCHOR',
+    'velingara':      'KOLDA',
+    'nioro du rip':   'KAOLACK',
+    'nioro':          'KAOLACK',
+    'linguere':       'LOUGA',
+    'kebemer':        'LOUGA',
+    'raneriou':       'MATAM',
+    'kanel':          'MATAM',
+    'salemata':       'KEDOUGOU',
+    'saraya':         'KEDOUGOU',
+    'mbirkilane':     'KAFFRINE',
+    'koungheul':      'KAFFRINE',
+    'goudomp':        'SEDHIOU',
+    'bounkiling':     'SEDHIOU',
+    'bakel':          'TAMBACOUNDA',
+    'goudiry':        'TAMBACOUNDA',
+    'koumpentoum':    'TAMBACOUNDA',
+    'bambey':         'DIOURBEL',
+    'mbacke':         'DIOURBEL',
+    'pikine':         'DAKAR',
+    'guediawaye':     'DAKAR',
+    'rufisque':       'DAKAR',
+    'parcelles':      'DAKAR',
+    'medina':         'DAKAR',
+    'plateau':        'DAKAR',
+    'almadies':       'DAKAR',
+    'ouakam':         'DAKAR',
+    'yoff':           'DAKAR',
+    'grand dakar':    'DAKAR',
+    'grand yoff':     'DAKAR',
+    'hann':           'DAKAR',
+    'fann':           'DAKAR',
+    'ngor':           'DAKAR',
+    'thiaroye':       'DAKAR',
+    'keur massar':    'DAKAR',
+    'diamniadio':     'DAKAR',
+    'sangalkam':      'DAKAR',
   };
 
   /* ── Index inversé & TF-IDF ─────────────────────────────────── */
@@ -180,78 +225,258 @@ const SearchEngine = (() => {
   let _docs  = [];           // docId → { rec, isFormation, fields: {name, type, region, ...} }
   let _idf   = {};           // token → idf score
   let _ready = false;
+  let _nextDocId = 0;        // Auto-increment pour les nouveaux docs
+  let _listeners = [];       // Callbacks notifiés lors de changements d'index
+  let _idfDirty = false;     // IDF doit être recalculé
 
-  function buildIndex(infrastructures, formations) {
-    _index = {};
-    _docs  = [];
-    _idf   = {};
-    let docId = 0;
+  /* ── Créer un objet document indexable ─────────────────────── */
+  function _makeDoc(id, rec, isFormation) {
+    const name     = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '';
+    const typeKey  = isFormation ? (rec.BRANCHE || '') : getInfraTypeSearch(rec);
+    const region   = rec.REGION || '';
+    const dept     = rec.DEPARTEMENT || '';
+    const commune  = rec.COMMUNE || rec.LOCALITE || '';
+    const localite = rec.LOCALITES || rec.LOCALITE || '';
+    const milieu   = rec.MILIEU || '';
+    const thematique = rec.THEMATIQUE || '';
+    const descriptif = rec.DESCRIPTIF || '';
 
-    // Helper: ajouter un doc à l'index
-    function addDoc(rec, isFormation) {
-      const id = docId++;
-      const name     = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '';
-      const typeKey  = isFormation ? (rec.BRANCHE || '') : getInfraTypeSearch(rec);
-      const region   = rec.REGION || '';
-      const dept     = rec.DEPARTEMENT || '';
-      const commune  = rec.COMMUNE || rec.LOCALITE || '';
-      const localite = rec.LOCALITES || rec.LOCALITE || '';
-      const milieu   = rec.MILIEU || '';
-      const thematique = rec.THEMATIQUE || '';
-      const descriptif = rec.DESCRIPTIF || '';
+    return {
+      id, rec, isFormation,
+      fields: { name, typeKey, region, dept, commune, localite, milieu, thematique, descriptif },
+      _nameNorm:     normalize(name),
+      _communeNorm:  normalize(commune),
+      _regionNorm:   normalize(region),
+      _deptNorm:     normalize(dept),
+      _localiteNorm: normalize(localite),
+      _typeNorm:     normalize(typeKey),
+      _milieuNorm:   normalize(milieu),
+    };
+  }
 
-      const doc = {
-        id, rec, isFormation,
-        fields: { name, typeKey, region, dept, commune, localite, milieu, thematique, descriptif },
-        _nameNorm:     normalize(name),
-        _communeNorm:  normalize(commune),
-        _regionNorm:   normalize(region),
-        _deptNorm:     normalize(dept),
-        _localiteNorm: normalize(localite),
-        _typeNorm:     normalize(typeKey),
-        _milieuNorm:   normalize(milieu),
-      };
-      _docs.push(doc);
+  /* ── Indexer les tokens d'un document ──────────────────────── */
+  function _indexDocTokens(doc) {
+    const fieldTexts = {
+      name:      doc.fields.name,
+      type:      doc.fields.typeKey + ' ' + doc.fields.thematique + ' ' + doc.fields.descriptif,
+      region:    doc.fields.region,
+      dept:      doc.fields.dept,
+      commune:   doc.fields.commune,
+      localite:  doc.fields.localite,
+    };
 
-      // Indexer chaque champ avec pondération
-      const fieldTexts = {
-        name:      name,
-        type:      typeKey + ' ' + thematique + ' ' + descriptif,
-        region:    region,
-        dept:      dept,
-        commune:   commune,
-        localite:  localite,
-      };
-
-      const docTokens = new Set();
-      for (const [field, text] of Object.entries(fieldTexts)) {
-        const tokens = tokenize(text);
-        const freq = {};
-        for (const t of tokens) {
-          freq[t] = (freq[t] || 0) + 1;
-          docTokens.add(t);
-        }
-        for (const [token, count] of Object.entries(freq)) {
-          if (!_index[token]) _index[token] = [];
-          _index[token].push({ docId: id, field, tf: count / tokens.length });
-        }
+    for (const [field, text] of Object.entries(fieldTexts)) {
+      const tokens = tokenize(text);
+      const freq = {};
+      for (const t of tokens) {
+        freq[t] = (freq[t] || 0) + 1;
+      }
+      for (const [token, count] of Object.entries(freq)) {
+        if (!_index[token]) _index[token] = [];
+        _index[token].push({ docId: doc.id, field, tf: count / tokens.length });
       }
     }
+  }
 
-    // Indexer toutes les infrastructures
-    for (const rec of infrastructures) addDoc(rec, false);
-    // Indexer toutes les formations
-    for (const rec of formations) addDoc(rec, true);
+  /* ── Retirer les tokens d'un document de l'index inversé ──── */
+  function _unindexDocTokens(docId) {
+    for (const token of Object.keys(_index)) {
+      _index[token] = _index[token].filter(p => p.docId !== docId);
+      if (_index[token].length === 0) {
+        delete _index[token];
+      }
+    }
+  }
 
-    // Calculer IDF
+  /* ── Recalculer IDF (appelé automatiquement quand nécessaire) ── */
+  function _recomputeIDF() {
     const N = _docs.length;
+    _idf = {};
     for (const [token, postings] of Object.entries(_index)) {
       const df = new Set(postings.map(p => p.docId)).size;
       _idf[token] = Math.log(1 + N / df);
     }
+    _idfDirty = false;
+  }
+
+  /* ── Notifier les listeners d'un changement ────────────────── */
+  function _notifyChange(type, doc, meta) {
+    // Recomputer IDF si sale
+    if (_idfDirty) _recomputeIDF();
+    // Dispatch
+    const event = { type, doc, meta, timestamp: Date.now(), totalDocs: _docs.length };
+    for (const fn of _listeners) {
+      try { fn(event); } catch(e) { console.warn('[SearchEngine] Listener error:', e); }
+    }
+  }
+
+  /* ── Construction complète de l'index (initial) ────────────── */
+  function buildIndex(infrastructures, formations) {
+    _index = {};
+    _docs  = [];
+    _idf   = {};
+    _nextDocId = 0;
+
+    // Indexer toutes les infrastructures
+    for (const rec of infrastructures) {
+      const doc = _makeDoc(_nextDocId++, rec, false);
+      _docs.push(doc);
+      _indexDocTokens(doc);
+    }
+    // Indexer toutes les formations
+    for (const rec of formations) {
+      const doc = _makeDoc(_nextDocId++, rec, true);
+      _docs.push(doc);
+      _indexDocTokens(doc);
+    }
+
+    // Calculer IDF
+    _recomputeIDF();
 
     _ready = true;
     console.log(`[SearchEngine] Index construit: ${_docs.length} documents, ${Object.keys(_index).length} tokens`);
+    _notifyChange('rebuild', null, { infraCount: infrastructures.length, formCount: formations.length });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     INDEXATION TEMPS RÉEL — Ajouter, Modifier, Supprimer
+     ══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Ajouter un seul enregistrement à l'index en temps réel.
+   * @param {object}  rec          — Objet brut (DESIGNATION, REGION, etc.)
+   * @param {boolean} isFormation  — true si formation, false si infrastructure
+   * @param {string}  [source]     — Source optionnelle (ex: 'user', 'api', 'sync')
+   * @returns {object} Le document indexé (avec doc.id)
+   */
+  function indexOne(rec, isFormation, source) {
+    if (!_ready) {
+      console.warn('[SearchEngine] Index non prêt, appeler buildIndex() d\'abord');
+      return null;
+    }
+
+    const id = _nextDocId++;
+    const doc = _makeDoc(id, rec, isFormation);
+    _docs.push(doc);
+    _indexDocTokens(doc);
+    _idfDirty = true;
+
+    console.log(`[SearchEngine] +1 ${isFormation ? 'formation' : 'infra'} indexé: "${doc.fields.name}" (id=${id})`);
+    _notifyChange('add', doc, { source: source || 'unknown' });
+    return doc;
+  }
+
+  /**
+   * Ajouter plusieurs enregistrements en batch (plus performant que N × indexOne).
+   * @param {Array}   records       — Tableau d'objets bruts
+   * @param {boolean} isFormation
+   * @param {string}  [source]
+   * @returns {number} Nombre de documents ajoutés
+   */
+  function indexBatch(records, isFormation, source) {
+    if (!_ready || !records || !records.length) return 0;
+
+    const added = [];
+    for (const rec of records) {
+      const id = _nextDocId++;
+      const doc = _makeDoc(id, rec, isFormation);
+      _docs.push(doc);
+      _indexDocTokens(doc);
+      added.push(doc);
+    }
+
+    // Recalculer IDF une seule fois pour tout le batch
+    _recomputeIDF();
+
+    console.log(`[SearchEngine] +${added.length} ${isFormation ? 'formations' : 'infras'} indexés en batch`);
+    _notifyChange('batch_add', null, { count: added.length, source: source || 'unknown' });
+    return added.length;
+  }
+
+  /**
+   * Mettre à jour un enregistrement existant.
+   * Identifié par le record objet (ref) ou par un matcher fn.
+   * @param {object|function} matcher — Objet rec exact OU fn(doc) => boolean
+   * @param {object}          newRec  — Nouveau contenu complet
+   * @param {boolean}         [isFormation]
+   * @returns {object|null} Le document mis à jour, ou null si non trouvé
+   */
+  function updateOne(matcher, newRec, isFormation) {
+    if (!_ready) return null;
+
+    const matchFn = typeof matcher === 'function' ? matcher : (doc) => doc.rec === matcher;
+    const idx = _docs.findIndex(matchFn);
+    if (idx === -1) {
+      console.warn('[SearchEngine] updateOne: document non trouvé');
+      return null;
+    }
+
+    const oldDoc = _docs[idx];
+    const docId = oldDoc.id;
+
+    // Retirer les anciens tokens
+    _unindexDocTokens(docId);
+
+    // Recréer le doc avec les nouvelles données
+    const updatedDoc = _makeDoc(docId, newRec, isFormation !== undefined ? isFormation : oldDoc.isFormation);
+    _docs[idx] = updatedDoc;
+
+    // Réindexer
+    _indexDocTokens(updatedDoc);
+    _idfDirty = true;
+
+    console.log(`[SearchEngine] ✏️ Mis à jour: "${updatedDoc.fields.name}" (id=${docId})`);
+    _notifyChange('update', updatedDoc, { oldName: oldDoc.fields.name });
+    return updatedDoc;
+  }
+
+  /**
+   * Supprimer un enregistrement de l'index.
+   * @param {object|function} matcher — Objet rec exact OU fn(doc) => boolean
+   * @returns {boolean} true si supprimé
+   */
+  function removeOne(matcher) {
+    if (!_ready) return false;
+
+    const matchFn = typeof matcher === 'function' ? matcher : (doc) => doc.rec === matcher;
+    const idx = _docs.findIndex(matchFn);
+    if (idx === -1) return false;
+
+    const doc = _docs[idx];
+
+    // Retirer les tokens de l'index
+    _unindexDocTokens(doc.id);
+
+    // Retirer le doc du tableau
+    _docs.splice(idx, 1);
+    _idfDirty = true;
+
+    console.log(`[SearchEngine] 🗑 Supprimé: "${doc.fields.name}" (id=${doc.id})`);
+    _notifyChange('remove', doc, {});
+    return true;
+  }
+
+  /**
+   * Trouver un document par son record ou un matcher.
+   * @param {object|function} matcher
+   * @returns {object|null}
+   */
+  function findDoc(matcher) {
+    if (!_ready) return null;
+    const matchFn = typeof matcher === 'function' ? matcher : (doc) => doc.rec === matcher;
+    return _docs.find(matchFn) || null;
+  }
+
+  /**
+   * S'abonner aux changements d'index.
+   * Le callback reçoit { type, doc, meta, timestamp, totalDocs }.
+   * Types: 'add', 'batch_add', 'update', 'remove', 'rebuild'
+   * @param {function} fn
+   * @returns {function} Fonction de désabonnement
+   */
+  function onChange(fn) {
+    _listeners.push(fn);
+    return () => { _listeners = _listeners.filter(l => l !== fn); };
   }
 
   /* ── Détection du type infrastructure (copie de getInfraType) ─ */
@@ -294,8 +519,53 @@ const SearchEngine = (() => {
       proximity: null,      // "près de", "autour de" → geo intent
     };
 
-    // Détection questions
-    const questionWords = ['combien', 'ou est', 'ou se trouve', 'ou sont', 'quel', 'quelle', 'quels', 'quelles', 'est-ce', 'y a-t-il', 'existe', 'trouver', 'cherche', 'je veux', 'montre', 'affiche', 'liste'];
+    // Détection questions — toutes les tournures FR plausibles
+    const questionWords = [
+      // Interrogatifs directs
+      'combien', 'ou est', 'ou se trouve', 'ou sont', 'ou trouver',
+      'quel', 'quelle', 'quels', 'quelles',
+      'est-ce', 'y a-t-il', 'y a t il', 'ya-t-il', 'ya t il',
+      'existe', 'existe-t-il', 'existe t il',
+      // Verbes de recherche
+      'trouver', 'trouve', 'cherche', 'recherche', 'rechercher',
+      // Expressions de volonté / demande
+      'je veux', 'je voudrais', 'j\'aimerais', 'j\'aimerai', 'je souhaite',
+      'je desire', 'je cherche', 'je recherche',
+      // Impératifs / demandes
+      'montre', 'montrez', 'affiche', 'affichez',
+      'liste', 'listez', 'enumere', 'enumerez',
+      'dites', 'dis-moi', 'donne', 'donnez', 'donne-moi', 'donnez-moi',
+      'indique', 'indiquez', 'precise', 'precisez',
+      'presente', 'presentez', 'decris', 'decrivez',
+      'recommande', 'recommandez', 'suggere', 'suggerez', 'propose', 'proposez',
+      // Verbes d'action / découverte
+      'visiter', 'voir', 'decouvrir', 'explorer', 'connaitre',
+      'apprendre', 'etudier', 'pratiquer', 'participer', 'assister',
+      // Questions directes
+      'c\'est quoi', 'qu\'est-ce', 'qu\'est ce',
+      'comment trouver', 'comment voir', 'comment visiter',
+      'peut-on', 'on peut', 'pouvons-nous', 'pourrait-on',
+      // Formulations "il y a" / "ça existe"
+      'il y a', 'ya', 'il existe', 'ca existe', 'on trouve',
+      // Tournures indirectes
+      'quoi comme', 'quoi voir', 'quoi faire', 'quoi visiter',
+      'que faire', 'que voir', 'que visiter', 'que decouvrir',
+      'quelque chose', 'un endroit', 'un lieu', 'un espace', 'un coin',
+      // Conseils / suggestions
+      'conseillez', 'conseil', 'suggestion', 'idee', 'idees',
+      'meilleur', 'meilleures', 'meilleurs', 'top', 'populaire', 'incontournable',
+      'plus beau', 'plus beaux', 'plus belle', 'plus belles',
+      'plus connu', 'plus connus', 'plus important', 'plus importants',
+      // Formation / apprentissage (recherche implicite)
+      'cours', 'formation', 'ecole', 'stage', 'atelier',
+      // Orientés objectif
+      'pour voir', 'pour visiter', 'pour decouvrir', 'pour apprendre',
+      'ou aller', 'ou se rendre', 'envie de', 'besoin de',
+      'a la recherche', 'en quete',
+      // Passif / général
+      'disponible', 'accessible', 'ouvert', 'gratuit',
+      'interessant', 'a ne pas manquer', 'a voir',
+    ];
     for (const qw of questionWords) {
       if (normalized.includes(qw)) {
         intent.isQuestion = true;
@@ -304,11 +574,24 @@ const SearchEngine = (() => {
     }
 
     // Détection quantité
-    if (normalized.includes('combien')) intent.quantity = 'count';
+    if (normalized.includes('combien') || normalized.match(/\bquel\s+nombre\b/) || normalized.match(/\btotal\b/)) {
+      intent.quantity = 'count';
+    }
 
     // Détection proximité
-    const proxMatch = normalized.match(/(?:pres de|autour de|a cote de|proche de|dans|vers)\s+(.+)/);
+    const proxMatch = normalized.match(/(?:pres de|autour de|a cote de|proche de|a proximite de|non loin de|aux alentours de|aux environs de|dans les parages de|dans le coin de|dans le quartier de)\s+(.+)/);
     if (proxMatch) intent.proximity = proxMatch[1].trim();
+
+    // Détection exclusion (sauf X, hors X, pas à X, excepté X)
+    const exclMatch = normalized.match(/(?:sauf|hors|excepte|pas a|ni a|sans)\s+(\w+)/);
+    if (exclMatch) {
+      intent.exclude = exclMatch[1]; // Sera utilisé en post-filtre
+    }
+
+    // Détection tri / préférence
+    if (normalized.match(/\b(plus proche|le plus proche|nearest)\b/)) intent.sortBy = 'distance';
+    if (normalized.match(/\b(plus grand|le plus grand|biggest|important)\b/)) intent.sortBy = 'size';
+    if (normalized.match(/\b(plus recent|le plus recent|nouveau|nouveaux|dernier)\b/)) intent.sortBy = 'recent';
 
     // Résolution des synonymes pour chaque token
     const resolvedCats = new Set();
@@ -413,7 +696,20 @@ const SearchEngine = (() => {
       if (!usedTokens.has(idx) && !['de', 'du', 'des', 'le', 'la', 'les', 'un', 'une',
         'et', 'ou', 'en', 'au', 'aux', 'a', 'dans', 'sur', 'pour', 'par', 'avec',
         'qui', 'que', 'est', 'sont', 'il', 'ya', 'je', 'mon', 'ma', 'mes', 'ce',
-        'cette', 'ces', 'tout', 'tous', 'toute', 'toutes', 'se', 'vers', 'pres', 'autour'].includes(t)) {
+        'cette', 'ces', 'tout', 'tous', 'toute', 'toutes', 'se', 'vers', 'pres', 'autour',
+        'moi', 'nous', 'vous', 'on', 'peut', 'voudrais', 'veux', 'voir', 'c\'est',
+        'quoi', 'qu\'il', 'qu\'est', 'pas', 'plus', 'aussi', 'tres', 'sauf', 'hors',
+        'entre', 'comme', 'chez', 'dites', 'donne', 'petit', 'grand', 'meilleur',
+        'nouveau', 'ancien', 'bon', 'bonne', 'beau', 'belle', 'joli', 'jolie',
+        'comment', 'pourquoi', 'quand', 'existe', 'disponible', 'accessible',
+        'ouvert', 'gratuit', 'interessant', 'incontournable', 'populaire',
+        'top', 'quelque', 'chose', 'endroit', 'lieu', 'coin', 'espace',
+        'aller', 'rendre', 'envie', 'besoin', 'recherche', 'idee', 'conseil',
+        'suggestion', 'propose', 'recommande', 'souhaite', 'desire', 'aimerai',
+        'montrez', 'affichez', 'listez', 'presentez', 'decrivez', 'indiquez',
+        'suggerez', 'precisez', 'enumerez', 'donnez', 'conseillez',
+        'faire', 'manquer', 'apprendre', 'pratiquer', 'participer', 'assister',
+        'pouvons', 'pourrait', 'quete', 'total', 'nombre'].includes(t)) {
         intent.freeTokens.push(t);
       }
     });
@@ -429,6 +725,9 @@ const SearchEngine = (() => {
   /* ── Recherche principale avec scoring ─────────────────────── */
   function search(raw, options = {}) {
     if (!_ready || !raw || !raw.trim()) return { results: [], intent: null, message: '' };
+
+    // S'assurer que l'IDF est à jour (après ajout/suppression temps réel)
+    if (_idfDirty) _recomputeIDF();
 
     const intent = parseIntent(raw);
     const queryTokens = tokenize(raw);
@@ -455,6 +754,36 @@ const SearchEngine = (() => {
             }
           }
         }
+      }
+    }
+
+    // 1b. Score de base pour les docs correspondant à l'intent (même sans TF-IDF)
+    //     Ceci permet aux synonymes Wolof/culturels de retourner des résultats
+    //     même si le mot exact n'est pas dans les textes des docs.
+    if (intent.types.length || intent.wantFormations || intent.regions.length || intent.milieu) {
+      for (let i = 0; i < _docs.length; i++) {
+        const doc = _docs[i];
+        let intentScore = 0;
+        // Formations match
+        if (intent.wantFormations && doc.isFormation) {
+          intentScore += 1;
+          if (intent.branches.length) {
+            if (intent.branches.some(b => doc._typeNorm.includes(normalize(b)))) intentScore += 3;
+          }
+        }
+        // Type match
+        if (intent.types.length && !doc.isFormation) {
+          if (intent.types.some(t => normalize(t) === doc._typeNorm)) intentScore += 1;
+        }
+        // Region match
+        if (intent.regions.length && intent.regions.includes(doc.fields.region.toUpperCase())) {
+          intentScore += 1;
+        }
+        // Milieu match
+        if (intent.milieu && doc._milieuNorm === normalize(intent.milieu)) {
+          intentScore += 0.5;
+        }
+        if (intentScore > 0) scores[i] += intentScore;
       }
     }
 
@@ -732,6 +1061,13 @@ const SearchEngine = (() => {
     searchNear,
     parseIntent,
     getStats,
+    // Indexation temps réel
+    indexOne,
+    indexBatch,
+    updateOne,
+    removeOne,
+    findDoc,
+    onChange,
     get ready() { return _ready; },
     get docs() { return _docs; },
   };
