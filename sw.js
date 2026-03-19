@@ -3,7 +3,7 @@
 // Version du cache et stratégies de mise en cache
 // ============================================================
 
-const CACHE_NAME = 'culte-v4';
+const CACHE_NAME = 'culte-v5';
 
 // Ressources de l'app shell à pré-cacher lors de l'installation
 const APP_SHELL = [
@@ -32,7 +32,8 @@ const APP_SHELL = [
   '/css/events.css',
   '/css/chatbot.css',
   '/css/tours.css',
-  '/css/stats.css'
+  '/css/stats.css',
+  '/css/desktop.css'
 ];
 
 // Données JSON à pré-cacher

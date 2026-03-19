@@ -1,0 +1,729 @@
+/* ═══════════════════════════════════════════════════════════════
+   DESKTOP OVERHAUL — Refonte ergonomie et affichage desktop
+   Breakpoints: 1024px (desktop), 1440px (large), 1920px (XL)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   1. APP GRID LAYOUT — Sidebar plus large, meilleure topbar
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+
+  /* ── Grid principal : sidebar 260px ── */
+  #app {
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: 60px 1fr;
+  }
+
+  /* ── Topbar ── */
+  .status-bar {
+    height: 60px;
+    padding: 0 28px;
+    gap: 24px;
+    background: linear-gradient(90deg, #071a2e 0%, #0a2540 100%);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .dt-brand { gap: 12px; }
+  .dt-brand-name { font-size: 20px; letter-spacing: -.6px; }
+  .dt-brand-sub { font-size: 11px; opacity: .45; letter-spacing: .5px; }
+
+  /* ── Barre de recherche desktop plus large ── */
+  .dt-search-wrap {
+    max-width: 600px;
+    padding: 10px 20px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+    transition: all .25s;
+  }
+  .dt-search-wrap:focus-within {
+    background: rgba(255,255,255,.14);
+    border-color: rgba(72,202,228,.4);
+    box-shadow: 0 0 0 3px rgba(72,202,228,.1);
+  }
+  #dtSearch { font-size: 15px; }
+  #dtSearch::placeholder { color: rgba(255,255,255,.4); }
+
+  /* ── Liens admin topbar ── */
+  .dt-admin-link {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,.7);
+    text-decoration: none;
+    transition: all .2s;
+  }
+  .dt-admin-link:hover {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+  }
+
+  /* ── Count badge ── */
+  .dt-count-badge {
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    background: rgba(72,202,228,.12);
+    color: rgba(72,202,228,.9);
+    font-weight: 600;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     2. SIDEBAR — Navigation enrichie
+     ══════════════════════════════════════════════════════════ */
+  .bottom-nav {
+    width: 260px;
+    padding: 16px 14px;
+    gap: 2px;
+    background: linear-gradient(180deg, #071a2e 0%, #0a1e35 100%);
+    border-right: 1px solid rgba(255,255,255,.05);
+  }
+
+  .nav-btn {
+    padding: 11px 14px;
+    border-radius: 10px;
+    gap: 12px;
+    color: rgba(255,255,255,.5);
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .nav-btn::before {
+    content: '';
+    position: absolute; left: 0; top: 50%;
+    width: 3px; height: 0;
+    background: var(--teal);
+    border-radius: 0 3px 3px 0;
+    transform: translateY(-50%);
+    transition: height .25s;
+  }
+  .nav-btn:hover {
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.8);
+  }
+  .nav-btn.active {
+    background: rgba(0,180,216,.08);
+    color: #48cae4;
+  }
+  .nav-btn.active::before {
+    height: 24px;
+  }
+  .nav-btn span {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: .1px;
+  }
+
+  /* ── Sidebar footer ── */
+  .bottom-nav::after {
+    content: 'Scenews v2.0 · Sénégal 🇸🇳';
+    padding: 14px;
+    font-size: 11px;
+    color: rgba(255,255,255,.2);
+    border-top: 1px solid rgba(255,255,255,.05);
+    margin-top: auto;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     3. HOME TAB — Layout en grille desktop
+     ══════════════════════════════════════════════════════════ */
+
+  /* Header home : pleine largeur, plus d'air */
+  .home-header {
+    padding: 24px 32px 22px;
+    border-radius: 0;
+    background: linear-gradient(135deg, #071a2e 0%, #0d3a5c 50%, #0a4f7a 100%);
+  }
+  .home-header-top { display: none; } /* Masquer la marque redondante sur desktop */
+  .home-search-wrap { display: none; } /* Recherche dans la topbar sur desktop */
+  .sdlg-trigger { display: none; } /* Recherche multicritères aussi dans topbar */
+
+  /* Zone de scroll home */
+  .home-scroll {
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 28px;
+    align-content: start;
+  }
+
+  /* Section headers prennent toute la largeur */
+  .home-scroll > .section-header {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+  .section-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+  }
+  .see-all {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ocean-4);
+    transition: color .2s;
+  }
+  .see-all:hover { color: var(--teal); }
+
+  /* Catégories : grille wrap au lieu de scroll horizontal */
+  .categories-row {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .cat-item { min-width: auto; }
+  .cat-icon {
+    width: 64px; height: 64px;
+    font-size: 26px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .cat-item:hover .cat-icon {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  }
+  .cat-label { font-size: 12px; }
+
+  /* Carte du Sénégal CTA : pleine largeur */
+  .map-cta-card {
+    grid-column: 1 / -1;
+    padding: 24px 32px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .map-cta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.15);
+  }
+  .map-cta-title { font-size: 20px; }
+
+  /* Carousel : colonne gauche */
+  .carousel-wrap {
+    grid-column: 1;
+    max-width: none;
+    border-radius: 18px;
+  }
+  .featured-card { height: 240px; }
+  .fc-name { font-size: 20px; }
+  .fc-loc { font-size: 13px; }
+
+  /* Régions : colonne droite */
+  .regions-row {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .region-card {
+    min-width: auto;
+    height: 100px;
+    border-radius: 14px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .region-card:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  }
+  .rc-name { font-size: 14px; }
+  .rc-count { font-size: 11px; }
+
+  /* Mini cards : pleine largeur, 4 colonnes */
+  .mini-cards-grid {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .mini-card {
+    padding: 16px;
+    border-radius: 14px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .mini-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  }
+  .mini-card-icon { width: 48px; height: 48px; font-size: 22px; }
+  .mini-card-name { font-size: 13px; }
+
+  /* Stats strip : pleine largeur */
+  .stats-strip {
+    grid-column: 1 / -1;
+    max-width: none;
+    padding: 22px 32px;
+    border-radius: 18px;
+  }
+  .stat-num { font-size: 26px; }
+  .stat-lbl { font-size: 12px; }
+
+  /* ══════════════════════════════════════════════════════════
+     4. EXPLORE TAB — Panneau latéral + carte
+     ══════════════════════════════════════════════════════════ */
+  #tab-explore .explore-panel {
+    width: 310px;
+  }
+  .explore-title { font-size: 18px; }
+  .explore-search-wrap {
+    border-radius: 12px;
+    padding: 10px 16px;
+  }
+  .explore-search-wrap:focus-within {
+    border-color: rgba(72,202,228,.4);
+    background: rgba(255,255,255,.2);
+  }
+  .map-chip {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 10px;
+    transition: all .2s;
+  }
+  .map-chip:hover:not(.active) {
+    background: rgba(255,255,255,.18);
+    color: #fff;
+  }
+
+  /* Filtres desktop explore */
+  .ep-label { font-size: 11px; letter-spacing: .8px; margin-bottom: 6px; }
+  .ep-select {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    transition: border-color .2s;
+  }
+  .ep-select:focus {
+    border-color: rgba(72,202,228,.5);
+    outline: none;
+  }
+  .ep-milieu {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    transition: all .2s;
+  }
+  .ep-milieu:hover:not(.active) {
+    background: rgba(255,255,255,.15);
+    color: rgba(255,255,255,.9);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     5. LIST TAB — Grille de cards
+     ══════════════════════════════════════════════════════════ */
+
+  /* Filtres sidebar list */
+  #tab-list .list-desktop-filters {
+    width: 260px;
+    border-right: 1px solid rgba(0,0,0,.06);
+  }
+  .ldf-inner { padding: 20px; }
+
+  /* Cards en grille 2 colonnes */
+  #tab-list .list-cards {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    align-content: start;
+  }
+
+  /* Cards desktop : hover élaboré */
+  .list-card {
+    border-radius: 14px;
+    padding: 14px 16px;
+    transition: transform .2s, box-shadow .25s, border-color .25s;
+    border: 1px solid transparent;
+  }
+  .list-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(10,61,107,.12);
+    border-color: rgba(18,130,212,.15);
+  }
+  .lc-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    font-size: 24px;
+  }
+  .lc-name { font-size: 14.5px; }
+  .lc-fav-btn {
+    font-size: 20px;
+    transition: color .2s, transform .25s;
+  }
+  .lc-fav-btn:hover { color: #e84393; transform: scale(1.2); }
+
+  /* Pagination */
+  .pagination { padding: 12px 24px; }
+  .pg-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    transition: all .2s;
+  }
+  .pg-btn:hover:not(.active) {
+    background: rgba(18,130,212,.1);
+    color: var(--ocean-3);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     6. MODAL — Centrée, plus grande, 2 colonnes
+     ══════════════════════════════════════════════════════════ */
+  .modal { padding: 32px; }
+  .modal-sheet {
+    max-width: 680px;
+    max-height: 85vh;
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.25);
+  }
+  .modal-hero {
+    height: 240px;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-close {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    transition: all .2s;
+  }
+  .modal-close:hover {
+    background: rgba(0,0,0,.6);
+    transform: scale(1.05);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     7. FAVORIS TAB
+     ══════════════════════════════════════════════════════════ */
+  .favs-header {
+    padding: 22px 28px;
+    border-radius: 0;
+  }
+  .favs-content {
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    align-content: start;
+  }
+  .favs-content .list-card { margin: 0; }
+  .empty-state { grid-column: 1 / -1; }
+
+  /* ══════════════════════════════════════════════════════════
+     8. FABs — Repositionnement intelligent
+     ══════════════════════════════════════════════════════════ */
+  .tours-fab {
+    bottom: 180px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.4rem;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .tours-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(45,106,79,.4);
+  }
+
+  .stats-fab {
+    bottom: 120px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.4rem;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .stats-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(224,122,95,.4);
+  }
+
+  .vc-toggle {
+    bottom: 60px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.4rem;
+  }
+  .vc-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(0,120,200,.4);
+  }
+  .vc-speaking-indicator {
+    bottom: 116px;
+    right: 24px;
+  }
+
+  .locate-fab {
+    bottom: 24px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .locate-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(18,130,212,.3);
+  }
+
+  /* ── Theme toggle : dans la topbar zone ── */
+  .theme-toggle {
+    top: 12px;
+    right: auto;
+    left: calc(260px + 16px);
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    z-index: 200;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     9. OVERLAYS — Stats, Tours, Chatbot centrés
+     ══════════════════════════════════════════════════════════ */
+  .stats-overlay,
+  .tours-overlay {
+    align-items: center;
+    justify-content: center;
+  }
+  .stats-overlay > *:not(.stats-overlay),
+  .tours-overlay > *:not(.tours-overlay) {
+    max-width: 900px;
+    width: 100%;
+  }
+  .stats-header,
+  .tours-header {
+    border-radius: 18px 18px 0 0;
+    padding: 18px 24px;
+  }
+  .stats-content {
+    max-height: 70vh;
+    border-radius: 0 0 18px 18px;
+  }
+  .tours-grid {
+    max-height: 70vh;
+    border-radius: 0 0 18px 18px;
+  }
+  .stats-tabs { padding: 12px 20px; gap: 8px; }
+  .stats-tab {
+    padding: 8px 20px;
+    font-size: .9rem;
+    border-radius: 12px;
+    transition: all .2s;
+  }
+  .stats-tab:hover:not(.active) { background: #d0d0d0; }
+
+  /* Chatbot panel on desktop */
+  .chatbot-panel {
+    width: 400px;
+    max-width: 400px;
+    right: 24px;
+    bottom: 80px;
+    border-radius: 18px;
+    box-shadow: 0 12px 48px rgba(0,0,0,.2);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     10. SEARCH DIALOG — Centre, plus grande
+     ══════════════════════════════════════════════════════════ */
+  .sdlg-overlay { align-items: center; }
+  .sdlg-container {
+    border-radius: 20px;
+    max-width: 560px;
+    max-height: 75vh;
+    animation: sdlgScaleIn .3s ease;
+  }
+  .sdlg-overlay.active .sdlg-container {
+    transform: none;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     11. VOICE PANEL — Centré
+     ══════════════════════════════════════════════════════════ */
+  .voice-overlay { align-items: center; }
+  .voice-panel {
+    border-radius: 20px;
+    max-width: 480px;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     12. SCROLLBARS CUSTOM
+     ══════════════════════════════════════════════════════════ */
+  .home-scroll::-webkit-scrollbar,
+  .list-cards::-webkit-scrollbar,
+  .favs-content::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+  .home-scroll::-webkit-scrollbar-track,
+  .list-cards::-webkit-scrollbar-track,
+  .favs-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .home-scroll::-webkit-scrollbar-thumb,
+  .list-cards::-webkit-scrollbar-thumb,
+  .favs-content::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,.12);
+    border-radius: 3px;
+  }
+  .home-scroll::-webkit-scrollbar-thumb:hover,
+  .list-cards::-webkit-scrollbar-thumb:hover,
+  .favs-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,.2);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     13. TRANSITIONS GLOBALES HOVER
+     ══════════════════════════════════════════════════════════ */
+  button, a, .list-card, .mini-card, .region-card, .cat-item,
+  .map-chip, .tour-card, .stats-tab, .pg-btn {
+    cursor: pointer;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LARGE DESKTOP (1440px+) — Plus de colonnes, plus d'espace
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1440px) {
+
+  /* Sidebar plus large */
+  #app {
+    grid-template-columns: 280px 1fr;
+  }
+  .bottom-nav { width: 280px; }
+
+  /* Home scroll en 3 colonnes */
+  .home-scroll {
+    padding: 32px 40px;
+    gap: 28px 32px;
+  }
+
+  /* Carousel prend 2 colonnes, régions 1 */
+  .carousel-wrap { grid-column: 1 / 3; }
+  .featured-card { height: 260px; }
+  .fc-name { font-size: 22px; }
+
+  .regions-row {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Mini cards en 5 colonnes */
+  .mini-cards-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* List cards en 3 colonnes */
+  #tab-list .list-cards {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 24px 32px;
+  }
+
+  /* Favs en 3 colonnes */
+  .favs-content {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 28px 32px;
+  }
+
+  /* Explore sidebar un peu plus large */
+  #tab-explore .explore-panel { width: 340px; }
+
+  /* Theme toggle déplacé */
+  .theme-toggle { left: calc(280px + 20px); }
+
+  /* Topbar search plus large */
+  .dt-search-wrap { max-width: 700px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   XL DESKTOP (1920px+) — Optimisé pour écran 1080p+
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1920px) {
+
+  #app {
+    grid-template-columns: 300px 1fr;
+  }
+  .bottom-nav { width: 300px; }
+  .theme-toggle { left: calc(300px + 24px); }
+
+  .home-scroll {
+    padding: 36px 48px;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .carousel-wrap { grid-column: 1 / 3; }
+  .regions-row { grid-column: 3; grid-template-columns: 1fr; }
+
+  .mini-cards-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  #tab-list .list-cards {
+    grid-template-columns: repeat(4, 1fr);
+    padding: 28px 40px;
+  }
+
+  .favs-content {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  #tab-explore .explore-panel { width: 380px; }
+  .dt-search-wrap { max-width: 800px; }
+
+  .nav-btn { padding: 12px 18px; }
+  .nav-btn span { font-size: 14px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE DESKTOP OVERRIDES
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  [data-theme="dark"] .status-bar {
+    background: linear-gradient(90deg, #010409 0%, #0d1117 100%);
+  }
+  [data-theme="dark"] .bottom-nav {
+    background: linear-gradient(180deg, #010409 0%, #0d1117 100%);
+    border-right-color: rgba(255,255,255,.04);
+  }
+  [data-theme="dark"] .dt-search-wrap {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.08);
+  }
+  [data-theme="dark"] .dt-search-wrap:focus-within {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(72,202,228,.3);
+  }
+  [data-theme="dark"] .home-header {
+    background: linear-gradient(135deg, #010409 0%, #0d1117 50%, #0e293d 100%);
+  }
+  [data-theme="dark"] .home-scroll {
+    background: #0d1117;
+  }
+  [data-theme="dark"] .list-card:hover {
+    border-color: rgba(72,202,228,.15);
+    box-shadow: 0 8px 28px rgba(0,0,0,.3);
+  }
+  [data-theme="dark"] .mini-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  [data-theme="dark"] .region-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+
+  [data-theme="dark"] .home-scroll::-webkit-scrollbar-thumb,
+  [data-theme="dark"] .list-cards::-webkit-scrollbar-thumb,
+  [data-theme="dark"] .favs-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.1);
+  }
+  [data-theme="dark"] .home-scroll::-webkit-scrollbar-thumb:hover,
+  [data-theme="dark"] .list-cards::-webkit-scrollbar-thumb:hover,
+  [data-theme="dark"] .favs-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,.18);
+  }
+
+  [data-theme="dark"] #tab-list .list-desktop-filters {
+    background: #0d1117;
+    border-right-color: rgba(255,255,255,.05);
+  }
+
+  [data-theme="dark"] .stats-tab:hover:not(.active) {
+    background: #2a2a3d;
+  }
+}
