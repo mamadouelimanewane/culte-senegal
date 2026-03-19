@@ -1244,6 +1244,14 @@ function _renderNlpMapResults(recs, intent, raw, result, withGeo) {
   }
   NLP.showBot(botMsg);
 
+  // ── Analytics tracking ──
+  if (typeof Analytics !== 'undefined' && Analytics.trackSearch) {
+    Analytics.trackSearch(raw, result.results.length);
+  }
+  if (typeof Recommendations !== 'undefined' && Recommendations.trackSearch) {
+    Recommendations.trackSearch(raw);
+  }
+
   // ── Voice Conversation : lire la réponse à voix haute ──
   if (typeof VoiceConversation !== 'undefined' && VoiceConversation.isEnabled) {
     VoiceConversation.speakResponse(botMsg, result.results.length);
@@ -1577,13 +1585,13 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
     r.BRANCHE ? { icon: '🎓', label: 'Branche', value: r.BRANCHE } : null,
   ].filter(Boolean);
 
+  const itemId = name.replace(/\s+/g, '_').toLowerCase().substring(0, 40);
+  const socialButtons = typeof Social !== 'undefined' ? Social.renderShareButtons(name, typeKey, region, commune) : '';
+  const starsHtml = typeof Social !== 'undefined' ? Social.renderStars(itemId) : '';
+  const reviewFormHtml = typeof Social !== 'undefined' ? Social.renderReviewForm(itemId) : '';
+  const reviewsListHtml = typeof Social !== 'undefined' ? Social.renderReviewsList(itemId, 3) : '';
+
   document.getElementById('modalBody').innerHTML = `
-    <div class="modal-share-row">
-      <button class="modal-share-btn" onclick="sharePlace('${name.replace(/'/g,"&#39;")}','${(commune+', '+region).replace(/'/g,"&#39;")}')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Partager
-      </button>
-    </div>
     ${rows.map(row => `
       <div class="modal-info-row">
         <span class="modal-info-icon">${row.icon}</span>
@@ -1595,8 +1603,16 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
       ${hasCoords ? `<button class="modal-btn modal-btn-secondary" onclick="showOnMap(${lat},${lon})">🗺 Sur la carte</button>` : ''}
       ${!isFormation && r._id !== undefined ? `<a class="modal-btn modal-btn-site" href="site/?id=${r._id}" target="_blank">🌐 Voir la page</a>` : ''}
     </div>
-    <div style="height:8px"></div>
+    ${starsHtml}
+    ${socialButtons}
+    ${reviewFormHtml}
+    ${reviewsListHtml}
+    <div style="height:12px"></div>
   `;
+
+  // Tracker la vue pour recommandations / analytics
+  if (typeof Analytics !== 'undefined' && Analytics.trackView) Analytics.trackView(itemId, typeKey, region);
+  if (typeof Recommendations !== 'undefined' && Recommendations.trackView) Recommendations.trackView(r);
 
   const modal = document.getElementById('modal');
   modal.classList.remove('hidden');
@@ -2094,6 +2110,21 @@ async function init() {
 
   // Dark mode
   initDarkMode();
+
+  // Chatbot IA
+  if (typeof Chatbot !== 'undefined') Chatbot.init();
+
+  // Partage social + Avis
+  if (typeof Social !== 'undefined') Social.init();
+
+  // Recommandations
+  if (typeof Recommendations !== 'undefined') Recommendations.init?.();
+
+  // Analytics
+  if (typeof Analytics !== 'undefined') Analytics.init?.();
+
+  // MultiLang (Pulaar, Serer, Diola)
+  if (typeof MultiLang !== 'undefined') MultiLang.init?.();
 
   // Desktop filters setup
   setupDesktopFilters();
