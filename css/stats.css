@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════
+   STATS DASHBOARD — Tableau de bord statistiques visuelles
+   Palette sénégalaise : terracotta, sable, teal, indigo, vert
+   ═══════════════════════════════════════════════════════════════ */
+
+.stats-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  display: flex; flex-direction: column;
+  opacity: 0; transition: opacity .3s;
+}
+.stats-overlay.active { opacity: 1; }
+
+.stats-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #3D405B, #E07A5F);
+  color: #fff;
+}
+.stats-header h2 { flex: 1; margin: 0; font-size: 1.2rem; }
+.stats-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+
+/* Onglets pilule */
+.stats-tabs {
+  display: flex; gap: 6px; padding: 10px 16px;
+  background: #f5f5f5; overflow-x: auto;
+}
+.stats-tab {
+  padding: 7px 16px; border-radius: 20px; border: none;
+  background: #e0e0e0; color: #555; font-size: .85rem;
+  cursor: pointer; white-space: nowrap; transition: all .2s;
+}
+.stats-tab.active {
+  background: #3D405B; color: #fff;
+}
+
+/* Contenu */
+.stats-content {
+  flex: 1; overflow-y: auto; padding: 16px;
+  background: #fafafa;
+}
+
+/* KPI cards */
+.stats-kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.stats-kpi {
+  padding: 16px; border-radius: 14px; text-align: center;
+  color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+.stats-kpi:nth-child(1) { background: linear-gradient(135deg, #E07A5F, #F2CC8F); }
+.stats-kpi:nth-child(2) { background: linear-gradient(135deg, #3D9970, #81B29A); }
+.stats-kpi:nth-child(3) { background: linear-gradient(135deg, #3D405B, #6C6F8B); }
+.stats-kpi:nth-child(4) { background: linear-gradient(135deg, #F2CC8F, #E07A5F); }
+.stats-kpi-value { font-size: 2rem; font-weight: 800; }
+.stats-kpi-label { font-size: .75rem; opacity: .9; margin-top: 4px; }
+
+/* Conteneurs graphiques */
+.stats-chart-box {
+  background: #fff; border-radius: 14px; padding: 16px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.stats-chart-box h3 {
+  margin: 0 0 12px; font-size: .95rem; color: #3D405B;
+}
+.stats-chart-box canvas {
+  width: 100% !important; height: auto;
+}
+
+/* Bouton export CSV */
+.stats-export-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: #81B29A; color: #fff; font-size: .85rem;
+  cursor: pointer; margin-top: 8px;
+}
+
+/* Détail région */
+.stats-region-selector {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd;
+  font-size: .9rem; margin-bottom: 12px; width: 100%;
+}
+
+/* Heatmap légende */
+.stats-heatmap-legend {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 8px; font-size: .75rem; color: #888;
+}
+.stats-heatmap-legend span {
+  width: 20px; height: 12px; border-radius: 3px; display: inline-block;
+}
+
+/* FAB statistiques */
+.stats-fab {
+  position: fixed; bottom: 160px; right: 18px; z-index: 1050;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, #3D405B, #E07A5F);
+  color: #fff; border: none; font-size: 1.3rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .stats-tabs { background: #1e1e2e; }
+[data-theme="dark"] .stats-tab { background: #2a2a3d; color: #aaa; }
+[data-theme="dark"] .stats-tab.active { background: #E07A5F; color: #fff; }
+[data-theme="dark"] .stats-content { background: #161625; }
+[data-theme="dark"] .stats-chart-box { background: #1e1e2e; }
+[data-theme="dark"] .stats-chart-box h3 { color: #F2CC8F; }
+[data-theme="dark"] .stats-region-selector { background: #2a2a3d; color: #eee; border-color: #444; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .stats-kpis { grid-template-columns: repeat(2, 1fr); }
+  .stats-kpi-value { font-size: 1.5rem; }
+}
+
+/* ── Print ── */
+@media print {
+  .stats-overlay { position: static; background: #fff; }
+  .stats-header { background: #333; }
+  .stats-fab, .stats-close { display: none; }
+  .stats-chart-box { box-shadow: none; break-inside: avoid; }
+}

@@ -705,6 +705,7 @@ const EventsCalendar = (() => {
               ${evt.latitude ? `<button class="eda-btn eda-map" data-lat="${evt.latitude}" data-lon="${evt.longitude}">🗺 Voir sur la carte</button>` : ''}
               <button class="eda-btn eda-search" data-query="${_esc(evt.categorie + ' ' + evt.commune)}">🔍 Lieux à proximité</button>
             </div>
+            ${typeof CalendarExport !== 'undefined' ? CalendarExport.renderExportButtons(evt) : ''}
           </div>
         </div>
       </div>

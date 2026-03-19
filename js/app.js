@@ -2126,6 +2126,15 @@ async function init() {
   // MultiLang (Pulaar, Serer, Diola)
   if (typeof MultiLang !== 'undefined') MultiLang.init?.();
 
+  // Visites guidées
+  if (typeof GuidedTours !== 'undefined') GuidedTours.init?.();
+
+  // Statistiques visuelles
+  if (typeof StatsDashboard !== 'undefined') StatsDashboard.init?.();
+
+  // Export calendrier & rappels
+  if (typeof CalendarExport !== 'undefined') CalendarExport.init?.();
+
   // Desktop filters setup
   setupDesktopFilters();
 
