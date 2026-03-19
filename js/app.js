@@ -1148,39 +1148,113 @@ function runNlpSearch(raw) {
 
   // Utiliser le SearchEngine IA
   if (typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
-    const result = SearchEngine.search(raw, { limit: 200 });
-    const intent = result.intent;
+
+    // ── Mémoire conversationnelle : résoudre le contexte ──
+    let resolvedRaw = raw;
+    let resolvedIntent = null;
+    if (typeof ConversationMemory !== 'undefined' && ConversationMemory.isContextual(raw)) {
+      const baseIntent = SearchEngine.parseIntent(raw);
+      resolvedIntent = ConversationMemory.resolveContext(raw, baseIntent);
+      // Reconstruire la requête enrichie
+      const parts = [];
+      if (resolvedIntent.types && resolvedIntent.types.length) parts.push(resolvedIntent.types.join(' '));
+      if (resolvedIntent.wantFormations) parts.push('formation');
+      if (resolvedIntent.branches && resolvedIntent.branches.length) parts.push(resolvedIntent.branches.join(' '));
+      if (resolvedIntent.regions && resolvedIntent.regions.length) parts.push('à ' + resolvedIntent.regions[0]);
+      if (resolvedIntent.milieu) parts.push(resolvedIntent.milieu);
+      if (resolvedIntent.freeTokens && resolvedIntent.freeTokens.length) parts.push(resolvedIntent.freeTokens.join(' '));
+      if (parts.length) resolvedRaw = parts.join(' ');
+    }
+
+    const result = SearchEngine.search(resolvedRaw, { limit: 200 });
+    const intent = resolvedIntent || result.intent;
+
+    // ── Sauvegarder dans la mémoire conversationnelle ──
+    if (typeof ConversationMemory !== 'undefined') {
+      ConversationMemory.push(raw, intent, result.results);
+    }
+
+    // ── Géolocalisation : enrichir avec distances si disponible ──
+    let geoResults = result.results;
+    const isProximity = typeof GeoSearch !== 'undefined' && GeoSearch.isProximityQuery(raw);
+    if (isProximity && typeof GeoSearch !== 'undefined') {
+      GeoSearch.getPosition().then(pos => {
+        if (pos) {
+          geoResults = GeoSearch.enrichWithDistance(result.results.map(r => r.doc.rec), pos);
+          geoResults = GeoSearch.sortByDistance(geoResults, pos);
+          // Re-render avec distances
+          _renderNlpMapResults(geoResults.map(r => r), intent, raw, result, true);
+        }
+      }).catch(() => {});
+    }
 
     // Trouver les markers correspondants aux résultats
-    const matchedRecs = new Set(result.results.map(r => r.doc.rec));
-    const matches = state.mapMarkers.filter(({ rec }) => matchedRecs.has(rec));
-
-    MAP.clearMarkers();
-    MAP.addMarkers(matches.map(m => m.marker));
-
-    // Chips avec le nouvel intent
-    const chipIntent = {
-      types: intent.types || [],
-      regions: intent.regions || [],
-      milieu: intent.milieu || '',
-    };
-    if (intent.wantFormations) chipIntent.types.push('Formations');
-    NLP.showChips(chipIntent);
-
-    // Bot message IA
-    NLP.showBot(result.message);
-
-    // Auto zoom
-    if (matches.length) {
-      const pts = matches
-        .map(m => [parseFloat(m.rec.LATITUDE), parseFloat(m.rec.LONGITUDE)])
-        .filter(([la, lo]) => !isNaN(la) && !isNaN(lo) && (la || lo));
-      if (pts.length) MAP.fitBounds(pts);
-    }
+    _renderNlpMapResults(result.results.map(r => r.doc.rec), intent, raw, result, false);
 
     NLP.saveHistory(raw);
     return;
   }
+
+  // Fallback: ancien système (inchangé)
+  _runNlpSearchFallback(raw);
+}
+
+/* ── Rendu des résultats NLP sur la carte ── */
+function _renderNlpMapResults(recs, intent, raw, result, withGeo) {
+  const matchedSet = new Set(recs);
+  const matches = state.mapMarkers.filter(({ rec }) => matchedSet.has(rec));
+
+  MAP.clearMarkers();
+  MAP.addMarkers(matches.map(m => m.marker));
+
+  // Chips avec le nouvel intent
+  const chipIntent = {
+    types: (intent.types || []).slice(),
+    regions: intent.regions || [],
+    milieu: intent.milieu || '',
+  };
+  if (intent.wantFormations) chipIntent.types.push('Formations');
+  NLP.showChips(chipIntent);
+
+  // ── Réponse NLG intelligente ──
+  let botMsg = result.message;
+  if (typeof NLGResponse !== 'undefined') {
+    botMsg = NLGResponse.generate({
+      query: raw,
+      intent: intent,
+      results: result.results,
+      count: result.results.length,
+      isContextual: typeof ConversationMemory !== 'undefined' && ConversationMemory.isContextual(raw),
+      isProximity: withGeo,
+    });
+  }
+  NLP.showBot(botMsg);
+
+  // ── Voice Conversation : lire la réponse à voix haute ──
+  if (typeof VoiceConversation !== 'undefined' && VoiceConversation.isEnabled) {
+    VoiceConversation.speakResponse(botMsg, result.results.length);
+    // Poser une question de suivi si pertinent
+    setTimeout(() => {
+      if (VoiceConversation.isEnabled && !VoiceConversation.isSpeaking) {
+        VoiceConversation.speakFollowUp({
+          count: result.results.length,
+          hasGeo: typeof GeoSearch !== 'undefined' && GeoSearch.isAvailable,
+          hasFormations: intent.wantFormations,
+        });
+      }
+    }, 3000);
+  }
+
+  // Auto zoom
+  if (matches.length) {
+    const pts = matches
+      .map(m => [parseFloat(m.rec.LATITUDE), parseFloat(m.rec.LONGITUDE)])
+      .filter(([la, lo]) => !isNaN(la) && !isNaN(lo) && (la || lo));
+    if (pts.length) MAP.fitBounds(pts);
+  }
+}
+
+function _runNlpSearchFallback(raw) {
 
   // Fallback: ancien système
   const intent = parseQuery(raw);
@@ -1967,18 +2041,41 @@ async function init() {
   // Home search
   setupHomeSearch();
 
-  // Locate FAB
+  // Locate FAB — enrichi avec GeoSearch
   document.getElementById('locateFab').addEventListener('click', () => {
     const fab = document.getElementById('locateFab');
     fab.classList.add('locating');
-    navigator.geolocation?.getCurrentPosition(
-      pos => {
-        fab.classList.remove('locating');
-        MAP.setView(pos.coords.latitude, pos.coords.longitude, 13);
-        MAP.addUserMarker(pos.coords.latitude, pos.coords.longitude);
-      },
-      () => { fab.classList.remove('locating'); }
-    );
+
+    const onPos = (pos) => {
+      fab.classList.remove('locating');
+      MAP.setView(pos.coords ? pos.coords.latitude : pos.latitude,
+                   pos.coords ? pos.coords.longitude : pos.longitude, 13);
+      MAP.addUserMarker(pos.coords ? pos.coords.latitude : pos.latitude,
+                        pos.coords ? pos.coords.longitude : pos.longitude);
+
+      // Recherche de proximité automatique
+      if (typeof GeoSearch !== 'undefined' && typeof SearchEngine !== 'undefined' && SearchEngine.ready) {
+        const userPos = { latitude: pos.coords ? pos.coords.latitude : pos.latitude,
+                          longitude: pos.coords ? pos.coords.longitude : pos.longitude };
+        const allDocs = SearchEngine.docs.map(d => d.rec);
+        const nearby = GeoSearch.filterByRadius(allDocs, userPos, 5);
+        if (nearby.length) {
+          NLP.showBot(`📍 ${nearby.length} lieu${nearby.length > 1 ? 'x' : ''} culturel${nearby.length > 1 ? 's' : ''} dans un rayon de 5 km`);
+          if (typeof VoiceConversation !== 'undefined' && VoiceConversation.isEnabled) {
+            VoiceConversation.speakResponse(`J'ai trouvé ${nearby.length} lieux culturels à moins de 5 kilomètres de vous.`, nearby.length);
+          }
+        }
+      }
+    };
+
+    if (typeof GeoSearch !== 'undefined') {
+      GeoSearch.getPosition().then(pos => {
+        if (pos) onPos({ coords: pos });
+        else fab.classList.remove('locating');
+      }).catch(() => fab.classList.remove('locating'));
+    } else {
+      navigator.geolocation?.getCurrentPosition(onPos, () => fab.classList.remove('locating'));
+    }
   });
 
   // Desktop filters setup
@@ -2029,6 +2126,50 @@ async function init() {
    NLP SEARCH INIT — voix IA multilingue, suggestions, historique
    ════════════════════════════════════════════════════════════════ */
 function initNlpSearch() {
+  // ── Initialiser les modules révolutionnaires ──
+
+  // 1. Voice Conversation (TTS)
+  if (typeof VoiceConversation !== 'undefined') {
+    VoiceConversation.init();
+    // Accueil vocal
+    setTimeout(() => {
+      if (VoiceConversation.isEnabled) {
+        VoiceConversation.speakGreeting();
+      }
+    }, 2000);
+  }
+
+  // 2. AutoSuggest — attacher aux champs de recherche
+  if (typeof AutoSuggest !== 'undefined') {
+    const _onSuggestSelect = (suggestion) => {
+      const query = suggestion.query || suggestion.label;
+      if (state.activeTab === 'explore') {
+        const ms = document.getElementById('mapSearch');
+        if (ms) { ms.value = query; document.getElementById('mapSearchClear')?.classList.remove('hidden'); }
+        runNlpSearch(query);
+      } else {
+        switchTab('list');
+        NLP.applyToListTab(query);
+      }
+    };
+
+    setTimeout(() => {
+      const homeSearch = document.getElementById('homeSearch');
+      const mapSearch = document.getElementById('mapSearch');
+      const listSearch = document.getElementById('listSearch');
+      const dtSearch = document.getElementById('dtSearch');
+      if (homeSearch) AutoSuggest.attach(homeSearch, _onSuggestSelect);
+      if (mapSearch)  AutoSuggest.attach(mapSearch, _onSuggestSelect);
+      if (listSearch) AutoSuggest.attach(listSearch, _onSuggestSelect);
+      if (dtSearch)   AutoSuggest.attach(dtSearch, _onSuggestSelect);
+    }, 500);
+  }
+
+  // 3. GeoSearch — pré-charger la position
+  if (typeof GeoSearch !== 'undefined') {
+    GeoSearch.getPosition().catch(() => {});
+  }
+
   // ── Initialiser la recherche vocale IA (Français + Wolof) ──
   if (typeof VoiceSearch !== 'undefined') {
     VoiceSearch.init();

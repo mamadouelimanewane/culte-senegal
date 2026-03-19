@@ -1694,6 +1694,218 @@ input { outline: none; }
 }
 
 /* ════════════════════════════════════════════════════════════════
+   AUTO-SUGGEST — Suggestions prédictives IA
+   ════════════════════════════════════════════════════════════════ */
+.autosuggest-panel {
+  position: absolute; left: 0; right: 0; top: 100%;
+  z-index: 5000; margin-top: 4px;
+  background: linear-gradient(180deg, #0b2a47, #091e33);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(72,202,228,.12);
+  max-height: 360px; overflow-y: auto;
+  animation: asgFadeIn .2s ease;
+  scrollbar-width: thin; scrollbar-color: rgba(72,202,228,.2) transparent;
+}
+.autosuggest-panel::-webkit-scrollbar { width: 4px; }
+.autosuggest-panel::-webkit-scrollbar-thumb { background: rgba(72,202,228,.2); border-radius: 4px; }
+@keyframes asgFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.autosuggest-category {
+  padding: 8px 14px 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: rgba(72,202,228,.6);
+}
+.autosuggest-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  transition: background .15s;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.autosuggest-item:hover, .autosuggest-item.active {
+  background: rgba(72,202,228,.08);
+}
+.autosuggest-item .asg-icon { font-size: 18px; flex-shrink: 0; }
+.autosuggest-item .asg-label {
+  flex: 1; font-size: 13px; color: #d0e4f0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.autosuggest-item .asg-label mark {
+  background: rgba(72,202,228,.25); color: #48cae4;
+  border-radius: 2px; padding: 0 2px;
+}
+.autosuggest-count {
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700;
+  background: rgba(72,202,228,.12); color: #48cae4;
+  flex-shrink: 0;
+}
+.autosuggest-recent .asg-icon { opacity: .5; }
+.autosuggest-empty {
+  padding: 20px 14px; text-align: center;
+  font-size: 12px; color: #5a8aa8;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   VOICE CONVERSATION — TTS feedback visuel
+   ════════════════════════════════════════════════════════════════ */
+.vc-toggle {
+  background: none; border: 1.5px solid rgba(72,202,228,.25);
+  color: #5a8aa8; width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .25s; font-size: 16px;
+  flex-shrink: 0;
+}
+.vc-toggle.active {
+  background: rgba(72,202,228,.15); color: #48cae4;
+  border-color: #48cae4;
+}
+.vc-toggle:hover { background: rgba(72,202,228,.1); color: #48cae4; }
+
+.vc-speaking {
+  position: relative;
+}
+.vc-speaking::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: inherit; border: 2px solid #48cae4;
+  animation: vcPulse 1.2s ease infinite;
+  pointer-events: none;
+}
+@keyframes vcPulse {
+  0%, 100% { opacity: .3; transform: scale(1); }
+  50%      { opacity: .8; transform: scale(1.03); }
+}
+
+.vc-indicator {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 14px;
+  background: rgba(72,202,228,.1); color: #48cae4;
+  font-size: 11px; font-weight: 600;
+  animation: vcSlideIn .3s ease;
+}
+.vc-indicator .vc-waves {
+  display: flex; gap: 2px; align-items: center; height: 14px;
+}
+.vc-indicator .vc-wave {
+  width: 3px; border-radius: 2px; background: #48cae4;
+  animation: vcWave .6s ease infinite alternate;
+}
+.vc-wave:nth-child(1) { height: 6px; animation-delay: 0s; }
+.vc-wave:nth-child(2) { height: 10px; animation-delay: .1s; }
+.vc-wave:nth-child(3) { height: 14px; animation-delay: .2s; }
+.vc-wave:nth-child(4) { height: 8px; animation-delay: .3s; }
+@keyframes vcWave {
+  from { height: 4px; } to { height: 14px; }
+}
+@keyframes vcSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GEOLOCATION — Distance badges & user marker
+   ════════════════════════════════════════════════════════════════ */
+.geo-distance-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700;
+  background: rgba(46,125,50,.12); color: #4caf50;
+  border: 1px solid rgba(46,125,50,.2);
+}
+.geo-distance-badge.far {
+  background: rgba(255,152,0,.1); color: #ffa726;
+  border-color: rgba(255,152,0,.2);
+}
+.geo-near-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 18px;
+  background: rgba(46,125,50,.1); color: #66bb6a;
+  border: 1.5px solid rgba(46,125,50,.2);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.geo-near-btn:hover {
+  background: rgba(46,125,50,.2); border-color: #66bb6a;
+}
+.geo-locating {
+  animation: geoSpin 1s linear infinite;
+}
+@keyframes geoSpin {
+  from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NLG RESPONSE — Réponses enrichies en langage naturel
+   ════════════════════════════════════════════════════════════════ */
+.nlg-response {
+  padding: 12px 16px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(72,202,228,.06), rgba(13,95,160,.06));
+  border: 1px solid rgba(72,202,228,.1);
+  animation: nlgFadeIn .4s ease;
+}
+@keyframes nlgFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nlg-main {
+  font-size: 14px; color: #d0e4f0; line-height: 1.6;
+}
+.nlg-main strong { color: #48cae4; font-weight: 600; }
+.nlg-stats {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.nlg-stat {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(255,255,255,.05); color: #8cb8d4;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.nlg-suggestion {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-size: 12px; color: #5a8aa8; font-style: italic;
+}
+.nlg-followup {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px; padding: 5px 12px; border-radius: 14px;
+  background: rgba(72,202,228,.08); color: #48cae4;
+  font-size: 11.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid rgba(72,202,228,.15);
+  transition: all .2s;
+}
+.nlg-followup:hover {
+  background: rgba(72,202,228,.15); border-color: #48cae4;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CONVERSATION MEMORY — Context badges
+   ════════════════════════════════════════════════════════════════ */
+.ctx-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: .3px;
+  background: rgba(156,39,176,.1); color: #ce93d8;
+  border: 1px solid rgba(156,39,176,.15);
+}
+.ctx-history {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 6px 0;
+}
+.ctx-chip {
+  padding: 4px 10px; border-radius: 12px;
+  font-size: 11px; color: #8cb8d4;
+  background: rgba(255,255,255,.05);
+  cursor: pointer; transition: all .15s;
+  border: 1px solid transparent;
+}
+.ctx-chip:hover {
+  background: rgba(72,202,228,.1); color: #48cae4;
+  border-color: rgba(72,202,228,.2);
+}
+
+/* ════════════════════════════════════════════════════════════════
    FAB ADD — Bouton flottant ajouter
    ════════════════════════════════════════════════════════════════ */
 .fab-add {
@@ -1845,4 +2057,167 @@ input { outline: none; }
     margin-bottom: 0;
     animation: sdlgScaleIn .3s ease;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REVOLUTION MODULES — AutoSuggest, VoiceConversation, NLG, Geo
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── AutoSuggest Panel ─────────────────────────────────────── */
+.as-panel {
+  position: absolute;
+  z-index: 9999;
+  background: var(--card, #fff);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid rgba(0,0,0,.08);
+  backdrop-filter: blur(12px);
+  animation: asPanelIn .2s ease;
+}
+@keyframes asPanelIn {
+  from { opacity:0; transform: translateY(-8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.as-panel::-webkit-scrollbar { width: 4px; }
+.as-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 4px; }
+
+.as-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer; transition: background .15s;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.as-item:hover, .as-item.as-active {
+  background: rgba(0,120,200,.08);
+}
+.as-item-icon {
+  font-size: 1.2em; flex-shrink: 0; width: 28px; text-align: center;
+}
+.as-item-label {
+  flex: 1; font-size: .92em; color: #333;
+}
+.as-item-count {
+  font-size: .78em; color: #999; background: rgba(0,0,0,.05);
+  padding: 2px 8px; border-radius: 10px;
+}
+.as-category {
+  padding: 6px 14px; font-size: .75em; font-weight: 600;
+  color: #888; text-transform: uppercase; letter-spacing: .5px;
+  background: rgba(0,0,0,.02);
+}
+
+/* ── Voice Conversation (TTS) ──────────────────────────────── */
+.vc-toggle {
+  position: fixed; bottom: 80px; right: 16px;
+  z-index: 1000;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: none; cursor: pointer;
+  background: linear-gradient(135deg, #0078c8, #00b4d8);
+  color: white; font-size: 1.4em;
+  box-shadow: 0 4px 16px rgba(0,120,200,.35);
+  transition: all .3s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.vc-toggle:hover { transform: scale(1.1); }
+.vc-toggle.vc-off {
+  background: rgba(0,0,0,.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.vc-speaking-indicator {
+  position: fixed; bottom: 134px; right: 16px;
+  z-index: 1001;
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(0,120,200,.9);
+  color: white; padding: 6px 14px;
+  border-radius: 20px; font-size: .78em;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  animation: vcPulse 1.5s ease-in-out infinite;
+}
+@keyframes vcPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+.vc-speaking-indicator .vc-wave {
+  display: flex; gap: 2px; align-items: flex-end; height: 14px;
+}
+.vc-speaking-indicator .vc-wave span {
+  width: 3px; background: white; border-radius: 2px;
+  animation: vcWave .6s ease-in-out infinite;
+}
+.vc-speaking-indicator .vc-wave span:nth-child(2) { animation-delay: .1s; }
+.vc-speaking-indicator .vc-wave span:nth-child(3) { animation-delay: .2s; }
+.vc-speaking-indicator .vc-wave span:nth-child(4) { animation-delay: .3s; }
+@keyframes vcWave {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+
+.vc-highlight {
+  outline: 2px solid rgba(0,180,216,.5);
+  outline-offset: 2px;
+  border-radius: 8px;
+  transition: outline .3s ease;
+}
+
+/* ── NLG Response Badges ───────────────────────────────────── */
+.nlg-response {
+  font-size: .88em; line-height: 1.5;
+  color: #e0f7ff;
+}
+.nlg-stat-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.12);
+  padding: 2px 8px; border-radius: 8px;
+  font-size: .82em; margin: 2px 2px;
+}
+
+/* ── Geolocation / Proximity badges ────────────────────────── */
+.geo-distance-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg, rgba(0,180,216,.15), rgba(0,120,200,.1));
+  color: #0078c8; padding: 3px 10px;
+  border-radius: 12px; font-size: .78em; font-weight: 600;
+}
+.geo-nearby-indicator {
+  animation: geoNearbyPulse 2s ease-in-out infinite;
+}
+@keyframes geoNearbyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,216,.4); }
+  50% { box-shadow: 0 0 0 8px rgba(0,180,216,0); }
+}
+
+/* ── Conversational Memory indicator ───────────────────────── */
+.conv-context-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(106,27,154,.12);
+  color: #6a1b9a; padding: 2px 8px;
+  border-radius: 10px; font-size: .75em; font-weight: 600;
+}
+
+/* ── Enhanced Bot Bar for NLG ──────────────────────────────── */
+.map-bot-bar.nlg-enhanced {
+  background: linear-gradient(135deg, rgba(13,25,42,.95), rgba(0,70,130,.9));
+  border-left: 3px solid #00b4d8;
+  padding: 10px 14px;
+}
+.map-bot-bar.nlg-enhanced .bot-avatar {
+  font-size: 1.3em;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .vc-toggle { bottom: 74px; right: 12px; width: 42px; height: 42px; font-size: 1.2em; }
+  .vc-speaking-indicator { bottom: 122px; right: 12px; }
+  .as-panel { max-height: 260px; }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) {
+  .vc-toggle { bottom: 32px; right: 32px; }
+  .vc-speaking-indicator { bottom: 86px; right: 32px; }
+  .as-panel { max-width: 500px; }
 }
