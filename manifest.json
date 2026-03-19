@@ -1,0 +1,26 @@
+{
+  "name": "Scenews — Culture Sénégal",
+  "short_name": "Scenews",
+  "description": "Découvrez la culture sénégalaise : musées, galeries, cinémas, formations artistiques",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1a2e",
+  "theme_color": "#0078c8",
+  "lang": "fr",
+  "orientation": "any",
+  "categories": ["culture", "travel", "education"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230078c8'/%3E%3Cstop offset='100%25' stop-color='%23005a9e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='96' cy='96' r='88' fill='url(%23g)'/%3E%3Ctext x='96' y='112' font-family='Arial,sans-serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3ESC%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230078c8'/%3E%3Cstop offset='100%25' stop-color='%23005a9e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='240' fill='url(%23g)'/%3E%3Ctext x='256' y='300' font-family='Arial,sans-serif' font-size='170' font-weight='bold' fill='white' text-anchor='middle'%3ESC%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

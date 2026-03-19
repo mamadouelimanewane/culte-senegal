@@ -457,6 +457,20 @@ function buildHome() {
   buildRegions();
   buildMiniCards();
   buildStats();
+  buildEventsWidget();
+}
+
+function buildEventsWidget() {
+  if (typeof EventsCalendar === 'undefined') return;
+  EventsCalendar.init();
+  const statsStrip = document.getElementById('statsStrip');
+  if (!statsStrip) return;
+  // Injecter le widget événements juste avant le stats strip
+  const widgetHtml = EventsCalendar.renderHomeWidget();
+  if (widgetHtml) {
+    statsStrip.insertAdjacentHTML('beforebegin', widgetHtml);
+    EventsCalendar.attachHomeHandlers();
+  }
 }
 
 function buildCategories() {
@@ -2078,6 +2092,9 @@ async function init() {
     }
   });
 
+  // Dark mode
+  initDarkMode();
+
   // Desktop filters setup
   setupDesktopFilters();
 
@@ -2086,6 +2103,11 @@ async function init() {
 
   // Panneau ajout temps réel
   initLiveAddPanel();
+
+  // PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 
   // Écouter les changements d'index en temps réel
   if (typeof SearchEngine !== 'undefined') {
@@ -2427,6 +2449,40 @@ function initLiveAddPanel() {
       populateMapLayer(state.mapFilters.layer);
     }
   });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE
+   ════════════════════════════════════════════════════════════════ */
+function initDarkMode() {
+  // Restaurer la préférence sauvegardée ou auto-détecter
+  const saved = localStorage.getItem('culte_theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else {
+    // Auto dark entre 19h et 6h (heures sénégalaises)
+    const h = new Date().getHours();
+    if (h >= 19 || h < 6) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }
+
+  // Créer le bouton toggle
+  const btn = document.createElement('button');
+  btn.className = 'theme-toggle';
+  btn.setAttribute('aria-label', 'Basculer mode sombre');
+  btn.innerHTML = _isDark() ? '☀️' : '🌙';
+  btn.addEventListener('click', () => {
+    const next = _isDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('culte_theme', next);
+    btn.innerHTML = next === 'dark' ? '☀️' : '🌙';
+  });
+  document.body.appendChild(btn);
+}
+
+function _isDark() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
 }
 
 document.addEventListener('DOMContentLoaded', init);
