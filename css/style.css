@@ -895,7 +895,7 @@ input { outline: none; }
   .mobile-only { display: none !important; }
   .desktop-only { display: flex !important; }
 
-  body { overflow: hidden; background: #0a2540; }
+  body { overflow: hidden; background: #f0f4f8; }
 
   /* ── Splash ── */
   #splash {

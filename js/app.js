@@ -2497,14 +2497,18 @@ function initLiveAddPanel() {
 function initDarkMode() {
   // Restaurer la préférence sauvegardée ou auto-détecter
   const saved = localStorage.getItem('culte_theme');
+  const isDesktop = window.innerWidth >= 1024;
   if (saved) {
     document.documentElement.setAttribute('data-theme', saved);
-  } else {
-    // Auto dark entre 19h et 6h (heures sénégalaises)
+  } else if (!isDesktop) {
+    // Auto dark entre 19h et 6h — uniquement sur mobile
     const h = new Date().getHours();
     if (h >= 19 || h < 6) {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+  } else {
+    // Desktop : toujours light par défaut (l'utilisateur peut changer)
+    document.documentElement.setAttribute('data-theme', 'light');
   }
 
   // Créer le bouton toggle
