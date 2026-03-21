@@ -1700,6 +1700,7 @@ function switchTab(tabName) {
 
   state.activeTab = tabName;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+  document.querySelectorAll('.dt-nav-link').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
 
   const section = document.getElementById(`tab-${tabName}`);
   if (section) {
@@ -1788,6 +1789,120 @@ function isDesktop() { return window.innerWidth >= 1024; }
 
 function applyLayout() {
   document.body.classList.toggle('is-desktop', isDesktop());
+  // Sur desktop, synchro nav horizontale avec onglet actif
+  if (isDesktop()) {
+    document.querySelectorAll('.dt-nav-link').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === state.activeTab)
+    );
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HERO MAP — Carte Leaflet dans la page d'accueil desktop
+   ════════════════════════════════════════════════════════════════ */
+function initHeroMap() {
+  if (!isDesktop()) return;
+  const el = document.getElementById('heroMap');
+  if (!el || el._leaflet_id) return; // déjà initialisée
+
+  const heroMap = L.map(el, {
+    zoomControl: true,
+    attributionControl: false,
+    scrollWheelZoom: true,
+  }).setView([14.5, -14.5], 7);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(heroMap);
+
+  heroMap.zoomControl.setPosition('topright');
+
+  // Cluster de marqueurs
+  const heroCluster = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    showCoverageOnHover: false
+  });
+  heroMap.addLayer(heroCluster);
+
+  // Remplir les marqueurs
+  function populateHeroMap(layer) {
+    heroCluster.clearLayers();
+    const batch = [];
+    const addRecords = (records, isFormation) => {
+      records.forEach(rec => {
+        const lat = parseFloat(rec.LATITUDE);
+        const lon = parseFloat(rec.LONGITUDE);
+        if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
+        const typeKey = isFormation ? (rec.BRANCHE || '') : getInfraType(rec);
+        const conf = getTypeConf(typeKey, isFormation);
+        const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || 'Sans nom';
+        const commune = rec.COMMUNE || rec.LOCALITE || '';
+        const region = rec.REGION || '';
+        const idx = state.nlpStore ? state.nlpStore.findIndex(s => s.name === name && s.lat === lat) : -1;
+        const html = `<div class="map-popup">
+          <div class="mp-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
+          <div class="mp-name">${name}</div>
+          <div class="mp-loc">📍 ${commune}${region ? ', '+region : ''}</div>
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-primary" onclick="openModalFromMap(${idx >= 0 ? idx : 0})">Voir la fiche</button>
+          </div>
+        </div>`;
+        const m = L.marker([lat, lon], { icon: createLeafletIcon(conf) });
+        m.bindPopup(html, { maxWidth: 280 });
+        batch.push(m);
+      });
+    };
+    if (layer === 'all' || layer === 'infrastructures') addRecords(state.data.infrastructures, false);
+    if (layer === 'all' || layer === 'formations') addRecords(state.data.formations, true);
+    batch.forEach(m => heroCluster.addLayer(m));
+  }
+
+  populateHeroMap('all');
+
+  // Filtres hero chips
+  document.querySelectorAll('.hero-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.hero-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      populateHeroMap(btn.dataset.heroLayer);
+    });
+  });
+
+  // Bouton localiser
+  const heroLocate = document.getElementById('heroLocateBtn');
+  if (heroLocate) {
+    heroLocate.addEventListener('click', () => {
+      if (typeof GeoSearch !== 'undefined') {
+        GeoSearch.getPosition().then(pos => {
+          if (pos) {
+            heroMap.setView([pos.latitude, pos.longitude], 13);
+            L.circleMarker([pos.latitude, pos.longitude], {
+              radius: 8, fillColor: '#00b4d8', color: 'white', weight: 3, fillOpacity: 1
+            }).addTo(heroMap).bindPopup('📍 Vous êtes ici').openPopup();
+          }
+        });
+      } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(p => {
+          heroMap.setView([p.coords.latitude, p.coords.longitude], 13);
+          L.circleMarker([p.coords.latitude, p.coords.longitude], {
+            radius: 8, fillColor: '#00b4d8', color: 'white', weight: 3, fillOpacity: 1
+          }).addTo(heroMap).bindPopup('📍 Vous êtes ici').openPopup();
+        });
+      }
+    });
+  }
+
+  // Mise à jour du compteur
+  const heroCount = document.getElementById('heroMapCount');
+  if (heroCount) {
+    const total = state.data.infrastructures.length + state.data.formations.length;
+    heroCount.textContent = total.toLocaleString('fr-FR');
+  }
+
+  // Invalidate size après render
+  setTimeout(() => heroMap.invalidateSize(), 200);
+  window.addEventListener('resize', () => heroMap.invalidateSize());
 }
 
 function setupDesktopFilters() {
@@ -1967,8 +2082,11 @@ async function init() {
   buildHome();
   buildListFilters();
 
-  // Bottom nav
+  // Bottom nav (mobile) + Desktop horizontal nav
   document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  document.querySelectorAll('.dt-nav-link').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
@@ -2135,7 +2253,8 @@ async function init() {
   // Export calendrier & rappels
   if (typeof CalendarExport !== 'undefined') CalendarExport.init?.();
 
-  // Desktop filters setup
+  // Desktop hero map + filters setup
+  initHeroMap();
   setupDesktopFilters();
 
   // NLP enhanced search — mic, suggestions, history

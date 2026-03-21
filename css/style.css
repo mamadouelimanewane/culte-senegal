@@ -903,23 +903,19 @@ input { outline: none; }
     left: 0; right: 0; transform: none;
   }
 
-  /* ── App: CSS Grid ── */
+  /* ── App: Flex column layout (no sidebar) ── */
   #app {
     position: fixed; inset: 0;
     max-width: none; width: 100%;
     left: 0; right: 0; transform: none;
-    display: grid;
-    grid-template-columns: 230px 1fr;
-    grid-template-rows: 64px 1fr;
-    grid-template-areas:
-      "topbar topbar"
-      "sidebar main";
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
 
   /* ── Topbar ── */
   .status-bar {
-    grid-area: topbar;
+    flex-shrink: 0;
     height: 64px;
     padding: 0 24px;
     display: flex; align-items: center; gap: 20px;
@@ -960,9 +956,8 @@ input { outline: none; }
     display: flex; align-items: center; justify-content: center;
   }
 
-  /* ── Sidebar (nav) ── */
+  /* ── Sidebar (nav) — masquée par desktop.css ── */
   .bottom-nav {
-    grid-area: sidebar;
     position: static;
     height: auto; width: auto;
     flex-direction: column;
@@ -1005,11 +1000,10 @@ input { outline: none; }
     margin-top: 20px;
   }
 
-  /* ── Tab wrap → fills main area ── */
+  /* ── Tab wrap → fills remaining space ── */
   #tab-wrap {
-    grid-area: main;
+    flex: 1;
     position: relative;
-    inset: auto;
     overflow: hidden;
     background: var(--bg);
   }

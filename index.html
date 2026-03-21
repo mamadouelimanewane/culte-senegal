@@ -56,14 +56,17 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="dtSearch" type="text" placeholder="Rechercher musées, cinémas, formations, régions…" autocomplete="off">
     </div>
-    <a href="responsable/" class="dt-admin-link desktop-only" title="Espace Responsables" style="background:rgba(42,157,100,.18);color:#1a6b3e">👤 Responsables</a>
-    <a href="admin/" class="dt-admin-link desktop-only" title="Backoffice">⚙ Admin</a>
+    <!-- Desktop horizontal nav -->
+    <nav class="dt-nav desktop-only">
+      <button class="dt-nav-link active" data-tab="home">Accueil</button>
+      <button class="dt-nav-link" data-tab="explore">Cartographie</button>
+      <button class="dt-nav-link" data-tab="list">Annuaire</button>
+      <button class="dt-nav-link" data-tab="favorites">Favoris</button>
+    </nav>
     <div class="dt-topbar-right desktop-only">
+      <a href="responsable/" class="dt-admin-link" title="Espace Responsables">👤 Responsables</a>
+      <a href="admin/" class="dt-admin-link" title="Backoffice">⚙ Admin</a>
       <span class="dt-count-badge">🗺 <span id="dtTotalCount">—</span> lieux</span>
-      <button class="btn-notif dt-notif" aria-label="Notifications">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="notif-dot"></span>
-      </button>
     </div>
   </div>
 
@@ -102,6 +105,28 @@
         </button>
       </div>
 
+      <!-- HERO MAP (desktop only) — Carte interactive du Sénégal -->
+      <div class="hero-map-section desktop-only" id="heroMapSection">
+        <div class="hero-map-container">
+          <div id="heroMap" class="hero-map-leaflet"></div>
+          <div class="hero-map-overlay">
+            <div class="hero-map-info">
+              <h2 class="hero-map-title">🗺 Carte culturelle du Sénégal</h2>
+              <p class="hero-map-sub"><span id="heroMapCount">1 226</span> lieux culturels et formations artistiques</p>
+              <div class="hero-map-chips">
+                <button class="hero-chip active" data-hero-layer="all">Tout</button>
+                <button class="hero-chip" data-hero-layer="infrastructures">Infrastructures</button>
+                <button class="hero-chip" data-hero-layer="formations">Formations</button>
+              </div>
+            </div>
+            <button class="hero-locate-btn" id="heroLocateBtn" aria-label="Me localiser">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Me localiser
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Scroll content -->
       <div class="home-scroll">
 
@@ -112,8 +137,8 @@
         </div>
         <div class="categories-row" id="categoriesRow"><!-- injected --></div>
 
-        <!-- Carte du Sénégal CTA -->
-        <div class="map-cta-card" onclick="switchTab('explore')">
+        <!-- Carte du Sénégal CTA (mobile only) -->
+        <div class="map-cta-card mobile-only" onclick="switchTab('explore')">
           <div class="map-cta-bg">
             <svg viewBox="0 0 260 160" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M50 70 L68 48 L90 44 L115 40 L145 44 L168 56 L178 72 L174 90 L162 106 L146 118 L132 128 L120 145 L112 158 L100 148 L88 134 L72 122 L56 112 L44 98 L40 84 Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.30)" stroke-width="1.5"/>
