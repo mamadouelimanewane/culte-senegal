@@ -1,15 +1,15 @@
-/* ═══════════════════════════════════════════════════════════════
-   DESKTOP — Page Web avec Carte du Sénégal en Héro
+/* ===================================================================
+   DESKTOP — Page Web avec Carte du Senegal en Hero
    Transformation : app mobile → site web professionnel
    Breakpoints: 1024px (desktop), 1440px (large), 1920px (XL)
    NE TOUCHE PAS AU MOBILE (< 1024px)
-   ═══════════════════════════════════════════════════════════════ */
+   =================================================================== */
 
 @media (min-width: 1024px) {
 
-  /* ══════════════════════════════════════════════════════════
-     1. BASE — Full page web, pas d'app grid
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     1. BASE — Full viewport, light background
+     ============================================================== */
   #app {
     position: fixed; inset: 0;
     display: flex;
@@ -17,9 +17,9 @@
     overflow: hidden;
   }
 
-  /* ══════════════════════════════════════════════════════════
+  /* ==============================================================
      2. NAVBAR — Barre horizontale fixe
-     ══════════════════════════════════════════════════════════ */
+     ============================================================== */
   .status-bar {
     flex-shrink: 0;
     height: 64px;
@@ -137,44 +137,47 @@
     white-space: nowrap;
   }
 
-  /* ══════════════════════════════════════════════════════════
-     3. SIDEBAR MASQUÉE — Nav dans la topbar
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     3. SIDEBAR MASQUEE — Nav dans la topbar
+     ============================================================== */
   .bottom-nav {
     display: none !important;
   }
 
-  /* ══════════════════════════════════════════════════════════
+  /* ==============================================================
      4. TAB-WRAP — Zone principale pleine largeur
-     ══════════════════════════════════════════════════════════ */
+     ============================================================== */
   #tab-wrap {
     flex: 1;
     overflow: hidden;
     background: #f0f4f8;
+    position: relative;
   }
 
+  /* IMPORTANT: ne pas forcer display sur les tabs individuels,
+     laisser .tab-section / .tab-section.active gerer */
   .tab-section {
     position: absolute;
     inset: 0;
   }
 
-  /* ══════════════════════════════════════════════════════════
-     5. HOME TAB — Page web avec carte héro
-     ══════════════════════════════════════════════════════════ */
-  #tab-home {
+  /* Quand tab-home est actif, layout column pour hero + scroll */
+  #tab-home.active {
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
-  /* Header mobile caché sur desktop */
+  /* Header mobile cache sur desktop */
   .home-header { display: none; }
 
-  /* ── Hero Map Section ── */
+  /* ==============================================================
+     5. HERO MAP — Carte interactive du Senegal
+     ============================================================== */
   .hero-map-section {
     position: relative;
     flex-shrink: 0;
-    height: 420px;
+    height: 380px;
     background: #0a2540;
     overflow: hidden;
   }
@@ -262,7 +265,9 @@
     border-color: rgba(255,255,255,.4);
   }
 
-  /* ── Scroll content sous la carte ── */
+  /* ==============================================================
+     6. HOME SCROLL — Contenu sous la carte
+     ============================================================== */
   .home-scroll {
     flex: 1;
     overflow-y: auto;
@@ -293,7 +298,7 @@
   }
   .see-all:hover { color: #0a3d6b; }
 
-  /* Catégories : wrap grid */
+  /* Categories : wrap grid */
   .categories-row {
     grid-column: 1 / -1;
     display: flex;
@@ -320,7 +325,7 @@
     font-weight: 600;
   }
 
-  /* Carte CTA mobile masquée sur desktop (remplacée par hero map) */
+  /* Carte CTA mobile masquee sur desktop (remplacee par hero map) */
   .map-cta-card { display: none; }
 
   /* Carousel : colonne gauche */
@@ -335,7 +340,7 @@
   .fc-name { font-size: 20px; }
   .fc-loc { font-size: 13px; }
 
-  /* Régions : colonne droite */
+  /* Regions : colonne droite */
   .regions-row {
     grid-column: 2;
     display: grid;
@@ -390,9 +395,9 @@
   .stat-num { font-size: 28px; color: #0a3d6b; font-weight: 900; }
   .stat-lbl { font-size: 12px; color: #6b8fae; }
 
-  /* ══════════════════════════════════════════════════════════
-     6. EXPLORE TAB — Carte pleine page + panneau
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     7. EXPLORE TAB — Carte pleine page + panneau lateral
+     ============================================================== */
   #tab-explore .explore-panel {
     width: 320px;
     background: #ffffff;
@@ -528,9 +533,9 @@
     color: #0a1e35;
   }
 
-  /* ══════════════════════════════════════════════════════════
-     7. LIST TAB — Fond clair, cards blanches
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     8. LIST TAB — Fond clair, cards blanches
+     ============================================================== */
   .list-header {
     background: #ffffff;
     border-bottom: 1px solid #e0eaf3;
@@ -587,9 +592,9 @@
   .pg-btn:hover:not(.active) { background: #dae8f3; color: #0a3d6b; }
   .pg-btn.active { background: #1282d4; color: #ffffff; }
 
-  /* ══════════════════════════════════════════════════════════
-     8. MODAL
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     9. MODAL
+     ============================================================== */
   .modal { padding: 32px; }
   .modal-sheet {
     max-width: 680px;
@@ -602,9 +607,9 @@
   .modal-close { width: 36px; height: 36px; border-radius: 10px; transition: all .2s; }
   .modal-close:hover { background: rgba(0,0,0,.6); transform: scale(1.05); }
 
-  /* ══════════════════════════════════════════════════════════
-     9. FAVORIS TAB
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     10. FAVORIS TAB
+     ============================================================== */
   .favs-header {
     padding: 22px 28px;
     background: linear-gradient(135deg, #0a3d6b 0%, #1282d4 100%);
@@ -621,9 +626,9 @@
   .favs-content .list-card { margin: 0; }
   .empty-state { grid-column: 1 / -1; color: #6b8fae; }
 
-  /* ══════════════════════════════════════════════════════════
-     10. FABs
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     11. FABs
+     ============================================================== */
   .tours-fab {
     bottom: 160px; right: 28px;
     width: 50px; height: 50px; font-size: 1.4rem;
@@ -685,9 +690,9 @@
   }
   .theme-toggle:hover { background: rgba(255,255,255,.22); }
 
-  /* ══════════════════════════════════════════════════════════
-     11. OVERLAYS
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     12. OVERLAYS — Stats, Tours, Chatbot
+     ============================================================== */
   .stats-overlay, .tours-overlay {
     align-items: center;
     justify-content: center;
@@ -729,9 +734,9 @@
     box-shadow: 0 12px 48px rgba(10,61,107,.18);
   }
 
-  /* ══════════════════════════════════════════════════════════
-     12. DIALOGS
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     13. DIALOGS
+     ============================================================== */
   .sdlg-overlay { align-items: center; }
   .sdlg-container {
     border-radius: 20px; max-width: 560px; max-height: 75vh;
@@ -744,9 +749,9 @@
   .voice-overlay { align-items: center; }
   .voice-panel { border-radius: 20px; max-width: 480px; }
 
-  /* ══════════════════════════════════════════════════════════
-     13. SCROLLBARS
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     14. SCROLLBARS
+     ============================================================== */
   .home-scroll::-webkit-scrollbar,
   .list-cards::-webkit-scrollbar,
   .favs-content::-webkit-scrollbar {
@@ -769,18 +774,18 @@
     background: rgba(10,61,107,.2);
   }
 
-  /* ══════════════════════════════════════════════════════════
-     14. CURSORS
-     ══════════════════════════════════════════════════════════ */
+  /* ==============================================================
+     15. CURSORS
+     ============================================================== */
   button, a, .list-card, .mini-card, .region-card, .cat-item,
   .map-chip, .tour-card, .stats-tab, .pg-btn { cursor: pointer; }
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ===================================================================
    LARGE DESKTOP (1440px+)
-   ══════════════════════════════════════════════════════════════ */
+   =================================================================== */
 @media (min-width: 1440px) {
-  .hero-map-section { height: 480px; }
+  .hero-map-section { height: 440px; }
   .hero-map-title { font-size: 30px; }
 
   .home-scroll {
@@ -803,11 +808,11 @@
   .dt-search-wrap:focus-within { flex: 0 1 580px; }
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ===================================================================
    XL DESKTOP (1920px+)
-   ══════════════════════════════════════════════════════════════ */
+   =================================================================== */
 @media (min-width: 1920px) {
-  .hero-map-section { height: 520px; }
+  .hero-map-section { height: 480px; }
 
   .home-scroll {
     padding: 40px 64px 48px;
@@ -824,9 +829,9 @@
   .dt-search-wrap:focus-within { flex: 0 1 660px; }
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ===================================================================
    DARK MODE DESKTOP
-   ══════════════════════════════════════════════════════════════ */
+   =================================================================== */
 @media (min-width: 1024px) {
   [data-theme="dark"] .status-bar {
     background: linear-gradient(90deg, #010409 0%, #0d1117 60%, #161b22 100%);
