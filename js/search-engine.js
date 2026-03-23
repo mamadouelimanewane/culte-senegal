@@ -874,9 +874,10 @@ const SearchEngine = (() => {
     }
 
     // 3. Trier par score décroissant
+    const minScore = options.minScore || 0.01;
     const ranked = [];
     for (let i = 0; i < _docs.length; i++) {
-      if (scores[i] > 0.01) {
+      if (scores[i] > minScore) {
         ranked.push({ doc: _docs[i], score: scores[i] });
       }
     }

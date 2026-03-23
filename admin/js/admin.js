@@ -4,8 +4,13 @@
 'use strict';
 
 /* ── Config ─────────────────────────────────────────────────────── */
+// Mots de passe hachés SHA-256 (ne plus stocker en clair)
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 const ADMIN_USERS = [
-  { email: 'admin@culte.sn', pwd: 'admin2024', name: 'Administrateur' },
+  { email: 'admin@culte.sn', hash: 'b8b8eb83374c0bf3b1c3224159f6119dbfff1b7ed6dfecdd80d4e8a895790a34', name: 'Administrateur' },
 ];
 const LS_EDITS    = 'culte_admin_edits';
 const LS_LOG      = 'culte_admin_log';
@@ -41,11 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
     showApp();
   }
 
-  document.getElementById('loginForm').addEventListener('submit', e => {
+  document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
     const pwd   = document.getElementById('loginPwd').value;
-    const user  = ADMIN_USERS.find(u => u.email === email && u.pwd === pwd);
+    const pwdHash = await _sha256(pwd);
+    const user  = ADMIN_USERS.find(u => u.email === email && u.hash === pwdHash);
     if (user) {
       A.session = { email: user.email, name: user.name };
       sessionStorage.setItem(LS_SESSION, JSON.stringify(A.session));
@@ -1245,11 +1251,11 @@ function renderParametres() {
 }
 
 function setupSettingsListeners() {
-  document.getElementById('btnSavePwd').addEventListener('click', () => {
+  document.getElementById('btnSavePwd').addEventListener('click', async () => {
     const pwd = document.getElementById('newPwd').value;
     if (!pwd) return;
     const user = ADMIN_USERS.find(u => u.email === A.session.email);
-    if (user) { user.pwd = pwd; alert('Mot de passe mis à jour (session uniquement).'); }
+    if (user) { user.hash = await _sha256(pwd); alert('Mot de passe mis à jour (session uniquement).'); }
     document.getElementById('newPwd').value = '';
   });
 

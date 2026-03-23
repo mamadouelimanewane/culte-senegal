@@ -763,7 +763,7 @@ function applyListFilters(resetPage) {
 
   // Utiliser le SearchEngine IA si disponible et qu'il y a une recherche texte
   if (typeof SearchEngine !== 'undefined' && SearchEngine.ready && sNorm && sNorm.length >= 2) {
-    const result = SearchEngine.search(search, { limit: 2000 });
+    const result = SearchEngine.search(search, { limit: 2000, minScore: 0.5 });
     // Filtrer par dataset actif (infra/formation) et appliquer les filtres supplémentaires
     state.filtered = result.results
       .map(r => r.doc.rec)
@@ -775,6 +775,11 @@ function applyListFilters(resetPage) {
           if (isFormation && !state.data.formations.includes(r)) return false;
           if (!isFormation && !state.data.infrastructures.includes(r)) return false;
         }
+        // Vérification textuelle : le terme doit apparaître dans au moins un champ
+        const fields = [r.DESIGNATION, r.NOM_ETABLISSEMENT, r.DESCRIPTIF, r.BRANCHE,
+                        r.COMMUNE, r.LOCALITE, r.LOCALITES, r.REGION, r.DEPARTEMENT].filter(Boolean);
+        const textMatch = fields.some(f => norm(f).includes(sNorm));
+        if (!textMatch) return false;
         // Filtres dropdown
         const reg = (r.REGION || '').toUpperCase();
         const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);

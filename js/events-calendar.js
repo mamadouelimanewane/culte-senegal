@@ -90,7 +90,7 @@ const EventsCalendar = (() => {
       region: 'DIOURBEL',
       commune: 'Touba',
       lieu: 'Grande Mosquée de Touba',
-      mois: 0,
+      mois: 8, // ~Août-Sept selon calendrier lunaire 2026
       duree: 3,
       recurrence: 'annuel',
       importance: 5,
@@ -107,7 +107,7 @@ const EventsCalendar = (() => {
       region: 'THIES',
       commune: 'Tivaouane',
       lieu: 'Grande Mosquée de Tivaouane',
-      mois: 0,
+      mois: 9, // ~Sept selon calendrier lunaire 2026
       duree: 3,
       recurrence: 'annuel',
       importance: 5,
@@ -124,7 +124,7 @@ const EventsCalendar = (() => {
       region: 'DAKAR',
       commune: 'Tout le Sénégal',
       lieu: 'Tout le pays',
-      mois: 0,
+      mois: 3, // ~Mars 2026 (fin Ramadan)
       duree: 2,
       recurrence: 'annuel',
       importance: 5,
@@ -141,7 +141,7 @@ const EventsCalendar = (() => {
       region: 'DAKAR',
       commune: 'Tout le Sénégal',
       lieu: 'Tout le pays',
-      mois: 0,
+      mois: 6, // ~Juin 2026 (Aïd el-Kébir)
       duree: 2,
       recurrence: 'annuel',
       importance: 5,
@@ -265,7 +265,7 @@ const EventsCalendar = (() => {
       region: 'DAKAR',
       commune: 'Dakar',
       lieu: 'Quartiers de Dakar',
-      mois: 0,
+      mois: 7, // Période estivale typique
       duree: 1,
       recurrence: 'ponctuel',
       importance: 3,
@@ -439,7 +439,6 @@ const EventsCalendar = (() => {
     year = year || new Date().getFullYear();
     return _events.filter(e => {
       if (e.moisFixe !== undefined) return e.moisFixe === month;
-      if (e.mois === 0) return true; // variable (religieux lunaire)
       if (e.recurrence === 'biennale' && e.annees && !e.annees.includes(year)) return false;
       return e.mois === month + 1;
     }).concat(_userEvents.filter(e => {

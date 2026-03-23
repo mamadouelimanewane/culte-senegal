@@ -1,0 +1,26 @@
+{
+  "name": "culte",
+  "version": "1.0.0",
+  "main": "serve.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node serve.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mamadouelimanewane/culte-senegal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mamadouelimanewane/culte-senegal/issues"
+  },
+  "homepage": "https://github.com/mamadouelimanewane/culte-senegal#readme",
+  "description": "",
+  "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "terser": "^5.46.1"
+  }
+}

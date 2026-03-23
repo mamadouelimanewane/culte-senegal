@@ -3,6 +3,12 @@
    ════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* ── Utilitaire hachage ──────────────────────────────────────────── */
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /* ── Storage Keys ────────────────────────────────────────────────── */
 const LS_SESSION = 'culte_resp_session';
 const LS_REG     = 'culte_registrations';
@@ -37,12 +43,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Login
-  document.getElementById('loginForm').addEventListener('submit', e => {
+  document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
     const pwd   = document.getElementById('loginPwd').value;
+    const pwdHash = await _sha256(pwd);
     const resps = getResponsables();
-    const resp  = resps.find(r => r.email === email && r.pwd === pwd && r.statut === 'active');
+    const resp  = resps.find(r => r.email === email && r.pwd === pwdHash && r.statut === 'active');
     const errEl = document.getElementById('loginError');
     if (resp) {
       R.session = { id: resp.id, nom: resp.nom, email: resp.email, infraId: resp.infraId, infraNom: resp.infraNom };
@@ -520,7 +527,7 @@ function closeRegisterModal() {
   document.getElementById('registerModal').classList.add('hidden');
 }
 
-function submitRegistration() {
+async function submitRegistration() {
   const nom      = document.getElementById('reg-nom').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const tel      = document.getElementById('reg-tel').value.trim();
@@ -553,9 +560,10 @@ function submitRegistration() {
   }
 
   const regs = getRegistrations();
+  const pwdHash = await _sha256(pwd);
   regs.push({
     id: 'reg_' + Date.now(),
-    nom, email, tel, pwd,
+    nom, email, tel, pwd: pwdHash,
     infraId: parseInt(infraId),
     infraNom, region, justification: justif,
     statut: 'pending',
