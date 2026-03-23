@@ -217,6 +217,11 @@ async function loadData() {
   state.data.infrastructures = (infraSheet.records || []).map((r, i) => ({ ...r, _id: i }));
   state.data.formations      = (formSheet.records  || []).map((r, i) => ({ ...r, _id: i }));
 
+  // Invalider les caches dépendants des données
+  state._infraSet = null;
+  state._formSet = null;
+  state._favIndexDirty = true;
+
   // Construire l'index du moteur de recherche IA
   if (typeof SearchEngine !== 'undefined') {
     SearchEngine.buildIndex(state.data.infrastructures, state.data.formations);
@@ -796,16 +801,20 @@ function applyListFilters(resetPage) {
   // Utiliser le SearchEngine IA si disponible et qu'il y a une recherche texte
   if (typeof SearchEngine !== 'undefined' && SearchEngine.ready && sNorm && sNorm.length >= 2) {
     const result = SearchEngine.search(search, { limit: 2000, minScore: 0.5 });
+    // Lookup Set O(1) au lieu de .includes() O(n) pour la vérification dataset
+    if (!state._infraSet) state._infraSet = new Set(state.data.infrastructures);
+    if (!state._formSet)  state._formSet  = new Set(state.data.formations);
+    const infraSet = state._infraSet;
+    const formSet  = state._formSet;
     // Filtrer par dataset actif (infra/formation) et appliquer les filtres supplémentaires
     state.filtered = result.results
       .map(r => r.doc.rec)
       .filter(r => {
-        // Filtrer par dataset
+        // Filtrer par dataset — O(1) via Set
         const recIsFormation = !!r.NOM_ETABLISSEMENT && !r.DESIGNATION;
         if (isFormation !== recIsFormation) {
-          // Vérifier aussi via les listes source
-          if (isFormation && !state.data.formations.includes(r)) return false;
-          if (!isFormation && !state.data.infrastructures.includes(r)) return false;
+          if (isFormation && !formSet.has(r)) return false;
+          if (!isFormation && !infraSet.has(r)) return false;
         }
         // Vérification textuelle : le terme doit apparaître dans au moins un champ
         const fields = [r.DESIGNATION, r.NOM_ETABLISSEMENT, r.DESCRIPTIF, r.BRANCHE,
@@ -944,10 +953,18 @@ function renderFavs() {
     return;
   }
 
-  const allRecs = [
-    ...state.data.infrastructures.map(r => ({ rec: r, isFormation: false })),
-    ...state.data.formations.map(r => ({ rec: r, isFormation: true })),
-  ].filter(({ rec, isFormation }) => state.favs.has(favKey(rec, isFormation)));
+  // Index de favoris O(favs) au lieu de scanner O(n) tous les records
+  if (!state._favIndex || state._favIndexDirty) {
+    state._favIndex = new Map();
+    for (const r of state.data.infrastructures) state._favIndex.set(favKey(r, false), { rec: r, isFormation: false });
+    for (const r of state.data.formations) state._favIndex.set(favKey(r, true), { rec: r, isFormation: true });
+    state._favIndexDirty = false;
+  }
+  const allRecs = [];
+  for (const key of state.favs) {
+    const entry = state._favIndex.get(key);
+    if (entry) allRecs.push(entry);
+  }
 
   container.innerHTML = '<div class="list-cards" style="overflow:visible;padding:0;gap:10px">' +
     allRecs.map(({ rec, isFormation }) => {
@@ -1029,12 +1046,27 @@ function populateMapLayer(layer) {
   state.mapMarkers = [];
   state.nlpStore = [];
 
-  const addRecords = (records, isFormation) => {
+  // Préparer tous les records à afficher
+  const allRecords = [];
+  if (layer === 'all' || layer === 'infrastructures') {
+    for (const rec of state.data.infrastructures) allRecords.push({ rec, isFormation: false });
+  }
+  if (layer === 'all' || layer === 'formations') {
+    for (const rec of state.data.formations) allRecords.push({ rec, isFormation: true });
+  }
+
+  // Chargement par lots (500 marqueurs/frame) pour ne pas bloquer le UI
+  const BATCH_SIZE = 500;
+  let offset = 0;
+
+  function processBatch() {
+    const end = Math.min(offset + BATCH_SIZE, allRecords.length);
     const batch = [];
-    records.forEach(rec => {
+    for (let j = offset; j < end; j++) {
+      const { rec, isFormation } = allRecords[j];
       const lat = parseFloat(rec.LATITUDE);
       const lon = parseFloat(rec.LONGITUDE);
-      if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
+      if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
 
       const typeKey = isFormation ? (rec.BRANCHE || '') : getInfraType(rec);
       const conf = getTypeConf(typeKey, isFormation);
@@ -1057,12 +1089,12 @@ function populateMapLayer(layer) {
       const marker = MAP.createMarker(lat, lon, conf, html);
       state.mapMarkers.push({ marker, rec, isFormation, typeKey });
       batch.push(marker);
-    });
-    MAP.addMarkers(batch);
-  };
-
-  if (layer === 'all' || layer === 'infrastructures') addRecords(state.data.infrastructures, false);
-  if (layer === 'all' || layer === 'formations') addRecords(state.data.formations, true);
+    }
+    if (batch.length) MAP.addMarkers(batch);
+    offset = end;
+    if (offset < allRecords.length) requestAnimationFrame(processBatch);
+  }
+  if (allRecords.length) requestAnimationFrame(processBatch);
 
   updateMapChipCounts();
 }

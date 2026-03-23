@@ -76,8 +76,12 @@ const SearchEngine = (() => {
   }
 
   function similarity(a, b) {
+    // Fast reject : si la différence de longueur dépasse le seuil, pas besoin de calculer
+    const maxLen = Math.max(a.length, b.length, 1);
+    if (Math.abs(a.length - b.length) > maxLen * (1 - FUZZY_THRESHOLD)) return 0;
+    if (a === b) return 1;
     const d = levenshtein(a, b);
-    return 1 - d / Math.max(a.length, b.length, 1);
+    return 1 - d / maxLen;
   }
 
   /* ── Synonymes enrichis (FR + Wolof + variantes) ─────────── */
@@ -261,8 +265,10 @@ const SearchEngine = (() => {
       id, rec, isFormation,
       fields: { name, typeKey, region, dept, commune, localite, milieu, thematique, descriptif },
       _nameNorm:     normalize(name),
+      _nameWords:    normalize(name).split(/\s+/).filter(w => w.length > 1),
       _communeNorm:  normalize(commune),
       _regionNorm:   normalize(region),
+      _regionUpper:  region.toUpperCase(),
       _deptNorm:     normalize(dept),
       _localiteNorm: normalize(localite),
       _typeNorm:     normalize(typeKey),
@@ -776,80 +782,84 @@ const SearchEngine = (() => {
       }
     }
 
-    // 1b. Score de base pour les docs correspondant à l'intent (même sans TF-IDF)
-    //     Ceci permet aux synonymes Wolof/culturels de retourner des résultats
-    //     même si le mot exact n'est pas dans les textes des docs.
-    if (intent.types.length || intent.wantFormations || intent.regions.length || intent.milieu) {
-      for (let i = 0; i < _docs.length; i++) {
-        const doc = _docs[i];
-        let intentScore = 0;
-        // Formations match
-        if (intent.wantFormations && doc.isFormation) {
-          intentScore += 1;
-          if (intent.branches.length) {
-            if (intent.branches.some(b => doc._typeNorm.includes(normalize(b)))) intentScore += 3;
-          }
+    // Pré-calculer les valeurs intent normalisées (une seule fois par requête)
+    const hasIntent = intent.types.length || intent.wantFormations || intent.regions.length || intent.milieu;
+    const intentTypesNorm = intent.types.map(t => normalize(t));
+    const intentBranchesNorm = intent.branches.map(b => normalize(b));
+    const intentMilieuNorm = intent.milieu ? normalize(intent.milieu) : null;
+    const intentRegionsUpper = intent.regions.length ? new Set(intent.regions) : null;
+    let synonymsForTypes = null; // lazy — calculé une seule fois si besoin
+    function _getSynonyms() {
+      if (synonymsForTypes) return synonymsForTypes;
+      synonymsForTypes = intentTypesNorm.flatMap(tNorm => {
+        for (const [cat, realTypes] of Object.entries(CAT_TO_TYPE)) {
+          if (realTypes.some(rt => normalize(rt) === tNorm)) return (SYNONYMS[cat] || []).map(normalize);
         }
-        // Type match
-        if (intent.types.length && !doc.isFormation) {
-          if (intent.types.some(t => normalize(t) === doc._typeNorm)) intentScore += 1;
-        }
-        // Region match
-        if (intent.regions.length && intent.regions.includes(doc.fields.region.toUpperCase())) {
-          intentScore += 1;
-        }
-        // Milieu match
-        if (intent.milieu && doc._milieuNorm === normalize(intent.milieu)) {
-          intentScore += 0.5;
-        }
-        if (intentScore > 0) scores[i] += intentScore;
-      }
+        return [tNorm];
+      });
+      return synonymsForTypes;
     }
 
-    // 2. Scoring structuré
+    // ──── PASSE UNIQUE : intent + scoring structuré + ranking ────
+    // Fusionne les 3 boucles O(n) en une seule passe sur _docs
+    const minScore = options.minScore || 0.01;
+    const ranked = [];
+    // Budget fuzzy adaptatif : plus le dataset est grand, plus on limite
+    const FUZZY_BUDGET = Math.min(2000, Math.max(500, Math.floor(20000 / _docs.length * 1000)));
+    let fuzzyCount = 0;
+
+    // Pour grands datasets, skip le scoring coûteux si pas de signal TF-IDF
+    const skipExpensiveIfNoSignal = _docs.length > 3000;
+
     for (let i = 0; i < _docs.length; i++) {
       const doc = _docs[i];
 
-      // Intent filtering
-      if (intent.regions.length && !intent.regions.includes(doc.fields.region.toUpperCase())) {
-        scores[i] *= 0.05; // Pénaliser fortement mais pas exclure
+      // ── Intent scoring (ex-boucle 1b) ──
+      if (hasIntent) {
+        let intentScore = 0;
+        if (intent.wantFormations && doc.isFormation) {
+          intentScore += 1;
+          if (intentBranchesNorm.length && intentBranchesNorm.some(b => doc._typeNorm.includes(b))) intentScore += 3;
+        }
+        if (intentTypesNorm.length && !doc.isFormation && intentTypesNorm.some(t => t === doc._typeNorm)) intentScore += 1;
+        if (intentRegionsUpper && intentRegionsUpper.has(doc._regionUpper)) intentScore += 1;
+        if (intentMilieuNorm && doc._milieuNorm === intentMilieuNorm) intentScore += 0.5;
+        if (intentScore > 0) scores[i] += intentScore;
       }
-      if (intent.milieu && doc._milieuNorm !== normalize(intent.milieu)) {
+
+      // ── Scoring structuré (ex-boucle 2) ──
+      // Intent filtering (pénalités)
+      if (intentRegionsUpper && !intentRegionsUpper.has(doc._regionUpper)) {
+        scores[i] *= 0.05;
+      }
+      if (intentMilieuNorm && doc._milieuNorm !== intentMilieuNorm) {
         scores[i] *= 0.1;
       }
-      if (intent.types.length && !doc.isFormation) {
-        const typeMatch = intent.types.some(t => normalize(t) === doc._typeNorm || doc._typeNorm.includes(normalize(t)));
+      if (intentTypesNorm.length && !doc.isFormation) {
+        const typeMatch = intentTypesNorm.some(t => t === doc._typeNorm || doc._typeNorm.includes(t));
         if (typeMatch) {
           scores[i] += BOOST.typeMatch;
         } else {
-          // Vérifier aussi si le NOM contient des mots-clés du type cherché
-          // Ex: "CENTRE DE LECTURE" doit matcher quand on cherche "Bibliothèque"
-          const synonymsForTypes = intent.types.flatMap(t => {
-            const tNorm = normalize(t);
-            for (const [cat, realTypes] of Object.entries(CAT_TO_TYPE)) {
-              if (realTypes.some(rt => normalize(rt) === tNorm)) {
-                return SYNONYMS[cat] || [];
-              }
-            }
-            return [tNorm];
-          });
-          const nameHasSynonym = synonymsForTypes.some(syn => doc._nameNorm.includes(normalize(syn)));
-          if (nameHasSynonym) {
-            scores[i] += BOOST.typeMatch * 0.7; // Bonus réduit mais significatif
+          const syns = _getSynonyms();
+          if (syns.some(syn => doc._nameNorm.includes(syn))) {
+            scores[i] += BOOST.typeMatch * 0.7;
           } else {
             scores[i] *= 0.15;
           }
         }
       }
-      if (intent.wantFormations && !intent.wantInfra && !doc.isFormation) {
-        scores[i] *= 0.05;
-      }
-      if (intent.branches.length && doc.isFormation) {
-        const branchMatch = intent.branches.some(b => normalize(b) === doc._typeNorm || doc._typeNorm.includes(normalize(b)));
-        if (branchMatch) scores[i] += BOOST.typeMatch;
+      if (intent.wantFormations && !intent.wantInfra && !doc.isFormation) scores[i] *= 0.05;
+      if (intentBranchesNorm.length && doc.isFormation) {
+        if (intentBranchesNorm.some(b => b === doc._typeNorm || doc._typeNorm.includes(b))) scores[i] += BOOST.typeMatch;
       }
 
-      // Nom matching (le plus important)
+      // Early skip : si le doc n'a aucun signal (TF-IDF + intent = 0) sur grand dataset,
+      // pas besoin de fuzzy matching coûteux
+      if (skipExpensiveIfNoSignal && scores[i] <= 0) {
+        continue; // Ce doc ne sera jamais dans les résultats
+      }
+
+      // Nom matching
       if (queryNorm) {
         if (doc._nameNorm === queryNorm) {
           scores[i] += BOOST.exactName;
@@ -857,47 +867,40 @@ const SearchEngine = (() => {
           scores[i] += BOOST.nameStart;
         } else if (doc._nameNorm.includes(queryNorm)) {
           scores[i] += BOOST.nameContains;
-        } else {
-          // Fuzzy match sur le nom
+        } else if (fuzzyCount < FUZZY_BUDGET) {
+          // Fuzzy match limité pour éviter O(n·m·k) sur grands datasets
+          fuzzyCount++;
           for (const qt of queryTokens) {
-            const nameWords = doc._nameNorm.split(/\s+/);
-            for (const nw of nameWords) {
-              const sim = similarity(qt, nw);
-              if (sim >= FUZZY_THRESHOLD) {
-                scores[i] += BOOST.fuzzyName * sim;
-              }
+            for (let w = 0, wl = Math.min(doc._nameWords.length, 5); w < wl; w++) {
+              const sim = similarity(qt, doc._nameWords[w]);
+              if (sim >= FUZZY_THRESHOLD) { scores[i] += BOOST.fuzzyName * sim; break; }
             }
           }
         }
       }
 
       // Region matching
-      if (intent.regions.length && intent.regions.includes(doc.fields.region.toUpperCase())) {
+      if (intentRegionsUpper && intentRegionsUpper.has(doc._regionUpper)) {
         scores[i] += BOOST.regionMatch;
       }
 
-      // Commune matching
+      // Commune/dept/localité matching
       for (const ft of intent.freeTokens) {
         if (doc._communeNorm.includes(ft)) {
           scores[i] += BOOST.communeMatch;
-        } else if (similarity(ft, doc._communeNorm) > 0.75 || doc._communeNorm.split(/\s+/).some(w => similarity(ft, w) > FUZZY_THRESHOLD)) {
-          scores[i] += BOOST.fuzzyCom;
+        } else if (fuzzyCount < FUZZY_BUDGET) {
+          fuzzyCount++;
+          if (similarity(ft, doc._communeNorm) > 0.75 || doc._communeNorm.split(/\s+/).some(w => similarity(ft, w) > FUZZY_THRESHOLD)) {
+            scores[i] += BOOST.fuzzyCom;
+          }
         }
-        if (doc._deptNorm.includes(ft)) {
-          scores[i] += BOOST.deptMatch;
-        }
-        if (doc._localiteNorm.includes(ft)) {
-          scores[i] += BOOST.localiteMatch;
-        }
+        if (doc._deptNorm.includes(ft)) scores[i] += BOOST.deptMatch;
+        if (doc._localiteNorm.includes(ft)) scores[i] += BOOST.localiteMatch;
       }
-    }
 
-    // 3. Trier par score décroissant
-    const minScore = options.minScore || 0.01;
-    const ranked = [];
-    for (let i = 0; i < _docs.length; i++) {
+      // ── Ranking inline (ex-boucle 3) — évite une 3ème passe ──
       if (scores[i] > minScore) {
-        ranked.push({ doc: _docs[i], score: scores[i] });
+        ranked.push({ doc: doc, score: scores[i] });
       }
     }
     ranked.sort((a, b) => b.score - a.score);
