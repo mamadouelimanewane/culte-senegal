@@ -244,10 +244,12 @@ const Chatbot = (() => {
     let msg = `J'ai trouvé **${count} lieu${count > 1 ? 'x' : ''}** ! Voici les meilleurs :\n\n`;
     top5.forEach((r, i) => {
       const doc = r.doc;
-      const name = doc.fields.designation || doc.fields.nom_etablissement || 'Sans nom';
-      const region = doc.fields.region || '';
-      const type = doc.fields.descriptif || doc.fields.branche || '';
-      msg += `${i + 1}. **${name}**\n   📍 ${region}${type ? ' · ' + type : ''}\n\n`;
+      const name = doc.fields.name || doc.rec?.DESIGNATION || doc.rec?.NOM_ETABLISSEMENT || 'Sans nom';
+      const commune = doc.fields.commune || doc.rec?.COMMUNE || '';
+      const region = doc.fields.region || doc.rec?.REGION || '';
+      const type = doc.fields.typeKey || doc.fields.descriptif || doc.rec?.DESCRIPTIF || doc.rec?.BRANCHE || '';
+      const displayName = commune ? `${name} (${commune})` : name;
+      msg += `${i + 1}. **${displayName}**\n   📍 ${region}${type ? ' · ' + type : ''}\n\n`;
     });
 
     if (count > 5) msg += `...et ${count - 5} autres résultats.`;

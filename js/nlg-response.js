@@ -27,6 +27,7 @@ const NLGResponse = (() => {
    * Formate un nombre avec separateur de milliers.
    */
   function _fmt(n) {
+    if (n == null || isNaN(n)) return '0';
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
   }
 

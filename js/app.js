@@ -162,7 +162,10 @@ function getTypeConf(name, isFormation) {
   return INFRA_TYPES.default;
 }
 function favKey(rec, isFormation) {
-  return (isFormation ? 'F:' : 'I:') + (rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '');
+  const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || '';
+  const commune = rec.COMMUNE || rec.LOCALITE || '';
+  const region = rec.REGION || '';
+  return (isFormation ? 'F:' : 'I:') + name + '|' + commune + '|' + region;
 }
 function saveFavs() {
   localStorage.setItem('culte_favs', JSON.stringify([...state.favs]));
@@ -760,7 +763,7 @@ function applyListFilters(resetPage) {
 
   // Utiliser le SearchEngine IA si disponible et qu'il y a une recherche texte
   if (typeof SearchEngine !== 'undefined' && SearchEngine.ready && sNorm && sNorm.length >= 2) {
-    const result = SearchEngine.search(search, { limit: 500 });
+    const result = SearchEngine.search(search, { limit: 2000 });
     // Filtrer par dataset actif (infra/formation) et appliquer les filtres supplémentaires
     state.filtered = result.results
       .map(r => r.doc.rec)
@@ -1237,7 +1240,7 @@ function _renderNlpMapResults(recs, intent, raw, result, withGeo) {
       query: raw,
       intent: intent,
       results: result.results,
-      count: result.results.length,
+      resultCount: result.results.length,
       isContextual: typeof ConversationMemory !== 'undefined' && ConversationMemory.isContextual(raw),
       isProximity: withGeo,
     });
