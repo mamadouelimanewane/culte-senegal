@@ -538,22 +538,22 @@ if (!navigator.onLine) document.body.classList.add('is-offline');
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>window._leafletReady = true;</script>
-<!-- Modules critiques (chargement synchrone) -->
+<!-- Modules critiques (chargement synchrone — utilisés par app.js) -->
 <script src="js/seed.js"></script>
 <script src="js/search-engine.js"></script>
 <script src="js/voice-search.js"></script>
+<script src="js/search-dialog.js"></script>
+<script src="js/conversation-memory.js"></script>
+<script src="js/geolocation-search.js"></script>
 <script src="js/nlg-response.js"></script>
+<script src="js/auto-suggest.js"></script>
+<script src="js/voice-conversation.js"></script>
+<script src="js/events-calendar.js"></script>
+<script src="js/chatbot.js"></script>
+<script src="js/recommendations.js"></script>
 <script src="js/app.js"></script>
-<!-- Modules secondaires (chargement différé) -->
-<script src="js/search-dialog.js" defer></script>
-<script src="js/conversation-memory.js" defer></script>
-<script src="js/geolocation-search.js" defer></script>
-<script src="js/auto-suggest.js" defer></script>
-<script src="js/voice-conversation.js" defer></script>
-<script src="js/events-calendar.js" defer></script>
-<script src="js/chatbot.js" defer></script>
+<!-- Modules secondaires (chargement différé — autonomes) -->
 <script src="js/social.js" defer></script>
-<script src="js/recommendations.js" defer></script>
 <script src="js/multilang.js" defer></script>
 <script src="js/analytics.js" defer></script>
 <script src="js/guided-tours.js" defer></script>
