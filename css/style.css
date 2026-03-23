@@ -2400,3 +2400,13 @@ input { outline: none; }
     color: #ffc300;
   }
 }
+
+/* ── Indicateur hors-ligne ── */
+body.is-offline::after {
+  content: '📡 Hors connexion';
+  position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+  background: #e74c3c; color: #fff; text-align: center;
+  padding: 4px 0; font-size: 12px; font-weight: 600;
+  animation: slideDown .3s ease;
+}
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }

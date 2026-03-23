@@ -3,7 +3,7 @@
 // Version du cache et stratégies de mise en cache
 // ============================================================
 
-const CACHE_NAME = 'culte-v8';
+const CACHE_NAME = 'culte-v9';
 
 // Ressources de l'app shell à pré-cacher lors de l'installation
 const APP_SHELL = [
@@ -92,13 +92,20 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        // On utilise addAll pour cacher toutes les ressources d'un coup.
-        // Si une ressource échoue, l'installation échoue aussi,
-        // garantissant un cache complet.
-        return cache.addAll(PRE_CACHE);
+        // Cache résilient : chaque ressource est cachée individuellement
+        // pour qu'un échec unique ne bloque pas l'installation entière
+        return Promise.allSettled(
+          PRE_CACHE.map(url =>
+            cache.add(url).catch(err => {
+              console.warn(`[SW] Échec cache: ${url}`, err.message);
+              return null;
+            })
+          )
+        );
       })
-      .then(() => {
-        console.log('[SW] App shell et données pré-cachées avec succès');
+      .then((results) => {
+        const ok = results.filter(r => r.status === 'fulfilled').length;
+        console.log(`[SW] Pré-cache: ${ok}/${PRE_CACHE.length} ressources cachées`);
       })
   );
 });
@@ -152,8 +159,12 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate' || request.destination === 'document') {
     // Stratégie : Network-first pour le HTML (pour recevoir les mises à jour)
     event.respondWith(networkFirstStrategy(request));
+  } else if (url.pathname.endsWith('.json')) {
+    // Stratégie : Stale-while-revalidate pour les données JSON
+    // Sert le cache immédiatement puis met à jour en arrière-plan
+    event.respondWith(staleWhileRevalidate(request));
   } else {
-    // Stratégie : Cache-first pour les assets statiques (JS, CSS, JSON, images)
+    // Stratégie : Cache-first pour les assets statiques (JS, CSS, images)
     event.respondWith(cacheFirstStrategy(request));
   }
 });
@@ -223,6 +234,36 @@ async function networkFirstStrategy(request) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' }
     });
   }
+}
+
+// ============================================================
+// STRATÉGIE STALE-WHILE-REVALIDATE
+// Sert le cache immédiatement, puis met à jour en arrière-plan.
+// Optimal pour les données qui changent rarement (JSON).
+// ============================================================
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  // Lancer la revalidation réseau en arrière-plan
+  const fetchPromise = fetch(request).then(networkResponse => {
+    if (networkResponse && networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  }).catch(() => null);
+
+  // Si on a un cache, le servir immédiatement
+  if (cachedResponse) return cachedResponse;
+
+  // Sinon attendre le réseau
+  const networkResponse = await fetchPromise;
+  if (networkResponse) return networkResponse;
+
+  return new Response('Données indisponibles hors connexion', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
 }
 
 // ============================================================

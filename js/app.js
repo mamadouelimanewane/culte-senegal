@@ -4,6 +4,38 @@
 
 'use strict';
 
+/* ── Utilitaires de robustesse ─────────────────────────────────── */
+function _throttle(fn, ms) {
+  let last = 0, timer = null;
+  return function() {
+    const now = Date.now(), args = arguments, ctx = this;
+    const remaining = ms - (now - last);
+    clearTimeout(timer);
+    if (remaining <= 0) { last = now; fn.apply(ctx, args); }
+    else { timer = setTimeout(() => { last = Date.now(); fn.apply(ctx, args); }, remaining); }
+  };
+}
+function _debounce(fn, ms) {
+  let timer = null;
+  return function() { const args = arguments, ctx = this; clearTimeout(timer); timer = setTimeout(() => fn.apply(ctx, args), ms); };
+}
+function _safeLS(key, fallback) {
+  try { const v = localStorage.getItem(key); return v != null ? JSON.parse(v) : fallback; }
+  catch(e) { console.warn('[LS] Lecture échouée:', key, e); return fallback; }
+}
+function _saveLS(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch(e) {
+    console.warn('[LS] Écriture échouée (quota?):', key, e);
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      // Tenter de libérer de l'espace en nettoyant les vieux caches
+      try { localStorage.removeItem('culte_nlp_history'); localStorage.removeItem('autosuggest_recent'); } catch(_) {}
+      try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(_) {}
+    }
+    return false;
+  }
+}
+
 /* ── Type Configs ─────────────────────────────────────────────── */
 const INFRA_TYPES = {
   'Centre culturel':      { icon: '🏛', color: '#0d5fa0', bg: '#e8f4ff' },
@@ -120,7 +152,7 @@ const state = {
   mapFilters: { search: '', layer: 'all', region: '', milieu: '' },
   page: 1,
   perPage: 20,
-  favs: new Set(JSON.parse(localStorage.getItem('culte_favs') || '[]')),
+  favs: new Set(_safeLS('culte_favs', [])),
   map: null,
   mapCluster: null,
   infoWindow: null,
@@ -168,7 +200,7 @@ function favKey(rec, isFormation) {
   return (isFormation ? 'F:' : 'I:') + name + '|' + commune + '|' + region;
 }
 function saveFavs() {
-  localStorage.setItem('culte_favs', JSON.stringify([...state.favs]));
+  _saveLS('culte_favs', [...state.favs]);
 }
 function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
@@ -1910,7 +1942,7 @@ function initHeroMap() {
 
   // Invalidate size après render
   setTimeout(() => heroMap.invalidateSize(), 200);
-  window.addEventListener('resize', () => heroMap.invalidateSize());
+  window.addEventListener('resize', _throttle(() => heroMap.invalidateSize(), 200));
 }
 
 function setupDesktopFilters() {
@@ -2079,7 +2111,7 @@ function applyMapFilters() {
    ════════════════════════════════════════════════════════════════ */
 async function init() {
   applyLayout();
-  window.addEventListener('resize', () => applyLayout());
+  window.addEventListener('resize', _throttle(() => applyLayout(), 250));
 
   updateClock();
   setInterval(updateClock, 30000);

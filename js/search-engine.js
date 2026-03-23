@@ -24,6 +24,22 @@ const SearchEngine = (() => {
     tfidf:          2,    // Bonus TF-IDF
   };
 
+  /* ── Prefix index pour recherche rapide O(1) au lieu de O(n) ── */
+  let _prefixMap = {};  // prefix → Set de tokens complets
+  function _buildPrefixMap() {
+    _prefixMap = {};
+    for (const token of Object.keys(_index)) {
+      for (let len = 2; len <= Math.min(token.length, 8); len++) {
+        const prefix = token.substring(0, len);
+        if (!_prefixMap[prefix]) _prefixMap[prefix] = [];
+        _prefixMap[prefix].push(token);
+      }
+    }
+  }
+  function _getPrefixTokens(prefix) {
+    return _prefixMap[prefix] || [];
+  }
+
   /* ── Normalisation avancée ──────────────────────────────────── */
   function normalize(s) {
     return (s || '').toLowerCase()
@@ -330,11 +346,12 @@ const SearchEngine = (() => {
       _indexDocTokens(doc);
     }
 
-    // Calculer IDF
+    // Calculer IDF + prefix map
     _recomputeIDF();
+    _buildPrefixMap();
 
     _ready = true;
-    console.log(`[SearchEngine] Index construit: ${_docs.length} documents, ${Object.keys(_index).length} tokens`);
+    console.log(`[SearchEngine] Index construit: ${_docs.length} documents, ${Object.keys(_index).length} tokens, ${Object.keys(_prefixMap).length} prefixes`);
     _notifyChange('rebuild', null, { infraCount: infrastructures.length, formCount: formations.length });
   }
 
@@ -744,10 +761,12 @@ const SearchEngine = (() => {
           scores[posting.docId] += posting.tf * idf * fieldWeight * BOOST.tfidf;
         }
       }
-      // Prefix match (autocomplétion)
+      // Prefix match (autocomplétion) — via prefix map O(1)
       if (qt.length >= 2) {
-        for (const [token, postings] of Object.entries(_index)) {
-          if (token !== qt && token.startsWith(qt)) {
+        const prefixTokens = _getPrefixTokens(qt);
+        for (const token of prefixTokens) {
+          if (token !== qt) {
+            const postings = _index[token];
             const idf = _idf[token] || 1;
             for (const posting of postings) {
               scores[posting.docId] += posting.tf * idf * 0.5 * BOOST.tfidf;
