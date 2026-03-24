@@ -127,9 +127,10 @@ function navHandleBack() {
       return true;
     }
   }
-  if (state.activeTab !== 'home') {
+  const defaultTab = isDesktop() ? 'explore' : 'home';
+  if (state.activeTab !== defaultTab) {
     handlingPopState = true;
-    switchTab('home');
+    switchTab(defaultTab);
     handlingPopState = false;
     return true;
   }
@@ -146,7 +147,7 @@ window.addEventListener('popstate', (e) => {
 const state = {
   data: { infrastructures: [], formations: [] },
   filtered: [],
-  activeTab: 'home',
+  activeTab: window.innerWidth >= 1024 ? 'explore' : 'home',
   listSet: 'infrastructures',
   listFilters: { search: '', region: '', type: '', milieu: '' },
   mapFilters: { search: '', layer: 'all', region: '', milieu: '' },
@@ -516,7 +517,7 @@ function buildEventsWidget() {
 function buildCategories() {
   const row = document.getElementById('categoriesRow');
   const cats = [
-    { label: 'Nearby',       icon: '📍', color: '#e3f2fd', iconColor: '#1565c0', filter: 'nearby' },
+    { label: 'À proximité',  icon: '📍', color: '#e3f2fd', iconColor: '#1565c0', filter: 'nearby' },
     { label: 'Musées',       icon: '🏺', color: '#f3e5f5', iconColor: '#6a1b9a', type: 'musée' },
     { label: 'Cinémas',      icon: '🎬', color: '#fef0ee', iconColor: '#c0392b', type: 'cinéma' },
     { label: 'Galeries',     icon: '🖼', color: '#e0f7fa', iconColor: '#00838f', type: 'galerie' },
@@ -2148,6 +2149,13 @@ async function init() {
   // Build home
   buildHome();
   buildListFilters();
+
+  // Sur desktop, activer directement le tab explore (cartographie)
+  if (isDesktop()) {
+    document.getElementById('tab-home')?.classList.remove('active');
+    document.getElementById('tab-explore')?.classList.add('active');
+    setTimeout(() => { initMap(); if (state.map) MAP.resize(); }, 100);
+  }
 
   // Bottom nav (mobile) + Desktop horizontal nav
   document.querySelectorAll('.nav-btn').forEach(btn => {

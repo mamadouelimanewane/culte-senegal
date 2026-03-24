@@ -161,20 +161,21 @@
     inset: 0;
   }
 
-  /* Quand tab-home est actif, layout column pour hero + scroll */
-  #tab-home.active {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  /* Tab home masque entierement sur desktop */
+  #tab-home { display: none !important; }
 
   /* Header mobile cache sur desktop */
   .home-header { display: none; }
 
+  /* Hero map masque sur desktop — categories remontent directement */
+  .hero-map-section,
+  .hero-map-section.desktop-only { display: none !important; }
+
   /* ==============================================================
-     5. HERO MAP — Carte interactive du Senegal
+     5. HERO MAP — (garde les styles au cas ou reactivation)
      ============================================================== */
-  .hero-map-section {
+  .hero-map-section.force-show {
+    display: block !important;
     position: relative;
     flex-shrink: 0;
     height: 380px;
@@ -271,10 +272,10 @@
   .home-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 32px 48px 40px;
+    padding: 24px 48px 40px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px 32px;
+    gap: 20px 32px;
     align-content: start;
     background: #f0f4f8;
   }
@@ -785,7 +786,7 @@
    LARGE DESKTOP (1440px+)
    =================================================================== */
 @media (min-width: 1440px) {
-  .hero-map-section { height: 440px; }
+  .hero-map-section.force-show { height: 440px; }
   .hero-map-title { font-size: 30px; }
 
   .home-scroll {
@@ -812,7 +813,7 @@
    XL DESKTOP (1920px+)
    =================================================================== */
 @media (min-width: 1920px) {
-  .hero-map-section { height: 480px; }
+  .hero-map-section.force-show { height: 480px; }
 
   .home-scroll {
     padding: 40px 64px 48px;
