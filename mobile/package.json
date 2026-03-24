@@ -6,7 +6,14 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "target:client": "node configure-target.js client",
+    "target:admin": "node configure-target.js admin",
+    "target:responsable": "node configure-target.js responsable",
+    "build:client": "node configure-target.js client && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
+    "build:admin": "node configure-target.js admin && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
+    "build:responsable": "node configure-target.js responsable && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
+    "build:all": "npm run build:client && npm run build:admin && npm run build:responsable"
   },
   "dependencies": {
     "expo": "~55.0.7",

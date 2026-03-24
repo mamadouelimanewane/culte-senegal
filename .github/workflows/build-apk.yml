@@ -1,7 +1,18 @@
-name: Build APK (Gradle)
+name: Build APK (Multi-target)
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Cible du build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - client
+          - admin
+          - responsable
+          - all
   push:
     branches: [main]
     paths:
@@ -11,6 +22,9 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'all' && fromJSON(format('["{0}"]', github.event.inputs.target)) || fromJSON('["client", "admin", "responsable"]') }}
     defaults:
       run:
         working-directory: mobile
@@ -35,7 +49,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate native Android project (expo prebuild)
+      - name: Configure target (${{ matrix.target }})
+        run: node configure-target.js ${{ matrix.target }}
+
+      - name: Show configuration
+        run: |
+          echo "=== app.json ==="
+          cat app.json | head -20
+          echo ""
+          echo "=== App.js URL ==="
+          grep "SITE_URL" App.js
+
+      - name: Generate native Android project
         run: npx expo prebuild --platform android --clean --no-install
 
       - name: Make gradlew executable
@@ -46,14 +71,36 @@ jobs:
           cd android
           ./gradlew assembleRelease --no-daemon
 
-      - name: Rename APK
+      - name: Rename and collect APK
         run: |
           mkdir -p output
-          cp android/app/build/outputs/apk/release/app-release.apk output/scenews-v1.0.0.apk
+          TARGET=${{ matrix.target }}
+          cp android/app/build/outputs/apk/release/app-release.apk output/scenews-${TARGET}-v1.0.0.apk
+          echo "APK_NAME=scenews-${TARGET}-v1.0.0.apk" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: scenews-apk
-          path: mobile/output/scenews-v1.0.0.apk
+          name: scenews-${{ matrix.target }}-apk
+          path: mobile/output/scenews-${{ matrix.target }}-v1.0.0.apk
           retention-days: 90
+
+  # Job de résumé qui liste tous les APKs
+  summary:
+    needs: build-android
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## 📱 APKs générées" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Cible | APK | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-----|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Client | scenews-client-v1.0.0.apk | https://culte-senegal.vercel.app/ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin | scenews-admin-v1.0.0.apk | https://culte-senegal.vercel.app/admin/ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Responsable | scenews-responsable-v1.0.0.apk | https://culte-senegal.vercel.app/responsable/ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔑 Identifiants" >> $GITHUB_STEP_SUMMARY
+          echo "- **Admin**: admin@culte.sn / admin2024" >> $GITHUB_STEP_SUMMARY
+          echo "- **Responsables**: fatou@culte.sn / demo2024" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,29 @@
+{
+  "client": {
+    "name": "SCeNews",
+    "slug": "scenews-client",
+    "package": "com.mamadouelimane.scenews",
+    "url": "https://culte-senegal.vercel.app/",
+    "statusBarColor": "#0a3d6b",
+    "description": "Portail public - Cartographie culturelle du Sénégal",
+    "apkName": "scenews-client-v1.0.0.apk"
+  },
+  "admin": {
+    "name": "SCeNews Admin",
+    "slug": "scenews-admin",
+    "package": "com.mamadouelimane.scenews.admin",
+    "url": "https://culte-senegal.vercel.app/admin/",
+    "statusBarColor": "#1a1a2e",
+    "description": "Backoffice administrateur - Gestion plateforme",
+    "apkName": "scenews-admin-v1.0.0.apk"
+  },
+  "responsable": {
+    "name": "SCeNews Responsable",
+    "slug": "scenews-responsable",
+    "package": "com.mamadouelimane.scenews.responsable",
+    "url": "https://culte-senegal.vercel.app/responsable/",
+    "statusBarColor": "#0a3d6b",
+    "description": "Portail gestionnaire - Gestion infrastructure culturelle",
+    "apkName": "scenews-responsable-v1.0.0.apk"
+  }
+}
