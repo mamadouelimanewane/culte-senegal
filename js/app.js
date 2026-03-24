@@ -730,6 +730,8 @@ function buildStats() {
 function animateCounter(id, target, duration) {
   const el = document.getElementById(id);
   if (!el) return;
+  // Set final value immediately as fallback (RAF may not fire in background tabs)
+  el.textContent = target.toLocaleString('fr-FR');
   const start = performance.now();
   const step = (now) => {
     const p = Math.min((now - start) / duration, 1);
@@ -816,10 +818,12 @@ function applyListFilters(resetPage) {
           if (isFormation && !formSet.has(r)) return false;
           if (!isFormation && !infraSet.has(r)) return false;
         }
-        // Vérification textuelle : le terme doit apparaître dans au moins un champ
+        // Vérification textuelle : chaque mot de la recherche doit apparaître dans au moins un champ
         const fields = [r.DESIGNATION, r.NOM_ETABLISSEMENT, r.DESCRIPTIF, r.BRANCHE,
                         r.COMMUNE, r.LOCALITE, r.LOCALITES, r.REGION, r.DEPARTEMENT].filter(Boolean);
-        const textMatch = fields.some(f => norm(f).includes(sNorm));
+        const allFieldsText = fields.map(f => norm(f)).join(' ');
+        const searchWords = sNorm.split(/\s+/).filter(w => w.length > 1);
+        const textMatch = searchWords.every(w => allFieldsText.includes(w));
         if (!textMatch) return false;
         // Filtres dropdown
         const reg = (r.REGION || '').toUpperCase();
@@ -1055,46 +1059,37 @@ function populateMapLayer(layer) {
     for (const rec of state.data.formations) allRecords.push({ rec, isFormation: true });
   }
 
-  // Chargement par lots (500 marqueurs/frame) pour ne pas bloquer le UI
-  const BATCH_SIZE = 500;
-  let offset = 0;
+  // Chargement synchrone — 1-2K marqueurs est instantané avec MarkerCluster
+  const batch = [];
+  for (let j = 0; j < allRecords.length; j++) {
+    const { rec, isFormation } = allRecords[j];
+    const lat = parseFloat(rec.LATITUDE);
+    const lon = parseFloat(rec.LONGITUDE);
+    if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
 
-  function processBatch() {
-    const end = Math.min(offset + BATCH_SIZE, allRecords.length);
-    const batch = [];
-    for (let j = offset; j < end; j++) {
-      const { rec, isFormation } = allRecords[j];
-      const lat = parseFloat(rec.LATITUDE);
-      const lon = parseFloat(rec.LONGITUDE);
-      if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
+    const typeKey = isFormation ? (rec.BRANCHE || '') : getInfraType(rec);
+    const conf = getTypeConf(typeKey, isFormation);
+    const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || 'Sans nom';
+    const commune = rec.COMMUNE || rec.LOCALITE || '';
+    const region  = rec.REGION || '';
+    const idx = state.nlpStore.length;
+    state.nlpStore.push({ lat, lon, name, isFormation, rec });
 
-      const typeKey = isFormation ? (rec.BRANCHE || '') : getInfraType(rec);
-      const conf = getTypeConf(typeKey, isFormation);
-      const name = rec.DESIGNATION || rec.NOM_ETABLISSEMENT || 'Sans nom';
-      const commune = rec.COMMUNE || rec.LOCALITE || '';
-      const region  = rec.REGION || '';
-      const idx = state.nlpStore.length;
-      state.nlpStore.push({ lat, lon, name, isFormation, rec });
+    const html = `<div class="map-popup">
+      <div class="mp-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
+      <div class="mp-name">${name}</div>
+      <div class="mp-loc">📍 ${commune}${region ? ', '+region : ''}</div>
+      <div class="mp-actions">
+        <button class="mp-btn mp-btn-primary" onclick="openModalFromMap(${idx})">Voir la fiche</button>
+        <button class="mp-btn mp-btn-secondary" onclick="navigateTo(${lat},${lon})">🧭 Y aller</button>
+      </div>
+    </div>`;
 
-      const html = `<div class="map-popup">
-        <div class="mp-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
-        <div class="mp-name">${name}</div>
-        <div class="mp-loc">📍 ${commune}${region ? ', '+region : ''}</div>
-        <div class="mp-actions">
-          <button class="mp-btn mp-btn-primary" onclick="openModalFromMap(${idx})">Voir la fiche</button>
-          <button class="mp-btn mp-btn-secondary" onclick="navigateTo(${lat},${lon})">🧭 Y aller</button>
-        </div>
-      </div>`;
-
-      const marker = MAP.createMarker(lat, lon, conf, html);
-      state.mapMarkers.push({ marker, rec, isFormation, typeKey });
-      batch.push(marker);
-    }
-    if (batch.length) MAP.addMarkers(batch);
-    offset = end;
-    if (offset < allRecords.length) requestAnimationFrame(processBatch);
+    const marker = MAP.createMarker(lat, lon, conf, html);
+    state.mapMarkers.push({ marker, rec, isFormation, typeKey });
+    batch.push(marker);
   }
-  if (allRecords.length) requestAnimationFrame(processBatch);
+  if (batch.length) MAP.addMarkers(batch);
 
   updateMapChipCounts();
 }
@@ -2188,6 +2183,15 @@ async function init() {
     clearTimeout(listTimer);
     clearTimeout(listSugTimer);
     state.listFilters.search = listSearch.value;
+
+    // Si la recherche est vidée, réinitialiser les filtres NLP-inférés
+    if (!listSearch.value.trim()) {
+      state.listFilters.type = '';
+      state.listFilters.region = '';
+      state.listFilters.milieu = '';
+      const regionSel = document.getElementById('regionSelect');
+      if (regionSel) regionSel.value = '';
+    }
 
     // Autocomplétion temps réel
     listSugTimer = setTimeout(() => {

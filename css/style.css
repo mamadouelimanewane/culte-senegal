@@ -875,7 +875,7 @@ input { outline: none; }
    RESPONSIVE — 480px: centered phone frame
    ════════════════════════════════════════════════════════════════ */
 @media (min-width: 480px) and (max-width: 1023px) {
-  body { display: flex; justify-content: center; background: #c8dce8; }
+  body { display: flex; justify-content: center; background: var(--bg, #c8dce8); }
   #splash, #app, .modal, .bottom-nav {
     max-width: 430px;
     margin: 0 auto;
@@ -895,7 +895,7 @@ input { outline: none; }
   .mobile-only { display: none !important; }
   .desktop-only { display: flex !important; }
 
-  body { overflow: hidden; background: #f0f4f8; }
+  body { overflow: hidden; background: var(--bg, #f0f4f8); }
 
   /* ── Splash ── */
   #splash {

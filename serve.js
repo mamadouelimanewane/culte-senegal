@@ -51,9 +51,9 @@ http.createServer((req, res) => {
       'X-Content-Type-Options': 'nosniff',
     };
 
-    // Cache headers
+    // Cache headers — ETag handles revalidation; short max-age ensures fresh content
     if (LONG_CACHE.has(ext)) {
-      headers['Cache-Control'] = 'public, max-age=604800, stale-while-revalidate=86400';
+      headers['Cache-Control'] = 'public, max-age=60, must-revalidate';
     } else {
       headers['Cache-Control'] = 'public, max-age=0, must-revalidate';
     }

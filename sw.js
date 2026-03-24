@@ -3,7 +3,7 @@
 // Version du cache et stratégies de mise en cache
 // ============================================================
 
-const CACHE_NAME = 'culte-v9';
+const CACHE_NAME = 'culte-v12';
 
 // Ressources de l'app shell à pré-cacher lors de l'installation
 const APP_SHELL = [
