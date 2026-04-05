@@ -10,7 +10,7 @@ async function _sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 const ADMIN_USERS = [
-  { email: 'admin@culte.sn', hash: 'b8b8eb83374c0bf3b1c3224159f6119dbfff1b7ed6dfecdd80d4e8a895790a34', name: 'Administrateur' },
+  { email: 'admin@culte.sn', hash: '240be518fabd2724ddb6f0403f5d5d67175396144434b0744c6d66e7683793f7', name: 'Administrateur' }, // admin123
 ];
 const LS_EDITS    = 'culte_admin_edits';
 const LS_LOG      = 'culte_admin_log';
