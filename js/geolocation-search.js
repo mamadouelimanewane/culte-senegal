@@ -63,6 +63,7 @@ var GeoSearch = (function () {
   var PATTERNS_PROXIMITE = [
     // Français
     /pr[eè]s\s+d[''']ici/i,
+    /pr[eè]s\s+de\s+moi/i,
     /autour\s+de\s+moi/i,
     /[àa]\s+proximit[ée]/i,
     /le\s+plus\s+proche/i,

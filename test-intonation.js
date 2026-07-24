@@ -8,7 +8,8 @@ global.document={createElement:()=>mkEl(),body:{appendChild:()=>{},classList:{to
 global.window={SpeechRecognition:null,webkitSpeechRecognition:null,innerWidth:400,scrollY:0,addEventListener:()=>{}};
 global.localStorage={getItem:()=>null,setItem:()=>{}};
 global.history={pushState:()=>{}};
-const VS=(new Function('window','document',fs.readFileSync('C:/gravity/culte/js/voice-search.js','utf8')+';return VoiceSearch;'))(global.window,global.document);
+const path = require('path');
+const VS=(new Function('window','document',fs.readFileSync(path.join(__dirname, 'js/voice-search.js'),'utf8')+';return VoiceSearch;'))(global.window,global.document);
 
 let _p=0,_f=0;
 function t(name,fn){try{const r=fn();if(r===false)throw new Error('false');_p++;console.log('  ✅',name);}catch(e){_f++;console.log('  ❌',name,'—',e.message);}}

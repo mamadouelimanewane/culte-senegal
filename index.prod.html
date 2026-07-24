@@ -10,7 +10,20 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230078c8'/%3E%3Cstop offset='100%25' stop-color='%23005a9e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='96' cy='96' r='88' fill='url(%23g)'/%3E%3Ctext x='96' y='112' font-family='Arial,sans-serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3ESC%3C/text%3E%3C/svg%3E">
   <title>Scenews — Culture Sénégal</title>
-  <link rel="stylesheet" href="dist/css/app.bundle.min.css">
+  <!-- Preload ressources critiques -->
+  <link rel="preload" href="infrastructures_culturelles.json" as="fetch" crossorigin>
+  <link rel="preload" href="centre_formation_arts.json" as="fetch" crossorigin>
+  <link rel="preload" href="css/style.css?v=12" as="style">
+  <link rel="preload" href="js/app.js" as="script">
+  <!-- DNS prefetch pour CDN -->
+  <link rel="dns-prefetch" href="https://unpkg.com">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="css/style.css?v=12">
+  <link rel="stylesheet" href="css/events.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/tours.css">
+  <link rel="stylesheet" href="css/stats.css">
+  <link rel="stylesheet" href="css/desktop.css?v=3">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -54,8 +67,7 @@
     </div>
     <!-- Desktop horizontal nav -->
     <nav class="dt-nav desktop-only">
-      <button class="dt-nav-link active" data-tab="home">Accueil</button>
-      <button class="dt-nav-link" data-tab="explore">Cartographie</button>
+      <button class="dt-nav-link active" data-tab="explore">Cartographie</button>
       <button class="dt-nav-link" data-tab="list">Annuaire</button>
       <button class="dt-nav-link" data-tab="favorites">Favoris</button>
     </nav>
@@ -367,136 +379,11 @@
     </button>
   </nav>
 
-  <!-- ══════════════ FAB : Ajouter un lieu ══════════════ -->
-  <button class="fab-add" id="fabAdd" aria-label="Ajouter un lieu ou événement" title="Ajouter un lieu / événement">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
+  <!-- FAB supprimé — l'ajout de lieux/événements se fait via le portail Responsable (/responsable/) -->
 
 </div><!-- #app -->
 
-<!-- ══════════════ PANNEAU AJOUT TEMPS RÉEL ══════════════ -->
-<div id="liveAddPanel" class="live-panel hidden">
-  <div class="live-panel-backdrop"></div>
-  <div class="live-panel-sheet">
-    <div class="live-panel-header">
-      <h3>Ajouter un lieu ou événement</h3>
-      <button class="live-panel-close" id="liveAddClose" aria-label="Fermer">✕</button>
-    </div>
-    <div class="live-panel-body">
-      <!-- Type de donnée -->
-      <div class="live-field">
-        <label>Type de données</label>
-        <div class="live-toggle-row">
-          <button class="live-toggle active" data-set="infra" id="liveSetInfra">🏛 Infrastructure</button>
-          <button class="live-toggle" data-set="formation" id="liveSetFormation">🎓 Formation</button>
-          <button class="live-toggle" data-set="event" id="liveSetEvent">📅 Événement</button>
-        </div>
-      </div>
-      <!-- Nom -->
-      <div class="live-field">
-        <label for="liveName">Nom / Désignation *</label>
-        <input type="text" id="liveName" placeholder="Ex: Musée de la Femme" required>
-      </div>
-      <!-- Type infrastructure -->
-      <div class="live-field" id="liveTypeField">
-        <label for="liveType">Type d'infrastructure</label>
-        <select id="liveType">
-          <option value="">— Choisir —</option>
-          <option value="Musée">🏺 Musée</option>
-          <option value="Galerie">🖼 Galerie</option>
-          <option value="Cinéma">🎬 Cinéma</option>
-          <option value="Bibliothèque">📚 Bibliothèque</option>
-          <option value="Salle de spectacle">🎪 Salle de spectacle</option>
-          <option value="Salle des fêtes">🎉 Salle des fêtes</option>
-          <option value="Centre culturel">🏛 Centre culturel</option>
-          <option value="Maison de la culture">🏠 Maison de la culture</option>
-          <option value="Foyer des jeunes">🎭 Foyer des jeunes</option>
-          <option value="Foyer des femmes">👩 Foyer des femmes</option>
-          <option value="Village artisanal">🧶 Village artisanal</option>
-        </select>
-      </div>
-      <!-- Branche formation (visible si formation) -->
-      <div class="live-field hidden" id="liveBrancheField">
-        <label for="liveBranche">Branche de formation</label>
-        <select id="liveBranche">
-          <option value="">— Choisir —</option>
-          <option value="ARTS">🎨 Arts</option>
-          <option value="AUDIOVISUEL">🎬 Audiovisuel</option>
-          <option value="MUSIQUE">🎵 Musique</option>
-          <option value="THEATRE">🎭 Théâtre</option>
-          <option value="PEINTURE">🖌 Peinture</option>
-          <option value="INFOGRAPHIE">💻 Infographie</option>
-          <option value="SERIGRAPHIE">🖨 Sérigraphie</option>
-        </select>
-      </div>
-      <!-- Région -->
-      <div class="live-field">
-        <label for="liveRegion">Région *</label>
-        <select id="liveRegion">
-          <option value="">— Choisir —</option>
-          <option value="DAKAR">🌊 Dakar</option>
-          <option value="SAINT-LOUIS">🌹 Saint-Louis</option>
-          <option value="THIES">🏗 Thiès</option>
-          <option value="DIOURBEL">🕌 Diourbel</option>
-          <option value="FATICK">🐠 Fatick</option>
-          <option value="KAOLACK">🌾 Kaolack</option>
-          <option value="KAFFRINE">🌿 Kaffrine</option>
-          <option value="ZIGUINCHOR">🌴 Ziguinchor</option>
-          <option value="KOLDA">🦅 Kolda</option>
-          <option value="SEDHIOU">🦋 Sédhiou</option>
-          <option value="TAMBACOUNDA">🦁 Tambacounda</option>
-          <option value="KEDOUGOU">⛰ Kédougou</option>
-          <option value="LOUGA">🏜 Louga</option>
-          <option value="MATAM">🌵 Matam</option>
-        </select>
-      </div>
-      <!-- Commune -->
-      <div class="live-field">
-        <label for="liveCommune">Commune / Localité</label>
-        <input type="text" id="liveCommune" placeholder="Ex: Plateau, Pikine...">
-      </div>
-      <!-- Département -->
-      <div class="live-field">
-        <label for="liveDept">Département</label>
-        <input type="text" id="liveDept" placeholder="Ex: Dakar, Rufisque...">
-      </div>
-      <!-- Milieu -->
-      <div class="live-field">
-        <label for="liveMilieu">Milieu</label>
-        <div class="live-toggle-row">
-          <button class="live-toggle" data-milieu="URBAIN" id="liveMilieuU">🏙 Urbain</button>
-          <button class="live-toggle" data-milieu="RURAL" id="liveMilieuR">🌾 Rural</button>
-        </div>
-      </div>
-      <!-- Coordonnées GPS (optionnel) -->
-      <div class="live-field live-field-row">
-        <div class="live-field-half">
-          <label for="liveLat">Latitude</label>
-          <input type="number" step="any" id="liveLat" placeholder="14.693">
-        </div>
-        <div class="live-field-half">
-          <label for="liveLon">Longitude</label>
-          <input type="number" step="any" id="liveLon" placeholder="-17.447">
-        </div>
-        <button class="live-gps-btn" id="liveGpsBtn" title="Ma position GPS">📍</button>
-      </div>
-      <!-- Description -->
-      <div class="live-field">
-        <label for="liveDesc">Description / Thématique</label>
-        <textarea id="liveDesc" rows="3" placeholder="Description libre..."></textarea>
-      </div>
-      <!-- Date événement (visible si événement) -->
-      <div class="live-field hidden" id="liveDateField">
-        <label for="liveDate">Date de l'événement</label>
-        <input type="date" id="liveDate">
-      </div>
-    </div>
-    <div class="live-panel-footer">
-      <div class="live-preview-count" id="livePreview"></div>
-      <button class="live-submit-btn" id="liveSubmitBtn">➕ Ajouter et indexer</button>
-    </div>
-  </div>
-</div>
+<!-- Panneau d'ajout supprimé — l'ajout se fait via /responsable/ (backoffice dédié, validé par admin) -->
 
 <!-- ══════════════ DETAIL MODAL ══════════════ -->
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
@@ -508,9 +395,43 @@
   </div>
 </div>
 
+<!-- Error boundary global -->
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  console.error('[APP ERROR]', msg, src + ':' + line);
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[PROMISE ERROR]', e.reason);
+});
+// Indicateur connexion
+window.addEventListener('online',  function() { document.body.classList.remove('is-offline'); });
+window.addEventListener('offline', function() { document.body.classList.add('is-offline'); });
+if (!navigator.onLine) document.body.classList.add('is-offline');
+</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>window._leafletReady = true;</script>
-<script src="dist/js/app.bundle.min.js"></script>
+<!-- Modules critiques (chargement synchrone — utilisés par app.js) -->
+<script src="js/seed.js"></script>
+<script src="js/search-engine.js"></script>
+<script src="js/voice-search.js"></script>
+<script src="js/search-dialog.js"></script>
+<script src="js/conversation-memory.js"></script>
+<script src="js/geolocation-search.js"></script>
+<script src="js/nlg-response.js"></script>
+<script src="js/auto-suggest.js"></script>
+<script src="js/voice-conversation.js"></script>
+<script src="js/events-calendar.js"></script>
+<script src="js/chatbot.js"></script>
+<script src="js/recommendations.js"></script>
+<script src="js/app.js?v=14"></script>
+<!-- Modules secondaires (chargement différé — autonomes) -->
+<script src="js/social.js" defer></script>
+<script src="js/multilang.js" defer></script>
+<script src="js/analytics.js" defer></script>
+<script src="js/guided-tours.js" defer></script>
+<script src="js/stats-dashboard.js" defer></script>
+<script src="js/calendar-export.js" defer></script>
 </body>
 </html>

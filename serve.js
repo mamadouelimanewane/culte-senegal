@@ -22,7 +22,7 @@ const LONG_CACHE = new Set(['.css','.js','.png','.jpg','.jpeg','.svg','.woff2','
 // ETag simple basé sur mtime + taille
 function etag(stat) { return `"${stat.mtimeMs.toString(36)}-${stat.size.toString(36)}"`; }
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   // Sécurité : bloquer path traversal
   const urlPath = decodeURIComponent(req.url.split('?')[0]);
   if (urlPath.includes('..')) { res.writeHead(403); res.end('Forbidden'); return; }
@@ -76,4 +76,19 @@ http.createServer((req, res) => {
       fs.createReadStream(fp).pipe(res);
     }
   });
-}).listen(PORT, () => console.log(`Serving on http://localhost:${PORT} (gzip enabled)`));
+});
+
+function listenOnPort(p) {
+  server.removeAllListeners('error');
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[Serve] Port ${p} déjà utilisé. Tentative sur http://localhost:${p + 1}...`);
+      listenOnPort(p + 1);
+    } else {
+      console.error('[Serve] Erreur serveur:', err);
+    }
+  });
+  server.listen(p, () => console.log(`Serving on http://localhost:${p} (gzip enabled)`));
+}
+
+listenOnPort(PORT);

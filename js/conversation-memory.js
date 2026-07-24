@@ -97,8 +97,6 @@ const ConversationMemory = (() => {
    * @return {boolean}
    */
   function isContextual(text) {
-    if (!history.length) return false;
-
     const norm = normalize(text);
 
     // Réinitialisation explicite → pas contextuel (c'est une rupture)

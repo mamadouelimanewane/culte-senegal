@@ -94,6 +94,17 @@ names.forEach(n => { if (global[n]) eval(n + ' = global.' + n); });
 // Alias
 if (global.NLGResponse) { global.NlgResponse = global.NLGResponse; NlgResponse = global.NLGResponse; }
 
+// Indexation des données JSON dans SearchEngine
+try {
+  const infrasFile = JSON.parse(fs.readFileSync('infrastructures_culturelles.json', 'utf8'));
+  const formationsFile = JSON.parse(fs.readFileSync('centre_formation_arts.json', 'utf8'));
+  const infras = infrasFile.sheets.INFRASTRUCTURES_CULTURELLES.records;
+  const formations = formationsFile.sheets.CENTRE_FORMATION_CULTURE.records;
+  if (global.SearchEngine && global.SearchEngine.buildIndex) {
+    global.SearchEngine.buildIndex(infras, formations);
+  }
+} catch(e) { console.error('INDEX BUILD ERROR:', e.message); }
+
 let pass = 0, fail = 0, total = 0;
 function test(name, fn) {
   total++;

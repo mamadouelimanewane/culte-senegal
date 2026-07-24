@@ -14,42 +14,47 @@ const StatsDashboard = (() => {
     return (typeof SearchEngine !== 'undefined' && SearchEngine.docs) ? SearchEngine.docs : [];
   }
 
+  function _getReg(d) { return (d.rec && d.rec.REGION) || d.REGION || (d.fields && d.fields.region) || 'Inconnu'; }
+  function _getType(d) { return (d.rec && (d.rec.DESCRIPTIF || d.rec.THEMATIQUE)) || d.TYPE_INFRA || (d.fields && d.fields.typeKey) || 'Autre'; }
+  function _getCom(d) { return (d.rec && d.rec.COMMUNE) || d.COMMUNE || (d.fields && d.fields.commune) || 'Inconnu'; }
+  function _getMil(d) { return (d.rec && d.rec.MILIEU) || d.MILIEU || (d.fields && d.fields.milieu) || 'Non précisé'; }
+
   // ── Agrégation ──
   function getInfraByRegion() {
-    const m = {}; _getDocs().forEach(d => { const r = d.REGION || 'Inconnu'; m[r] = (m[r]||0)+1; });
+    const m = {}; _getDocs().forEach(d => { const r = _getReg(d); m[r] = (m[r]||0)+1; });
     return Object.entries(m).sort((a,b) => b[1]-a[1]);
   }
   function getInfraByType() {
-    const m = {}; _getDocs().forEach(d => { const t = d.TYPE_INFRA || 'Autre'; m[t] = (m[t]||0)+1; });
+    const m = {}; _getDocs().forEach(d => { const t = _getType(d); m[t] = (m[t]||0)+1; });
     return Object.entries(m).sort((a,b) => b[1]-a[1]);
   }
   function getMilieuDistribution() {
-    const m = {}; _getDocs().forEach(d => { const k = d.MILIEU||'Non précisé'; m[k] = (m[k]||0)+1; });
+    const m = {}; _getDocs().forEach(d => { const k = _getMil(d); m[k] = (m[k]||0)+1; });
     return Object.entries(m).sort((a,b) => b[1]-a[1]);
   }
   function getTopCommunes(limit) {
     limit = limit || 10;
-    const m = {}; _getDocs().forEach(d => { const c = d.COMMUNE||'Inconnu'; m[c] = (m[c]||0)+1; });
+    const m = {}; _getDocs().forEach(d => { const c = _getCom(d); m[c] = (m[c]||0)+1; });
     return Object.entries(m).sort((a,b) => b[1]-a[1]).slice(0, limit);
   }
   function getTypeByRegion() {
     const regions = new Set(), types = new Set(), matrix = {};
     _getDocs().forEach(d => {
-      const r = d.REGION||'Inconnu', t = d.TYPE_INFRA||'Autre';
+      const r = _getReg(d), t = _getType(d);
       regions.add(r); types.add(t);
       const k = r+'|'+t; matrix[k] = (matrix[k]||0)+1;
     });
     return { regions: [...regions].sort(), types: [...types].sort(), matrix: matrix };
   }
   function getCulturalDensity() {
-    const counts = {}; _getDocs().forEach(d => { const r = d.REGION||'Inconnu'; counts[r] = (counts[r]||0)+1; });
+    const counts = {}; _getDocs().forEach(d => { const r = _getReg(d); counts[r] = (counts[r]||0)+1; });
     const total = _getDocs().length || 1;
     return Object.entries(counts).map(function(e) { return [e[0], +(e[1]/total*100).toFixed(1)]; }).sort((a,b) => b[1]-a[1]);
   }
   function getRegionDiversity() {
     const regionTypes = {};
     _getDocs().forEach(d => {
-      const r = d.REGION||'Inconnu', t = d.TYPE_INFRA||'Autre';
+      const r = _getReg(d), t = _getType(d);
       if (!regionTypes[r]) regionTypes[r] = {};
       regionTypes[r][t] = (regionTypes[r][t]||0)+1;
     });

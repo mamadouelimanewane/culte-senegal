@@ -760,11 +760,17 @@ const EventsCalendar = (() => {
 
   /* ── Intégration avec le moteur de recherche ──────────────── */
   function searchEvents(query) {
-    if (!query) return [];
-    const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return _events.filter(evt => {
+    if (query === undefined || query === null) return [];
+    const all = [..._events, ..._userEvents].map(e => ({
+      ...e,
+      name: e.name || e.nom,
+      date: e.date || (e.moisFixe ? '2026-0' + e.moisFixe + '-' + String(e.jourFixe || 1).padStart(2, '0') : '2026-' + String(e.mois || 1).padStart(2, '0') + '-01')
+    }));
+    if (typeof query === 'string' && query.trim() === '') return all;
+    const q = String(query).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return all.filter(evt => {
       const haystack = [
-        evt.nom, evt.type, evt.categorie, evt.description,
+        evt.nom || evt.name, evt.type, evt.categorie, evt.description,
         evt.region, evt.commune, evt.lieu,
         ...(evt.tags || [])
       ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');

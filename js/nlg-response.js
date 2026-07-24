@@ -199,25 +199,31 @@ const NLGResponse = (() => {
 
     for (var i = 0; i < results.length; i++) {
       var r = results[i];
-      var doc = r.doc;
+      var doc = (r && r.doc) ? r.doc : r;
       if (!doc) continue;
+      var fields = doc.fields || {
+        region: doc.REGION || doc.region || 'INCONNU',
+        typeKey: doc.TYPE_INFRA || doc.DESCRIPTIF || doc.THEMATIQUE || doc.typeKey || 'Autre',
+        milieu: doc.MILIEU || doc.milieu || '',
+        commune: doc.COMMUNE || doc.commune || ''
+      };
 
       // Region
-      var region = (doc.fields && doc.fields.region) ? doc.fields.region.toUpperCase().trim() : 'INCONNU';
+      var region = fields.region ? fields.region.toUpperCase().trim() : 'INCONNU';
       byRegion[region] = (byRegion[region] || 0) + 1;
 
       // Type
-      var typeKey = (doc.fields && doc.fields.typeKey) ? doc.fields.typeKey : 'Autre';
+      var typeKey = fields.typeKey || 'Autre';
       byType[typeKey] = (byType[typeKey] || 0) + 1;
 
       // Milieu
-      var milieu = (doc.fields && doc.fields.milieu) ? doc.fields.milieu.toUpperCase().trim() : '';
+      var milieu = fields.milieu ? fields.milieu.toUpperCase().trim() : '';
       if (milieu === 'URBAIN') byMilieu.urbain++;
       else if (milieu === 'RURAL') byMilieu.rural++;
       else byMilieu.autre++;
 
       // Commune
-      var commune = (doc.fields && doc.fields.commune) ? doc.fields.commune.trim() : '';
+      var commune = fields.commune ? fields.commune.trim() : '';
       if (commune) byCommune[commune] = (byCommune[commune] || 0) + 1;
 
       // Formation vs Infrastructure
@@ -450,12 +456,21 @@ const NLGResponse = (() => {
 
   function _templateSingle(params) {
     var r = params.results[0];
-    var doc = r.doc;
-    var name = (doc.fields && doc.fields.name) ? doc.fields.name : 'lieu inconnu';
-    var commune = (doc.fields && doc.fields.commune) ? doc.fields.commune : '';
-    var region = (doc.fields && doc.fields.region) ? formatRegionName(doc.fields.region) : '';
-    var milieu = (doc.fields && doc.fields.milieu) ? doc.fields.milieu.toLowerCase() : '';
-    var typeKey = (doc.fields && doc.fields.typeKey) ? doc.fields.typeKey : '';
+    var doc = (r && r.doc) ? r.doc : r;
+    if (!doc) return 'Un seul résultat trouvé.';
+    var fields = doc.fields || {
+      name: doc.NOM || doc.DESIGNATION || doc.NOM_ETABLISSEMENT || doc.name || 'lieu inconnu',
+      commune: doc.COMMUNE || doc.commune || '',
+      region: doc.REGION || doc.region || '',
+      milieu: doc.MILIEU || doc.milieu || '',
+      typeKey: doc.TYPE_INFRA || doc.TYPE || doc.typeKey || '',
+      descriptif: doc.DESCRIPTIF || doc.descriptif || ''
+    };
+    var name = fields.name || 'lieu inconnu';
+    var commune = fields.commune || '';
+    var region = fields.region ? formatRegionName(fields.region) : '';
+    var milieu = fields.milieu ? fields.milieu.toLowerCase() : '';
+    var typeKey = fields.typeKey || '';
     var emoji = _emojiForType(typeKey);
     var templates = [];
 

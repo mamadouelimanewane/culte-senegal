@@ -1006,21 +1006,49 @@ function removeFav(e, key) {
 /* ════════════════════════════════════════════════════════════════
    EXPLORE / MAP TAB
    ════════════════════════════════════════════════════════════════ */
-function initMap() {
-  if (state.map) return;
-  initMapLeaflet();
+function fitSenegalBounds(targetMap) {
+  const map = targetMap || state.map;
+  if (!map) return;
+  map.invalidateSize();
+  const senegalBounds = L.latLngBounds([[12.20, -17.65], [16.70, -11.30]]);
+  map.fitBounds(senegalBounds, { padding: isDesktop() ? [25, 25] : [12, 12], maxZoom: 9 });
 }
 
 function initMapLeaflet() {
   const el = document.getElementById('exploreMap');
-  state.map = L.map(el, { zoomControl: true, attributionControl: false }).setView([14.5, -14.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(state.map);
+  const maxBounds = L.latLngBounds([[10.50, -18.20], [17.80, -10.50]]);
+  state.map = L.map(el, {
+    zoomControl: true,
+    attributionControl: false,
+    minZoom: isDesktop() ? 7 : 6.2,
+    maxBounds: maxBounds,
+    maxBoundsViscosity: 1.0,
+    preferCanvas: true,
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd',
+    keepBuffer: 8,
+    updateWhenIdle: false,
+    updateWhenZooming: false,
+    crossOrigin: true,
+    attribution: '© OpenStreetMap © CARTO'
+  }).addTo(state.map);
   state.mapCluster = L.markerClusterGroup({ maxClusterRadius: 60, showCoverageOnHover: false });
   state.map.addLayer(state.mapCluster);
   state.map.zoomControl.setPosition('bottomright');
 
+  // ResizeObserver pour redimensionner et afficher les tuiles instantanément sans zone grise
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      if (state.map) state.map.invalidateSize();
+    });
+    ro.observe(el);
+  }
+
   MAP.setView = (lat, lng, zoom) => state.map.setView([lat, lng], zoom);
   MAP.fitBounds = (pts) => state.map.fitBounds(L.latLngBounds(pts));
+  MAP.fitSenegal = () => fitSenegalBounds(state.map);
   MAP.clearMarkers = () => state.mapCluster.clearLayers();
   MAP.addMarkers = (ms) => ms.forEach(m => state.mapCluster.addLayer(m));
   MAP.createMarker = (lat, lon, conf, html) => {
@@ -1036,6 +1064,7 @@ function initMapLeaflet() {
     state.map.setView([lat, lng], 13);
   };
   populateMapLayer('all');
+  fitSenegalBounds(state.map);
   setupMapSearch();
 }
 
@@ -1151,7 +1180,7 @@ function setupMapSearch() {
     document.getElementById('nlpChipsRow').classList.add('hidden');
     document.getElementById('mapBotBar').classList.add('hidden');
     populateMapLayer(state.mapFilters.layer);
-    MAP.setView(14.5, -14.5, 6);
+    fitSenegalBounds(state.map);
   };
 }
 
@@ -1780,10 +1809,19 @@ function switchTab(tabName) {
   if (navBtn) navBtn.classList.add('active');
 
   if (tabName === 'explore') {
-    setTimeout(() => {
-      initMap();
-      if (state.map) MAP.resize();
-    }, 100);
+    initMap();
+    const refreshMap = () => {
+      if (state.map) {
+        state.map.invalidateSize();
+        if (!state.mapFilters.search && !state.mapFilters.region) {
+          fitSenegalBounds(state.map);
+        }
+      }
+    };
+    refreshMap();
+    requestAnimationFrame(refreshMap);
+    setTimeout(refreshMap, 100);
+    setTimeout(refreshMap, 280);
   }
   if (tabName === 'list') {
     renderListTabs();
@@ -1873,18 +1911,37 @@ function initHeroMap() {
   const el = document.getElementById('heroMap');
   if (!el || el._leaflet_id) return; // déjà initialisée
 
+  const maxBounds = L.latLngBounds([[10.50, -18.20], [17.80, -10.50]]);
+
   const heroMap = L.map(el, {
     zoomControl: true,
     attributionControl: false,
     scrollWheelZoom: true,
-  }).setView([14.5, -14.5], 7);
+    minZoom: 7,
+    maxBounds: maxBounds,
+    maxBoundsViscosity: 1.0,
+    preferCanvas: true,
+  });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '© OpenStreetMap'
+    subdomains: 'abcd',
+    keepBuffer: 8,
+    updateWhenIdle: false,
+    updateWhenZooming: false,
+    crossOrigin: true,
+    attribution: '© OpenStreetMap © CARTO'
   }).addTo(heroMap);
 
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      heroMap.invalidateSize();
+    });
+    ro.observe(el);
+  }
+
   heroMap.zoomControl.setPosition('topright');
+  fitSenegalBounds(heroMap);
 
   // Cluster de marqueurs
   const heroCluster = L.markerClusterGroup({
@@ -2012,7 +2069,7 @@ function setupDesktopFilters() {
     document.getElementById('mapBotBar').classList.add('hidden');
     if (state.map) {
       populateMapLayer('all');
-      MAP.setView(14.5, -14.5, 6);
+      fitSenegalBounds(state.map);
     }
     updateEpStats();
   });
@@ -2154,7 +2211,7 @@ async function init() {
   if (isDesktop()) {
     document.getElementById('tab-home')?.classList.remove('active');
     document.getElementById('tab-explore')?.classList.add('active');
-    setTimeout(() => { initMap(); if (state.map) MAP.resize(); }, 100);
+    setTimeout(() => { initMap(); if (state.map) { MAP.resize(); fitSenegalBounds(state.map); } }, 100);
   }
 
   // Bottom nav (mobile) + Desktop horizontal nav

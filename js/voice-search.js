@@ -1094,6 +1094,7 @@ const VoiceSearch = (() => {
       .replace(/^[,;.\s]+|[,;.\s]+$/g, '')
       .trim();
 
+    result.type = result.tone || (result.isQuestion ? 'question' : 'statement');
     return result;
   }
 
@@ -1609,6 +1610,7 @@ const VoiceSearch = (() => {
     startListening,
     stopListening,
     translateWolofToFrench,
+    translateWolof: translateWolofToFrench,
     detectLanguage,
     correctPhonetics,
     parseVoiceCommand,
