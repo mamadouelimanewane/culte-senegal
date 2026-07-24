@@ -105,6 +105,7 @@ const scriptTags = JS_FILES.map(f => `<script src="${f}"></script>`).join('\n');
 html = html.replace(scriptTags, '<script src="dist/js/app.bundle.min.js"></script>');
 
 fs.writeFileSync(path.join(ROOT, 'index.prod.html'), html);
+fs.writeFileSync(path.join(DIST, 'index.html'), html.replace(/href="dist\//g, 'href="').replace(/src="dist\//g, 'src="'));
 
 // ── Copier les données ──
 console.log('📋 Copie des données...');

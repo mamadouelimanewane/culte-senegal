@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Scenews — Culture Sénégal</string>
+    <string name="title_activity_main">Scenews — Culture Sénégal</string>
+    <string name="package_name">com.scenews.culte</string>
+    <string name="custom_url_scheme">com.scenews.culte</string>
+</resources>

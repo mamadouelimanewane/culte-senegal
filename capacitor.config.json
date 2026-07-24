@@ -1,0 +1,6 @@
+{
+  "appId": "com.scenews.culte",
+  "appName": "Scenews — Culture Sénégal",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
