@@ -52,22 +52,22 @@
     text-transform: uppercase;
   }
 
-  /* Search bar */
   .dt-search-wrap {
-    flex: 0 1 420px;
+    flex: 0 1 320px;
+    min-width: 180px;
     padding: 9px 18px;
     border-radius: 30px;
     background: rgba(255,255,255,.15);
     border: 1px solid rgba(255,255,255,.2);
     backdrop-filter: blur(6px);
     transition: all .25s;
-    margin-right: 20px;
+    margin-right: 12px;
   }
   .dt-search-wrap:focus-within {
     background: rgba(255,255,255,.28);
     border-color: rgba(255,255,255,.45);
     box-shadow: 0 0 0 3px rgba(255,255,255,.08);
-    flex: 0 1 520px;
+    flex: 0 1 420px;
   }
   #dtSearch {
     font-size: 14px;

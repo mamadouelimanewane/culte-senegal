@@ -2410,3 +2410,71 @@ body.is-offline::after {
   animation: slideDown .3s ease;
 }
 @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN — TABLET & SMALL MOBILE BREAKPOINTS
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Petit Mobile (<= 380px) ── */
+@media (max-width: 380px) {
+  .status-bar { padding: 0 12px; height: 50px; }
+  .dt-brand-name { font-size: 17px; }
+  .cat-icon { width: 50px; height: 50px; font-size: 22px; }
+  .cat-label { font-size: 11px; }
+  .categories-row { gap: 10px; }
+  .list-card { padding: 10px; gap: 10px; }
+  .lc-icon { width: 42px; height: 42px; font-size: 20px; }
+  .lc-name { font-size: 13.5px; }
+  .stat-num { font-size: 22px; }
+  .stat-lbl { font-size: 10.5px; }
+  .modal-hero-name { font-size: 18px; }
+  .fab-add { width: 46px; height: 46px; bottom: 74px; right: 12px; }
+  .locate-fab { width: 44px; height: 44px; bottom: 74px; left: 12px; }
+}
+
+/* ── Tablette (768px à 1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .home-scroll {
+    padding: 20px 28px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .carousel-wrap { grid-column: 1 / -1; }
+  .categories-row {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-around;
+    gap: 14px;
+  }
+  .mini-cards-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .regions-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .stats-strip {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-around;
+    padding: 20px 24px;
+  }
+  #tab-list .list-cards,
+  .favs-content {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+    padding: 20px 24px !important;
+  }
+  .modal-sheet, .events-sheet, .live-panel-sheet {
+    max-width: 640px;
+    margin: 0 auto;
+    border-radius: 20px 20px 0 0;
+  }
+}
