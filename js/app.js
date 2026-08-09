@@ -85,14 +85,25 @@ const TYPE_DEFAULT_IMAGES = {
   'default':              'https://images.unsplash.com/photo-1627552244573-fc77c028e74f?w=1200&q=85',
 };
 
+/* Contenu publié par l'administration, chargé une fois au démarrage.
+   Rempli par loadPublishedContent(). */
+let PUBLISHED_CONTENT = {};
+
+async function loadPublishedContent() {
+  try {
+    PUBLISHED_CONTENT = await CulteAPI.getContent();
+  } catch (e) {
+    // Le portail doit rester consultable même si l'API est indisponible.
+    console.warn('Contenu publié indisponible:', e.message);
+    PUBLISHED_CONTENT = {};
+  }
+}
+
 /* Retourne l'image à afficher : galerie approuvée > défaut par type */
 function getInfraImage(r, typeKey) {
   if (r._id !== undefined) {
-    try {
-      const content = JSON.parse(localStorage.getItem('culte_site_content') || '{}');
-      const site = content[String(r._id)];
-      if (site?.gallery?.length) return site.gallery[0].url;
-    } catch(e) {}
+    const site = PUBLISHED_CONTENT[String(r._id)];
+    if (site?.gallery?.length) return site.gallery[0].url;
   }
   for (const k of Object.keys(TYPE_DEFAULT_IMAGES)) {
     if (k !== 'default' && (typeKey || '').toLowerCase().includes(k.toLowerCase())) return TYPE_DEFAULT_IMAGES[k];
@@ -127,7 +138,9 @@ function navHandleBack() {
       return true;
     }
   }
-  const defaultTab = isDesktop() ? 'explore' : 'home';
+  // L'accueil est le point d'entrée sur toutes les tailles d'écran :
+  // la cartographie est désormais un onglet à part entière.
+  const defaultTab = 'home';
   if (state.activeTab !== defaultTab) {
     handlingPopState = true;
     switchTab(defaultTab);
@@ -147,7 +160,7 @@ window.addEventListener('popstate', (e) => {
 const state = {
   data: { infrastructures: [], formations: [] },
   filtered: [],
-  activeTab: window.innerWidth >= 1024 ? 'explore' : 'home',
+  activeTab: 'home',
   listSet: 'infrastructures',
   listFilters: { search: '', region: '', type: '', milieu: '' },
   mapFilters: { search: '', layer: 'all', region: '', milieu: '' },
@@ -210,13 +223,30 @@ async function loadData() {
   const [infraRes, formRes] = await Promise.all([
     fetch('infrastructures_culturelles.json'),
     fetch('centre_formation_arts.json'),
+    // Contenu publié et corrections admin : le portail affiche
+    // désormais les mêmes données que le backoffice.
+    loadPublishedContent(),
   ]);
   const infraJson = await infraRes.json();
   const formJson  = await formRes.json();
   const infraSheet = infraJson.sheets?.INFRASTRUCTURES_CULTURELLES || {};
   const formSheet  = formJson.sheets?.CENTRE_FORMATION_CULTURE || {};
-  state.data.infrastructures = (infraSheet.records || []).map((r, i) => ({ ...r, _id: i }));
-  state.data.formations      = (formSheet.records  || []).map((r, i) => ({ ...r, _id: i }));
+
+  let edits = { infras: {}, forms: {}, deleted: { infras: [], forms: [] } };
+  try {
+    edits = await CulteAPI.getDatasetEdits();
+  } catch (e) {
+    console.warn('Corrections indisponibles:', e.message);
+  }
+
+  const apply = (records, patches, removed) => records
+    .map((r, i) => ({ ...r, ...(patches[i] || {}), _id: i }))
+    .filter(r => !removed.includes(r._id));
+
+  state.data.infrastructures = apply(
+    infraSheet.records || [], edits.infras, edits.deleted.infras);
+  state.data.formations = apply(
+    formSheet.records || [], edits.forms, edits.deleted.forms);
 
   // Invalider les caches dépendants des données
   state._infraSet = null;
@@ -590,16 +620,15 @@ function renderCarousel(idx) {
     const region  = rec.REGION  || '';
     const commune = rec.COMMUNE || '';
     const grad = gradients[i % gradients.length];
-    const recJson = JSON.stringify(rec).replace(/"/g, '&quot;');
     return `
-      <div class="featured-card" onclick="openModal(event,null,false,null,'${escAttr(rec.DESIGNATION||'')}')">
+      <div class="featured-card" onclick="openModal(event,null,false,null,'${jsAttr(rec.DESIGNATION||'')}')">
         <div class="fc-bg" style="background:${grad}"></div>
         <div class="fc-overlay"></div>
-        <button class="fc-action" onclick="event.stopPropagation();openModal(event,null,false,null,'${escAttr(rec.DESIGNATION||'')}')">Voir la fiche ›</button>
+        <button class="fc-action" onclick="event.stopPropagation();openModal(event,null,false,null,'${jsAttr(rec.DESIGNATION||'')}')">Voir la fiche ›</button>
         <div class="fc-content">
-          <span class="fc-badge">${conf.icon} ${typeName}</span>
-          <div class="fc-name">${rec.DESIGNATION || 'Infrastructure'}</div>
-          <div class="fc-loc">📍 ${commune}${region ? ', ' + region : ''}</div>
+          <span class="fc-badge">${conf.icon} ${escapeHtml(typeName)}</span>
+          <div class="fc-name">${escapeHtml(rec.DESIGNATION || 'Infrastructure')}</div>
+          <div class="fc-loc">📍 ${escapeHtml(commune)}${region ? ', ' + escapeHtml(region) : ''}</div>
         </div>
       </div>
     `;
@@ -654,7 +683,9 @@ function getCarouselRec(name) {
   return (state.carousel._recs || []).find(r => (r.DESIGNATION || '') === name);
 }
 
-function escAttr(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+// Échappement partagé (js/escape.js) : couvre &, <, > en plus des
+// guillemets, ce que l'ancienne version laissait passer.
+const escAttr = window.escapeHtml;
 
 function buildRegions() {
   const row = document.getElementById('regionsRow');
@@ -704,7 +735,7 @@ function buildMiniCards() {
   grid.innerHTML = sorted.map(([type, count]) => {
     const conf = getTypeConf(type, false);
     return `
-      <div class="mini-card fade-in" onclick="filterByType('${type.replace(/'/g,"\\'")}')">
+      <div class="mini-card fade-in" onclick="filterByType('${jsAttr(type)}')">
         <div class="mini-card-icon" style="background:${conf.bg}; color:${conf.color}">${conf.icon}</div>
         <div class="mini-card-info">
           <div class="mini-card-name">${type}</div>
@@ -892,14 +923,14 @@ function renderListCards() {
       <div class="list-card fade-in" style="animation-delay:${idx*0.03}s">
         <div class="lc-icon" style="background:${conf.bg};color:${conf.color}" onclick="openModal(event,null,${isFormation},${start+idx},null)">${conf.icon}</div>
         <div class="lc-info" onclick="openModal(event,null,${isFormation},${start+idx},null)">
-          <div class="lc-name">${name}</div>
+          <div class="lc-name">${escapeHtml(name)}</div>
           <div class="lc-meta">
-            <span class="lc-type" style="background:${conf.bg};color:${conf.color}">${typeKey}</span>
-            <span class="lc-loc">📍 ${commune}${region ? ', ' + region : ''}</span>
+            <span class="lc-type" style="background:${conf.bg};color:${conf.color}">${escapeHtml(typeKey)}</span>
+            <span class="lc-loc">📍 ${escapeHtml(commune)}${region ? ', ' + escapeHtml(region) : ''}</span>
           </div>
           ${milieu ? `<span class="lc-milieu ${milieu==='URBAIN'?'milieu-urban':'milieu-rural'}">${milieu==='URBAIN'?'Urbain':'Rural'}</span>` : ''}
         </div>
-        <button class="lc-fav-btn${isFav?' fav-active':''}" onclick="toggleFav(event,'${key.replace(/'/g,"\\'")}',${start+idx},${isFormation})" aria-label="Favori">${isFav?'♥':'♡'}</button>
+        <button class="lc-fav-btn${isFav?' fav-active':''}" onclick="toggleFav(event,'${jsAttr(key)}',${start+idx},${isFormation})" aria-label="Favori">${isFav?'♥':'♡'}</button>
       </div>
     `;
   }).join('');
@@ -981,15 +1012,15 @@ function renderFavs() {
       const key = favKey(rec, isFormation);
       return `
         <div class="list-card">
-          <div class="lc-icon" style="background:${conf.bg};color:${conf.color}" onclick='openModal(event,${JSON.stringify(rec).replace(/'/g,"&#39;")},${isFormation},null,null)'>${conf.icon}</div>
-          <div class="lc-info" onclick='openModal(event,${JSON.stringify(rec).replace(/'/g,"&#39;")},${isFormation},null,null)'>
-            <div class="lc-name">${name}</div>
+          <div class="lc-icon" style="background:${conf.bg};color:${conf.color}" onclick='openModal(event,${jsonAttr(rec)},${isFormation},null,null)'>${conf.icon}</div>
+          <div class="lc-info" onclick='openModal(event,${jsonAttr(rec)},${isFormation},null,null)'>
+            <div class="lc-name">${escapeHtml(name)}</div>
             <div class="lc-meta">
-              <span class="lc-type" style="background:${conf.bg};color:${conf.color}">${typeKey}</span>
-              <span class="lc-loc">📍 ${commune}${region ? ', '+region : ''}</span>
+              <span class="lc-type" style="background:${conf.bg};color:${conf.color}">${escapeHtml(typeKey)}</span>
+              <span class="lc-loc">📍 ${escapeHtml(commune)}${region ? ', '+escapeHtml(region) : ''}</span>
             </div>
           </div>
-          <button class="lc-fav-btn fav-active" onclick="removeFav(event,'${key.replace(/'/g,"\\'")}')">♥</button>
+          <button class="lc-fav-btn fav-active" onclick="removeFav(event,'${jsAttr(key)}')">♥</button>
         </div>
       `;
     }).join('') + '</div>';
@@ -1012,6 +1043,27 @@ function fitSenegalBounds(targetMap) {
   map.invalidateSize();
   const senegalBounds = L.latLngBounds([[12.20, -17.65], [16.70, -11.30]]);
   map.fitBounds(senegalBounds, { padding: isDesktop() ? [25, 25] : [12, 12], maxZoom: 9 });
+}
+
+/**
+ * Point d'entrée unique de la carte de l'onglet Cartographie.
+ *
+ * switchTab() et l'amorçage desktop appelaient tous deux initMap(),
+ * qui n'existait pas : la carte ne s'initialisait jamais et l'appel
+ * échouait en silence dans un setTimeout. La garde sur state.map est
+ * indispensable — relancer L.map() sur un conteneur déjà initialisé
+ * lève « Map container is already initialized ».
+ */
+function initMap() {
+  if (state.map) { state.map.invalidateSize(); return; }
+  if (typeof L === 'undefined') {
+    // Leaflet vient d'un CDN : on retente au prochain tour de boucle.
+    setTimeout(initMap, 250);
+    return;
+  }
+  const el = document.getElementById('exploreMap');
+  if (!el) return;
+  initMapLeaflet();
 }
 
 function initMapLeaflet() {
@@ -1528,7 +1580,7 @@ const NLP = {
     // Suggestions curated
     html += '<div class="nlp-suggest-sec">Explorer</div>';
     html += this.suggestions.map(s =>
-      `<div class="nlp-suggest-item" data-q="${escAttr(s.q)}">${s.label}</div>`
+      `<div class="nlp-suggest-item" data-q="${escAttr(s.q)}">${escapeHtml(s.label)}</div>`
     ).join('');
     panel.innerHTML = html;
 
@@ -1656,12 +1708,12 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
   if (!isFormation && imgUrl) {
     hero.style.background = '#0a1929';
     hero.innerHTML = `
-      <img class="modal-hero-img" src="${imgUrl}" alt="${name}"
+      <img class="modal-hero-img" src="${safeUrl(imgUrl)}" alt="${escapeHtml(name)}"
            onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,${conf.color},#00b4d8)'">
       <div class="modal-hero-overlay"></div>
       <div class="modal-hero-content">
-        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
-        <div class="modal-hero-name">${name}</div>
+        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${escapeHtml(typeKey)}</div>
+        <div class="modal-hero-name">${escapeHtml(name)}</div>
       </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     `;
@@ -1670,8 +1722,8 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
     hero.innerHTML = `
       <div class="modal-hero-overlay"></div>
       <div class="modal-hero-content">
-        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${typeKey}</div>
-        <div class="modal-hero-name">${name}</div>
+        <div class="modal-hero-type" style="background:${conf.bg};color:${conf.color}">${conf.icon} ${escapeHtml(typeKey)}</div>
+        <div class="modal-hero-name">${escapeHtml(name)}</div>
       </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     `;
@@ -1692,7 +1744,7 @@ function openModal(e, rec, isFormation, filteredIdx, carouselName) {
     ${rows.map(row => `
       <div class="modal-info-row">
         <span class="modal-info-icon">${row.icon}</span>
-        <div><div class="modal-info-label">${row.label}</div><div class="modal-info-value">${row.value}</div></div>
+        <div><div class="modal-info-label">${escapeHtml(row.label)}</div><div class="modal-info-value">${escapeHtml(row.value)}</div></div>
       </div>
     `).join('')}
     <div class="modal-actions">
@@ -1933,10 +1985,16 @@ function initHeroMap() {
     attribution: '© OpenStreetMap © CARTO'
   }).addTo(heroMap);
 
+  /* initHeroMap() s'exécute pendant le splash, alors que #app porte
+     encore la classe « hidden » : le conteneur mesure 0×0. Un
+     fitBounds sur une taille nulle produit un zoom aberrant, et
+     invalidateSize() seul ne le corrige pas — la carte reste vide.
+     On refait donc le cadrage et le remplissage la première fois que
+     le conteneur reçoit de vraies dimensions. */
+  let heroLayer = 'all';   // couche courante
+
   if (typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(() => {
-      heroMap.invalidateSize();
-    });
+    const ro = new ResizeObserver(() => heroMap.invalidateSize());
     ro.observe(el);
   }
 
@@ -1952,6 +2010,7 @@ function initHeroMap() {
 
   // Remplir les marqueurs
   function populateHeroMap(layer) {
+    heroLayer = layer;
     heroCluster.clearLayers();
     const batch = [];
     const addRecords = (records, isFormation) => {
@@ -2025,8 +2084,27 @@ function initHeroMap() {
     heroCount.textContent = total.toLocaleString('fr-FR');
   }
 
-  // Invalidate size après render
-  setTimeout(() => heroMap.invalidateSize(), 200);
+  /* La carte est construite pendant que le splash masque encore #app :
+     Leaflet mémorise une taille de 0×0, n'affiche qu'une tuile et ne
+     dessine aucun marqueur. Un unique invalidateSize() différé arrive
+     trop tôt selon la machine, et le ResizeObserver ne se déclenche
+     pas toujours. On resynchronise donc jusqu'à ce que la taille vue
+     par Leaflet corresponde réellement au conteneur. */
+  let heroSynced = false, heroTries = 0;
+  (function syncHeroSize() {
+    if (heroSynced) return;
+    const w = el.clientWidth;
+    if (w > 0) {
+      if (Math.abs(heroMap.getSize().x - w) > 1) {
+        heroMap.invalidateSize();
+        fitSenegalBounds(heroMap);
+      }
+      heroSynced = true;
+      return;
+    }
+    if (++heroTries < 30) setTimeout(syncHeroSize, 120);
+  })();
+
   window.addEventListener('resize', _throttle(() => heroMap.invalidateSize(), 200));
 }
 
@@ -2207,11 +2285,22 @@ async function init() {
   buildHome();
   buildListFilters();
 
-  // Sur desktop, activer directement le tab explore (cartographie)
+  // Sur desktop, l'accueil reste le point d'entrée. La carte de
+  // l'onglet Cartographie est préparée en arrière-plan pour que le
+  // passage sur l'onglet soit instantané.
   if (isDesktop()) {
-    document.getElementById('tab-home')?.classList.remove('active');
-    document.getElementById('tab-explore')?.classList.add('active');
-    setTimeout(() => { initMap(); if (state.map) { MAP.resize(); fitSenegalBounds(state.map); } }, 100);
+    // On attend que le splash soit retiré : initialiser Leaflet sur un
+    // conteneur masqué donne une carte au cadrage faussé.
+    const preloadMap = () => {
+      const app = document.getElementById('app');
+      if (!app || app.classList.contains('hidden')) {
+        setTimeout(preloadMap, 200);
+        return;
+      }
+      initMap();
+      if (state.map) { MAP.resize(); fitSenegalBounds(state.map); }
+    };
+    setTimeout(preloadMap, 400);
   }
 
   // Bottom nav (mobile) + Desktop horizontal nav

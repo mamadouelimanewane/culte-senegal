@@ -4,22 +4,10 @@
 'use strict';
 
 /* ── Config ─────────────────────────────────────────────────────── */
-// Mots de passe hachés SHA-256 (ne plus stocker en clair)
-async function _sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-const ADMIN_USERS = [
-  { email: 'admin@culte.sn', hash: '240be518fabd2724ddb6f0403f5d5d67175396144434b0744c6d66e7683793f7', name: 'Administrateur' }, // admin123
-];
-const LS_EDITS    = 'culte_admin_edits';
-const LS_LOG      = 'culte_admin_log';
-const LS_SESSION  = 'culte_admin_session';
-const LS_REG      = 'culte_registrations';
-const LS_RESP     = 'culte_responsables';
-const LS_PENDING  = 'culte_pending';
-const LS_CONTENT  = 'culte_site_content';
-const PER_PAGE    = 20;
+// L'authentification est entièrement serveur : aucun compte, aucun
+// hash et aucun jeton ne transitent par ce fichier. La session est
+// portée par un cookie httpOnly posé par /api/auth/login.
+const PER_PAGE = 20;
 
 /* ── State ───────────────────────────────────────────────────────── */
 const A = {
@@ -36,28 +24,35 @@ const A = {
 };
 
 /* ── INIT ────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  loadEdits();
-  loadLog();
-
-  const sess = sessionStorage.getItem(LS_SESSION);
-  if (sess) {
-    A.session = JSON.parse(sess);
-    showApp();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Seul le serveur peut confirmer une session : on lui demande.
+  try {
+    const { user } = await CulteAPI.me();
+    A.session = { email: user.email, name: user.nom };
+    await showApp();
+  } catch {
+    /* non authentifié : l'écran de login reste affiché */
   }
 
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const pwd   = document.getElementById('loginPwd').value;
-    const pwdHash = await _sha256(pwd);
-    const user  = ADMIN_USERS.find(u => u.email === email && u.hash === pwdHash);
-    if (user) {
-      A.session = { email: user.email, name: user.name };
-      sessionStorage.setItem(LS_SESSION, JSON.stringify(A.session));
-      showApp();
-    } else {
-      document.getElementById('loginError').classList.remove('hidden');
+    const email  = document.getElementById('loginEmail').value.trim();
+    const pwd    = document.getElementById('loginPwd').value;
+    const errEl  = document.getElementById('loginError');
+    const submit = e.target.querySelector('[type=submit]');
+
+    if (submit) submit.disabled = true;
+    try {
+      const { user } = await CulteAPI.login(email, pwd, 'admin');
+      A.session = { email: user.email, name: user.nom };
+      errEl.classList.add('hidden');
+      document.getElementById('loginPwd').value = '';
+      await showApp();
+    } catch (err) {
+      errEl.textContent = err.message || 'Identifiants incorrects';
+      errEl.classList.remove('hidden');
+    } finally {
+      if (submit) submit.disabled = false;
     }
   });
 
@@ -74,7 +69,7 @@ async function showApp() {
   document.getElementById('adminApp').classList.remove('hidden');
   document.getElementById('sbUserName').textContent = A.session.name;
   document.getElementById('settingsUser').textContent = A.session.email + ' — ' + A.session.name;
-  await loadData();
+  await Promise.all([loadData(), refreshStore()]);
   setupNav();
   setupTableListeners();
   setupSettingsListeners();
@@ -82,8 +77,8 @@ async function showApp() {
   switchView('dashboard');
 }
 
-function logout() {
-  sessionStorage.removeItem(LS_SESSION);
+async function logout() {
+  try { await CulteAPI.logout(); } catch { /* le cookie expirera de toute façon */ }
   location.reload();
 }
 
@@ -118,48 +113,59 @@ function getMergedForms() {
     .map(r => ({ ...r, ...(A.edits.forms[r._id]  || {}) }));
 }
 
-/* ── PERSISTENCE ─────────────────────────────────────────────────── */
-function loadEdits() {
-  const raw = localStorage.getItem(LS_EDITS);
-  if (raw) A.edits = JSON.parse(raw);
-}
-function saveEdits() {
-  localStorage.setItem(LS_EDITS, JSON.stringify(A.edits));
-}
-function loadLog() {
-  const raw = localStorage.getItem(LS_LOG);
-  if (raw) A.log = JSON.parse(raw);
-}
-function addLog(action, name) {
-  A.log.unshift({ action, name, ts: new Date().toISOString() });
-  if (A.log.length > 100) A.log.pop();
-  localStorage.setItem(LS_LOG, JSON.stringify(A.log));
+/* ── STORE SERVEUR ───────────────────────────────────────────────
+   Miroir en mémoire des données de l'API. Les lectures restent
+   synchrones (le rendu existant n'a pas à changer) ; toute écriture
+   passe par l'API puis rafraîchit ce miroir. ───────────────────── */
+const S = {
+  registrations: [],
+  responsables: [],
+  contributions: [],
+  content: {},
+};
+
+async function refreshStore() {
+  const [regs, resps, contribs, content, edits, log] = await Promise.all([
+    CulteAPI.listRegistrations().catch(() => S.registrations),
+    CulteAPI.listResponsables().catch(() => S.responsables),
+    CulteAPI.listContributions().catch(() => S.contributions),
+    CulteAPI.getContent().catch(() => S.content),
+    CulteAPI.getDatasetEdits().catch(() => A.edits),
+    CulteAPI.getAuditLog().catch(() => A.log),
+  ]);
+  S.registrations = regs;
+  S.responsables  = resps;
+  S.contributions = contribs;
+  S.content       = content;
+  A.edits = edits;
+  A.log   = log;
 }
 
-/* ── localStorage helpers ────────────────────────────────────────── */
-function getRegistrations() {
-  return JSON.parse(localStorage.getItem(LS_REG) || '[]');
+/** Affiche une erreur d'API sans casser la navigation. */
+function apiError(err) {
+  console.error('[admin]', err);
+  alert(err?.message || 'Une erreur est survenue.');
 }
-function saveRegistrations(arr) {
-  localStorage.setItem(LS_REG, JSON.stringify(arr));
+
+/* ── Accès aux données (lecture depuis le miroir) ─────────────────── */
+function getRegistrations() { return S.registrations; }
+function getResponsables()  { return S.responsables; }
+function getPending()       { return S.contributions; }
+function getSiteContent()   { return S.content; }
+
+function addLog(action, name) {
+  // Le journal fait foi côté serveur ; on affiche l'entrée
+  // immédiatement, refreshStore() la resynchronisera.
+  A.log.unshift({ action, name, ts: new Date().toISOString() });
+  if (A.log.length > 200) A.log.pop();
 }
-function getResponsables() {
-  return JSON.parse(localStorage.getItem(LS_RESP) || '[]');
-}
-function saveResponsables(arr) {
-  localStorage.setItem(LS_RESP, JSON.stringify(arr));
-}
-function getPending() {
-  return JSON.parse(localStorage.getItem(LS_PENDING) || '[]');
-}
-function savePending(arr) {
-  localStorage.setItem(LS_PENDING, JSON.stringify(arr));
-}
-function getSiteContent() {
-  return JSON.parse(localStorage.getItem(LS_CONTENT) || '{}');
-}
-function saveSiteContent(obj) {
-  localStorage.setItem(LS_CONTENT, JSON.stringify(obj));
+
+/** Enregistre une correction du jeu de référence côté serveur. */
+function persistEdit(dataset, recordId, patch, deleted) {
+  // Les enregistrements ajoutés en session (_id « new_… ») n'existent
+  // pas dans le jeu de référence : rien à corriger côté serveur.
+  if (typeof recordId !== 'number') return Promise.resolve();
+  return CulteAPI.saveDatasetEdit(dataset, recordId, patch, deleted).catch(apiError);
 }
 
 /* ── NOTIFICATION BADGES ─────────────────────────────────────────── */
@@ -439,9 +445,9 @@ function relativeTime(ts) {
   return new Date(ts).toLocaleDateString('fr-FR');
 }
 
-function escHtml(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// Alias historique — pointe sur l'échappement partagé (js/escape.js),
+// qui couvre aussi les apostrophes et les accents graves.
+const escHtml = window.escapeHtml;
 
 function renderBarChart(id, counts, limit) {
   const el = document.getElementById(id);
@@ -453,7 +459,7 @@ function renderBarChart(id, counts, limit) {
   const max = sorted[0]?.[1] || 1;
   el.innerHTML = sorted.map(([label, count]) => `
     <div class="bar-row">
-      <div class="bar-label" title="${label}">${label.charAt(0) + label.slice(1).toLowerCase()}</div>
+      <div class="bar-label" title="${esc(label)}">${esc(label.charAt(0) + label.slice(1).toLowerCase())}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100).toFixed(1)}%"></div></div>
       <div class="bar-count">${count}</div>
     </div>
@@ -481,9 +487,9 @@ function renderRecentEdits() {
     const cls = badgeMap[item.action] || 'badge-edit';
     const lbl = lblMap[item.action]  || item.action;
     return `<div class="recent-item">
-      <span class="recent-badge ${cls}">${lbl}</span>
-      <span class="recent-name">${item.name}</span>
-      <span class="recent-date">${ts}</span>
+      <span class="recent-badge ${cls}">${esc(lbl)}</span>
+      <span class="recent-name">${esc(item.name)}</span>
+      <span class="recent-date">${esc(ts)}</span>
     </div>`;
   }).join('');
 }
@@ -557,11 +563,11 @@ function renderInfraTable(reset) {
   });
 
   renderTableBody('infraTbody', A.infraFiltered, A.infraPage, (r, i) => `
-    <td class="td-name" title="${r.DESIGNATION||''}">${r.DESIGNATION||'Sans nom'}</td>
-    <td><span class="badge-type">${getInfraType(r)}</span></td>
-    <td>${r.REGION||'—'}</td>
-    <td>${r.COMMUNE||'—'}</td>
-    <td>${r.MILIEU||'—'}</td>
+    <td class="td-name" title="${esc(r.DESIGNATION||'')}">${esc(r.DESIGNATION||'Sans nom')}</td>
+    <td><span class="badge-type">${esc(getInfraType(r))}</span></td>
+    <td>${esc(r.REGION||'—')}</td>
+    <td>${esc(r.COMMUNE||'—')}</td>
+    <td>${esc(r.MILIEU||'—')}</td>
     <td class="td-actions">
       <button class="btn-icon" title="Modifier" onclick="openEditModal('infra',${i})">✏️</button>
       <button class="btn-icon" title="Supprimer" onclick="confirmDelete('infra',${i})">🗑</button>
@@ -569,10 +575,10 @@ function renderInfraTable(reset) {
   `, '🏛', 'Aucune infrastructure', 'Essayez de modifier vos filtres');
   renderMobileCards('infraMobileCards', A.infraFiltered, A.infraPage, (r, i) => `
     <div class="m-card">
-      <div class="m-card-name">${r.DESIGNATION||'Sans nom'}</div>
+      <div class="m-card-name">${esc(r.DESIGNATION||'Sans nom')}</div>
       <div class="m-card-meta">
-        <span>${getInfraType(r)}</span><span>📍 ${r.COMMUNE||'—'}, ${r.REGION||'—'}</span>
-        ${r.MILIEU ? `<span>${r.MILIEU}</span>` : ''}
+        <span>${esc(getInfraType(r))}</span><span>📍 ${esc(r.COMMUNE||'—')}, ${esc(r.REGION||'—')}</span>
+        ${r.MILIEU ? `<span>${esc(r.MILIEU)}</span>` : ''}
       </div>
       <div class="m-card-actions">
         <button class="btn-secondary" style="font-size:12px;padding:6px 10px" onclick="openEditModal('infra',${i})">✏️ Modifier</button>
@@ -600,10 +606,10 @@ function renderFormTable(reset) {
   });
 
   renderTableBody('formTbody', A.formFiltered, A.formPage, (r, i) => `
-    <td class="td-name" title="${r.NOM_ETABLISSEMENT||''}">${r.NOM_ETABLISSEMENT||'Sans nom'}</td>
-    <td><span class="badge-type" style="background:#f3e5f5;color:#6a1b9a">${r.BRANCHE||'—'}</span></td>
-    <td>${r.REGION||'—'}</td>
-    <td>${r.COMMUNE||'—'}</td>
+    <td class="td-name" title="${esc(r.NOM_ETABLISSEMENT||'')}">${esc(r.NOM_ETABLISSEMENT||'Sans nom')}</td>
+    <td><span class="badge-type" style="background:#f3e5f5;color:#6a1b9a">${esc(r.BRANCHE||'—')}</span></td>
+    <td>${esc(r.REGION||'—')}</td>
+    <td>${esc(r.COMMUNE||'—')}</td>
     <td class="td-actions">
       <button class="btn-icon" title="Modifier" onclick="openEditModal('form',${i})">✏️</button>
       <button class="btn-icon" title="Supprimer" onclick="confirmDelete('form',${i})">🗑</button>
@@ -611,9 +617,9 @@ function renderFormTable(reset) {
   `, '🎓', 'Aucune formation', 'Essayez de modifier vos filtres');
   renderMobileCards('formMobileCards', A.formFiltered, A.formPage, (r, i) => `
     <div class="m-card">
-      <div class="m-card-name">${r.NOM_ETABLISSEMENT||'Sans nom'}</div>
+      <div class="m-card-name">${esc(r.NOM_ETABLISSEMENT||'Sans nom')}</div>
       <div class="m-card-meta">
-        <span>${r.BRANCHE||'—'}</span><span>📍 ${r.COMMUNE||'—'}, ${r.REGION||'—'}</span>
+        <span>${esc(r.BRANCHE||'—')}</span><span>📍 ${esc(r.COMMUNE||'—')}, ${esc(r.REGION||'—')}</span>
       </div>
       <div class="m-card-actions">
         <button class="btn-secondary" style="font-size:12px;padding:6px 10px" onclick="openEditModal('form',${i})">✏️ Modifier</button>
@@ -704,48 +710,24 @@ function openReviewInscription(idx) {
   document.getElementById('reviewModal').classList.remove('hidden');
 }
 
-function approveRegistration(id) {
+/* La création du compte responsable est faite par le serveur, dans la
+   même transaction que l'approbation : le mot de passe choisi lors de
+   l'inscription reste haché et n'est jamais manipulé ici. */
+async function reviewRegistration(id, action) {
   const note = document.getElementById('reviewNote')?.value.trim() || '';
-  const regs = getRegistrations();
-  const idx  = regs.findIndex(r => r.id === id);
-  if (idx === -1) return;
-  regs[idx].statut    = 'approved';
-  regs[idx].noteAdmin = note;
-  saveRegistrations(regs);
-
-  // Create responsable account
-  const reg  = regs[idx];
-  const resps = getResponsables();
-  if (!resps.find(r => r.email === reg.email)) {
-    resps.push({
-      id: 'resp_' + Date.now(),
-      nom: reg.nom, email: reg.email, tel: reg.tel, pwd: reg.pwd,
-      infraId: reg.infraId, infraNom: reg.infraNom, region: reg.region,
-      statut: 'active',
-      dateCreation: new Date().toISOString(),
-    });
-    saveResponsables(resps);
+  try {
+    await CulteAPI.reviewRegistration(id, action, note);
+    await refreshStore();
+    closeReviewModal();
+    renderInscriptions(false);
+    updateNotifBadges();
+  } catch (err) {
+    apiError(err);
   }
-
-  addLog('approve_reg', reg.nom + ' → ' + reg.infraNom);
-  closeReviewModal();
-  renderInscriptions(false);
-  updateNotifBadges();
 }
 
-function rejectRegistration(id) {
-  const note = document.getElementById('reviewNote')?.value.trim() || '';
-  const regs = getRegistrations();
-  const idx  = regs.findIndex(r => r.id === id);
-  if (idx === -1) return;
-  regs[idx].statut    = 'rejected';
-  regs[idx].noteAdmin = note;
-  saveRegistrations(regs);
-  addLog('reject_reg', regs[idx].nom);
-  closeReviewModal();
-  renderInscriptions(false);
-  updateNotifBadges();
-}
+function approveRegistration(id) { return reviewRegistration(id, 'approve'); }
+function rejectRegistration(id)  { return reviewRegistration(id, 'reject'); }
 
 /* ── CONTENUS ────────────────────────────────────────────────────── */
 function renderContenus(reset) {
@@ -817,7 +799,7 @@ function openReviewContent(idx) {
     bodyHtml += `
       <div class="review-field review-full"><label>Caption</label><div class="rv-val">${esc(d.caption||'—')}</div></div>
       <div class="review-field review-full"><label>Photo</label>
-        ${d.url ? `<img src="${d.url}" class="review-photo" alt="photo">` : '<div class="rv-val">Aucune image</div>'}
+        ${safeUrl(d.url) ? `<img src="${safeUrl(d.url)}" class="review-photo" alt="photo">` : '<div class="rv-val">Aucune image</div>'}
       </div>
     `;
   } else if (p.type === 'event') {
@@ -828,14 +810,14 @@ function openReviewContent(idx) {
       <div class="review-field"><label>Lieu</label><div class="rv-val">${esc(d.lieu||'—')}</div></div>
       <div class="review-field review-full"><label>Description</label><div class="rv-val" style="white-space:pre-wrap">${esc(d.description||'—')}</div></div>
       ${d.photos?.length ? `<div class="review-field review-full"><label>Photos (${d.photos.length})</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">${d.photos.map(ph => `<img src="${ph}" class="review-photo" style="max-height:120px;max-width:180px" alt="event">`).join('')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${d.photos.map(ph => `<img src="${safeUrl(ph)}" class="review-photo" style="max-height:120px;max-width:180px" alt="event">`).join('')}</div>
       </div>` : ''}
     `;
   } else if (p.type === 'actu') {
     bodyHtml += `
       <div class="review-field review-full"><label>Titre</label><div class="rv-val">${esc(d.titre||'—')}</div></div>
       <div class="review-field review-full"><label>Contenu</label><div class="rv-val" style="white-space:pre-wrap">${esc(d.contenu||'—')}</div></div>
-      ${d.photo ? `<div class="review-field review-full"><label>Photo</label><img src="${d.photo}" class="review-photo" alt="actu"></div>` : ''}
+      ${safeUrl(d.photo) ? `<div class="review-field review-full"><label>Photo</label><img src="${safeUrl(d.photo)}" class="review-photo" alt="actu"></div>` : ''}
     `;
   }
 
@@ -865,64 +847,24 @@ function openReviewContent(idx) {
   document.getElementById('reviewModal').classList.remove('hidden');
 }
 
-function approveContent(id) {
+/* La fusion dans le contenu publié est faite par le serveur, dans la
+   même transaction que le changement de statut : contenu publié et
+   statut de la contribution ne peuvent pas diverger. */
+async function reviewContent(id, action) {
   const note = document.getElementById('reviewNote')?.value.trim() || '';
-  const pendings = getPending();
-  const idx = pendings.findIndex(p => p.id === id);
-  if (idx === -1) return;
-  pendings[idx].statut    = 'approved';
-  pendings[idx].noteAdmin = note;
-
-  // Merge into site content
-  const p = pendings[idx];
-  const content = getSiteContent();
-  const key = String(p.infraId);
-  if (!content[key]) {
-    content[key] = { description:'', horaires:'', telephone:'', email:'', website:'', gallery:[], events:[], actus:[], updatedAt:'' };
+  try {
+    await CulteAPI.reviewContribution(id, action, note);
+    await refreshStore();
+    closeReviewModal();
+    renderContenus(false);
+    updateNotifBadges();
+  } catch (err) {
+    apiError(err);
   }
-
-  const d = p.data || {};
-  if (p.type === 'profile') {
-    Object.assign(content[key], {
-      description: d.description || content[key].description,
-      horaires:    d.horaires    || content[key].horaires,
-      telephone:   d.telephone   || content[key].telephone,
-      email:       d.email       || content[key].email,
-      website:     d.website     || content[key].website,
-    });
-  } else if (p.type === 'gallery_add') {
-    content[key].gallery = content[key].gallery || [];
-    content[key].gallery.push({ id: p.id, url: d.url, caption: d.caption, dateAdded: p.dateSubmit });
-  } else if (p.type === 'event') {
-    content[key].events = content[key].events || [];
-    content[key].events.push({ id: p.id, titre: d.titre, dateDebut: d.dateDebut, dateFin: d.dateFin, lieu: d.lieu, description: d.description, photos: d.photos || [] });
-  } else if (p.type === 'actu') {
-    content[key].actus = content[key].actus || [];
-    content[key].actus.unshift({ id: p.id, titre: d.titre, contenu: d.contenu, photo: d.photo || '', date: p.dateSubmit });
-  }
-
-  content[key].updatedAt = new Date().toISOString();
-  saveSiteContent(content);
-  savePending(pendings);
-  addLog('approve_content', `${typeLbl(p.type)} — ${p.infraNom}`);
-  closeReviewModal();
-  renderContenus(false);
-  updateNotifBadges();
 }
 
-function rejectContent(id) {
-  const note = document.getElementById('reviewNote')?.value.trim() || '';
-  const pendings = getPending();
-  const idx = pendings.findIndex(p => p.id === id);
-  if (idx === -1) return;
-  pendings[idx].statut    = 'rejected';
-  pendings[idx].noteAdmin = note;
-  savePending(pendings);
-  addLog('reject_content', pendings[idx].infraNom);
-  closeReviewModal();
-  renderContenus(false);
-  updateNotifBadges();
-}
+function approveContent(id) { return reviewContent(id, 'approve'); }
+function rejectContent(id)  { return reviewContent(id, 'reject'); }
 
 function closeReviewModal() {
   document.getElementById('reviewModal').classList.add('hidden');
@@ -1108,7 +1050,11 @@ function saveEdit() {
       addLog('add', designation);
     } else {
       const rec = A.infraFiltered[A.editIdx];
-      if (rec) { A.edits.infras[rec._id] = data; addLog('edit', designation); }
+      if (rec) {
+        A.edits.infras[rec._id] = data;
+        addLog('edit', designation);
+        persistEdit('infras', rec._id, data, false);
+      }
     }
   } else {
     const nom = document.getElementById('ef-nom')?.value.trim();
@@ -1129,11 +1075,14 @@ function saveEdit() {
       addLog('add', nom);
     } else {
       const rec = A.formFiltered[A.editIdx];
-      if (rec) { A.edits.forms[rec._id] = data; addLog('edit', nom); }
+      if (rec) {
+        A.edits.forms[rec._id] = data;
+        addLog('edit', nom);
+        persistEdit('forms', rec._id, data, false);
+      }
     }
   }
 
-  saveEdits();
   closeEditModal();
   if (type === 'infra') renderInfraTable(false);
   else renderFormTable(false);
@@ -1164,10 +1113,11 @@ function doDelete(type, idx) {
     const i = src.findIndex(r => r._id === rec._id);
     if (i !== -1) src.splice(i, 1);
   } else {
-    A.edits.deleted[type === 'infra' ? 'infras' : 'forms'].push(rec._id);
+    const dataset = type === 'infra' ? 'infras' : 'forms';
+    A.edits.deleted[dataset].push(rec._id);
+    persistEdit(dataset, rec._id, {}, true);
   }
   addLog('delete', name);
-  saveEdits();
   if (type === 'infra') renderInfraTable(false);
   else renderFormTable(false);
 }
@@ -1252,11 +1202,27 @@ function renderParametres() {
 
 function setupSettingsListeners() {
   document.getElementById('btnSavePwd').addEventListener('click', async () => {
-    const pwd = document.getElementById('newPwd').value;
-    if (!pwd) return;
-    const user = ADMIN_USERS.find(u => u.email === A.session.email);
-    if (user) { user.hash = await _sha256(pwd); alert('Mot de passe mis à jour (session uniquement).'); }
-    document.getElementById('newPwd').value = '';
+    const current = document.getElementById('currentPwd').value;
+    const next    = document.getElementById('newPwd').value;
+    const status  = document.getElementById('pwdStatus');
+
+    const show = (msg, ok) => {
+      status.textContent = msg;
+      status.style.color = ok ? 'var(--ok, #1a7f37)' : 'var(--danger, #c62828)';
+      status.classList.remove('hidden');
+    };
+
+    if (!current || !next) return show('Renseignez le mot de passe actuel et le nouveau.', false);
+    if (next.length < 12)  return show('Le nouveau mot de passe doit faire au moins 12 caractères.', false);
+
+    try {
+      await CulteAPI.changePassword(current, next);
+      document.getElementById('currentPwd').value = '';
+      document.getElementById('newPwd').value = '';
+      show('✓ Mot de passe mis à jour.', true);
+    } catch (err) {
+      show(err.message || 'Échec de la mise à jour.', false);
+    }
   });
 
   document.getElementById('btnExportAll').addEventListener('click', () => {
@@ -1268,12 +1234,18 @@ function setupSettingsListeners() {
     downloadJSON(data, 'culte_admin_export_' + dateStr() + '.json');
   });
 
-  document.getElementById('btnClearEdits').addEventListener('click', () => {
-    if (!confirm('Effacer toutes les modifications locales ? Les données JSON d\'origine seront restaurées.')) return;
-    A.edits = { infras: {}, forms: {}, deleted: { infras: [], forms: [] } };
-    saveEdits();
-    alert('Modifications locales effacées.');
-    renderParametres();
+  document.getElementById('btnClearEdits').addEventListener('click', async () => {
+    if (!confirm('Annuler toutes les corrections apportées au jeu de référence ? Les données d\'origine seront restaurées pour tout le monde.')) return;
+    try {
+      await CulteAPI.clearDatasetEdits();
+      await refreshStore();
+      alert('Corrections annulées.');
+      renderParametres();
+      renderInfraTable(true);
+      renderFormTable(true);
+    } catch (err) {
+      apiError(err);
+    }
   });
 }
 
@@ -1293,7 +1265,7 @@ function exportCSV(type) {
 }
 
 /* ── UTILS ───────────────────────────────────────────────────────── */
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+const esc = window.escapeHtml;
 function dateStr() { return new Date().toISOString().slice(0,10); }
 function fmtDate(iso) {
   if (!iso) return '—';

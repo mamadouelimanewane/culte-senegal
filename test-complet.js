@@ -58,7 +58,7 @@ global.SpeechSynthesisUtterance = function(t) { this.text = t; };
 
 // ── Charger les modules en les assignant à global ──
 const modulesFiles = [
-  'js/seed.js','js/search-engine.js','js/voice-search.js',
+  'js/escape.js','js/api-client.js','js/search-engine.js','js/voice-search.js',
   'js/conversation-memory.js','js/geolocation-search.js','js/nlg-response.js',
   'js/auto-suggest.js','js/voice-conversation.js','js/events-calendar.js',
   'js/chatbot.js','js/social.js','js/recommendations.js','js/multilang.js',

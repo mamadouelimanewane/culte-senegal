@@ -15,7 +15,8 @@ const DIST = path.join(ROOT, 'dist');
 
 // Ordre exact des fichiers (doit correspondre à index.html)
 const JS_FILES = [
-  'js/seed.js',
+  'js/escape.js',
+  'js/api-client.js',
   'js/search-engine.js',
   'js/voice-search.js',
   'js/search-dialog.js',
@@ -96,13 +97,57 @@ try {
 console.log('📄 Génération index.prod.html...');
 let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
-// Remplacer les 6 CSS par le bundle
-const cssLinks = CSS_FILES.map(f => `  <link rel="stylesheet" href="${f}">`).join('\n');
-html = html.replace(cssLinks, '  <link rel="stylesheet" href="dist/css/app.bundle.min.css">');
+/* Le remplacement se fait fichier par fichier et tolère les
+   paramètres de cache (?v=12) ainsi que les attributs additionnels
+   (defer, integrity…). Un remplacement par bloc exact, comme
+   auparavant, échouait silencieusement dès qu'un « ?v= » était
+   ajouté à un lien — et index.prod.html se retrouvait identique à
+   index.html, donc non bundlé. */
+function replaceBundle(source, files, bundleTag, buildPattern) {
+  let first = true;
+  let out = source;
+  let replaced = 0;
 
-// Remplacer les 19 scripts par le bundle
-const scriptTags = JS_FILES.map(f => `<script src="${f}"></script>`).join('\n');
-html = html.replace(scriptTags, '<script src="dist/js/app.bundle.min.js"></script>');
+  for (const f of files) {
+    const pattern = buildPattern(f);
+    out = out.replace(pattern, () => {
+      replaced++;
+      if (first) { first = false; return bundleTag; }
+      return '';           // les suivants disparaissent
+    });
+  }
+
+  if (replaced !== files.length) {
+    console.warn(`   ⚠️  ${replaced}/${files.length} balises remplacées — vérifiez index.html`);
+  }
+  // Nettoie les lignes devenues vides
+  return out.replace(/^[ \t]*\n/gm, m => (m === '\n' ? '' : m));
+}
+
+const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// rel="stylesheet" explicitement : sinon le <link rel="preload"
+// as="style"> portant la même URL serait consommé à sa place.
+html = replaceBundle(
+  html, CSS_FILES,
+  '  <link rel="stylesheet" href="dist/css/app.bundle.min.css">',
+  f => new RegExp(
+    `[ \\t]*<link(?=[^>]*rel=["']stylesheet["'])[^>]*href=["']${esc(f)}(?:\\?[^"']*)?["'][^>]*>`, 'gi'),
+);
+
+html = replaceBundle(
+  html, JS_FILES,
+  '<script src="dist/js/app.bundle.min.js"></script>',
+  f => new RegExp(`[ \\t]*<script[^>]*src=["']${esc(f)}(?:\\?[^"']*)?["'][^>]*><\\/script>`, 'gi'),
+);
+
+// Le preload de css/style.css pointe désormais vers le bundle.
+html = html.replace(
+  /<link rel="preload" href="css\/[^"]*" as="style">/,
+  '<link rel="preload" href="dist/css/app.bundle.min.css" as="style">');
+html = html.replace(
+  /<link rel="preload" href="js\/[^"]*" as="script">/,
+  '<link rel="preload" href="dist/js/app.bundle.min.js" as="script">');
 
 fs.writeFileSync(path.join(ROOT, 'index.prod.html'), html);
 fs.writeFileSync(path.join(DIST, 'index.html'), html.replace(/href="dist\//g, 'href="').replace(/src="dist\//g, 'src="'));

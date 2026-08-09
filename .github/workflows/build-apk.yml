@@ -101,6 +101,5 @@ jobs:
           echo "| Admin | scenews-admin-v1.0.0.apk | https://culte-senegal.vercel.app/admin/ |" >> $GITHUB_STEP_SUMMARY
           echo "| Responsable | scenews-responsable-v1.0.0.apk | https://culte-senegal.vercel.app/responsable/ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔑 Identifiants" >> $GITHUB_STEP_SUMMARY
-          echo "- **Admin**: admin@culte.sn / admin2024" >> $GITHUB_STEP_SUMMARY
-          echo "- **Responsables**: fatou@culte.sn / demo2024" >> $GITHUB_STEP_SUMMARY
+          echo "> Les comptes sont gérés en base. Créer un administrateur :" >> $GITHUB_STEP_SUMMARY
+          echo "> \`node db/create-admin.js <email>\`" >> $GITHUB_STEP_SUMMARY

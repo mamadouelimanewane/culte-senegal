@@ -3,14 +3,15 @@
 // Version du cache et stratégies de mise en cache
 // ============================================================
 
-const CACHE_NAME = 'culte-v12';
+const CACHE_NAME = 'culte-v16';
 
 // Ressources de l'app shell à pré-cacher lors de l'installation
 const APP_SHELL = [
   '/',
   '/index.html',
   '/css/style.css',
-  '/js/seed.js',
+  '/js/escape.js',
+  '/js/api-client.js',
   '/js/search-engine.js',
   '/js/voice-search.js',
   '/js/search-dialog.js',
@@ -153,6 +154,12 @@ self.addEventListener('fetch', (event) => {
       })
     );
     return;
+  }
+
+  // L'API n'est jamais mise en cache : les réponses dépendent de la
+  // session et doivent toujours refléter l'état réel du serveur.
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
+    return; // laisse passer au réseau, sans interception
   }
 
   // Déterminer la stratégie selon le type de ressource

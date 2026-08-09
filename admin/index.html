@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Culte Culture Sénégal</title>
   <link rel="stylesheet" href="css/admin.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" integrity="sha384-wgw+aLYNQ7dlhK47ZPK7FRACiq7ROZwgFNg0m04avm4CaXS+Z9Y7nMu8yNjBKYC+" crossorigin="anonymous">
 </head>
 <body class="admin-body">
 
@@ -279,17 +279,22 @@
           <h3>Compte</h3>
           <p class="settings-info" id="settingsUser">—</p>
           <div class="form-group" style="margin-top:16px">
+            <label>Mot de passe actuel</label>
+            <input id="currentPwd" type="password" placeholder="Mot de passe actuel" autocomplete="current-password">
+          </div>
+          <div class="form-group">
             <label>Nouveau mot de passe</label>
-            <input id="newPwd" type="password" placeholder="Laisser vide pour ne pas changer" autocomplete="new-password">
+            <input id="newPwd" type="password" placeholder="12 caractères minimum" autocomplete="new-password">
           </div>
           <button class="btn-primary" id="btnSavePwd" style="margin-top:12px">Enregistrer</button>
+          <p class="settings-info hidden" id="pwdStatus" style="margin-top:10px"></p>
         </div>
         <div class="settings-card">
           <h3>Données</h3>
-          <p class="settings-desc">Exportez ou réinitialisez les données de modification locale.</p>
+          <p class="settings-desc">Exportez les données ou annulez les corrections apportées au jeu de référence.</p>
           <div class="settings-actions">
             <button class="btn-secondary" id="btnExportAll">↓ Exporter tout (JSON)</button>
-            <button class="btn-danger" id="btnClearEdits">🗑 Effacer les modifications locales</button>
+            <button class="btn-danger" id="btnClearEdits">🗑 Annuler les corrections</button>
           </div>
           <div class="settings-stats" id="settingsStats"></div>
         </div>
@@ -351,9 +356,10 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="../js/seed.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" integrity="sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr" crossorigin="anonymous"></script>
+<script src="../js/escape.js"></script>
+<script src="../js/api-client.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

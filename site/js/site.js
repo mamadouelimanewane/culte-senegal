@@ -3,7 +3,9 @@
    ════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const LS_CONTENT = 'culte_site_content';
+/* Le contenu publié vient de l'API (validé par l'administration),
+   plus du localStorage du visiteur. */
+let ALL_CONTENT = {};
 
 const TYPE_DEFAULT_IMAGES = {
   'Centre culturel':      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=1400&q=85',
@@ -56,9 +58,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Load published content from localStorage
-  const allContent = JSON.parse(localStorage.getItem(LS_CONTENT) || '{}');
-  const content    = allContent[String(id)] || {};
+  // Contenu publié, servi par l'API
+  try {
+    ALL_CONTENT = await CulteAPI.getContent();
+  } catch (e) {
+    console.error('Contenu indisponible:', e);
+    ALL_CONTENT = {};
+  }
+  const content = ALL_CONTENT[String(id)] || {};
 
   // Render page
   document.getElementById('loading').classList.add('hidden');
@@ -140,7 +147,7 @@ function renderGallery(photos) {
   }
   el.innerHTML = photos.map((ph, i) => `
     <div class="gallery-item" onclick="openLightbox(${i})">
-      <img src="${ph.url}" alt="${esc(ph.caption||'')}" loading="lazy">
+      <img src="${safeUrl(ph.url)}" alt="${esc(ph.caption||'')}" loading="lazy">
       ${ph.caption ? `<div class="gallery-caption">${esc(ph.caption)}</div>` : ''}
     </div>
   `).join('');
@@ -177,9 +184,8 @@ function renderEvents(events) {
 
 function toggleEventTab(past) {
   _showPast = past;
-  const allContent = JSON.parse(localStorage.getItem(LS_CONTENT) || '{}');
-  const params = new URLSearchParams(location.search);
-  const content = allContent[params.get('id')] || {};
+  const params  = new URLSearchParams(location.search);
+  const content = ALL_CONTENT[params.get('id')] || {};
   renderEvents(content.events || []);
 }
 
@@ -213,7 +219,7 @@ function renderActus(actus) {
   }
   el.innerHTML = actus.map(ac => `
     <div class="actu-card">
-      ${ac.photo ? `<img src="${ac.photo}" class="actu-photo" alt="${esc(ac.titre||'')}">` : ''}
+      ${ac.photo ? `<img src="${safeUrl(ac.photo)}" class="actu-photo" alt="${esc(ac.titre||'')}">` : ''}
       <div class="actu-body">
         <div class="actu-title">${esc(ac.titre||'')}</div>
         <div class="actu-date">${fmtDate(ac.date)}</div>
@@ -233,11 +239,22 @@ function renderContact(rec, content) {
   const hrs  = content.horaires  || '';
   const loc  = [rec.COMMUNE, rec.DEPARTEMENT, rec.REGION].filter(Boolean).join(', ');
 
-  if (loc)  items.push({ icon: '📍', label: 'Adresse', value: loc });
-  if (hrs)  items.push({ icon: '🕐', label: 'Horaires', value: hrs });
-  if (tel)  items.push({ icon: '📞', label: 'Téléphone', value: `<a href="tel:${tel}">${esc(tel)}</a>` });
-  if (mail) items.push({ icon: '✉️', label: 'Email', value: `<a href="mailto:${mail}">${esc(mail)}</a>` });
-  if (web)  items.push({ icon: '🌐', label: 'Site web', value: `<a href="${esc(web)}" target="_blank" rel="noopener">${esc(web.replace(/^https?:\/\//, ''))}</a>` });
+  // Ces valeurs viennent de contributions : elles sont échappées, et
+  // les URL passent par safeUrl() qui refuse le schéma javascript:.
+  const telUrl  = safeUrl('tel:' + tel.replace(/[^\d+]/g, ''));
+  const mailUrl = safeUrl('mailto:' + mail);
+  const webUrl  = safeUrl(web);
+
+  if (loc)  items.push({ icon: '📍', label: 'Adresse', value: esc(loc) });
+  if (hrs)  items.push({ icon: '🕐', label: 'Horaires', value: esc(hrs) });
+  if (tel)  items.push({ icon: '📞', label: 'Téléphone',
+                        value: telUrl ? `<a href="${telUrl}">${esc(tel)}</a>` : esc(tel) });
+  if (mail) items.push({ icon: '✉️', label: 'Email',
+                        value: mailUrl ? `<a href="${mailUrl}">${esc(mail)}</a>` : esc(mail) });
+  if (web)  items.push({ icon: '🌐', label: 'Site web',
+                        value: webUrl
+                          ? `<a href="${webUrl}" target="_blank" rel="noopener noreferrer">${esc(web.replace(/^https?:\/\//, ''))}</a>`
+                          : esc(web) });
 
   if (!items.length && !loc) {
     el.innerHTML = '<p class="empty-state">Informations de contact non disponibles.</p>';
@@ -259,7 +276,7 @@ function renderMap(lat, lon, name) {
   const mapEl = document.getElementById('siteMap');
   const map = L.map(mapEl, { zoomControl: true, attributionControl: false }).setView([lat, lon], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-  L.marker([lat, lon]).addTo(map).bindPopup(`<b>${name}</b>`).openPopup();
+  L.marker([lat, lon]).addTo(map).bindPopup(`<b>${esc(name)}</b>`).openPopup();
 }
 
 /* ── Lightbox ────────────────────────────────────────────────────── */
@@ -314,9 +331,9 @@ function showError() {
 }
 
 /* ── Utils ───────────────────────────────────────────────────────── */
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// Échappement partagé (js/escape.js) : couvre aussi les apostrophes,
+// indispensable dans les attributs délimités par des quotes simples.
+const esc = window.escapeHtml;
 function fmtDate(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });

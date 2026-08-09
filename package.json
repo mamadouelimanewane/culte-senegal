@@ -1,14 +1,19 @@
 {
   "name": "culte",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "serve.js",
   "scripts": {
     "build": "node build.js",
     "start": "node serve.js",
+    "dev": "vercel dev",
+    "db:migrate": "node db/migrate.js",
+    "db:create-admin": "node db/create-admin.js",
     "cap:sync": "npm run build && npx cap sync",
     "cap:add": "npx cap add android",
     "cap:open": "npx cap open android",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test-escape.js && node test-api.js && node test-complet.js",
+    "test:api": "node test-api.js",
+    "test:escape": "node test-escape.js"
   },
   "repository": {
     "type": "git",
@@ -21,14 +26,21 @@
     "url": "https://github.com/mamadouelimanewane/culte-senegal/issues"
   },
   "homepage": "https://github.com/mamadouelimanewane/culte-senegal#readme",
-  "description": "",
+  "description": "Scenews — cartographie culturelle du Sénégal",
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@capacitor/cli": "^8.4.2",
+    "@electric-sql/pglite": "^0.5.4",
     "clean-css-cli": "^5.6.3",
     "terser": "^5.46.1"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
-    "@capacitor/core": "^8.4.2"
+    "@capacitor/core": "^8.4.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1"
   }
 }

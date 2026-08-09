@@ -3,25 +3,33 @@
    ════════════════════════════════════════════════════════════════ */
 'use strict';
 
-/* ── Utilitaire hachage ──────────────────────────────────────────── */
-async function _sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/* ── Storage Keys ────────────────────────────────────────────────── */
-const LS_SESSION = 'culte_resp_session';
-const LS_REG     = 'culte_registrations';
-const LS_RESP    = 'culte_responsables';
-const LS_PENDING = 'culte_pending';
-const LS_CONTENT = 'culte_site_content';
+/* L'authentification et le stockage sont entièrement serveur : la
+   session vit dans un cookie httpOnly, les contributions et le
+   contenu publié viennent de /api. */
 
 /* ── State ───────────────────────────────────────────────────────── */
 const R = {
-  session: null,      // logged-in responsable
-  infraData: [],      // all infrastructures (from JSON)
-  infraRec: null,     // the responsable's infrastructure record
+  session: null,      // responsable connecté (confirmé par le serveur)
+  infraData: [],      // référentiel des infrastructures (JSON statique)
+  infraRec: null,     // l'infrastructure rattachée au responsable
+  contributions: [],  // miroir des contributions du responsable
+  content: {},        // miroir du contenu publié
 };
+
+/** Recharge le miroir local depuis l'API. */
+async function refreshStore() {
+  const [contribs, content] = await Promise.all([
+    CulteAPI.listContributions().catch(() => R.contributions),
+    CulteAPI.getContent().catch(() => R.content),
+  ]);
+  R.contributions = contribs;
+  R.content = content;
+}
+
+function apiError(err) {
+  console.error('[responsable]', err);
+  alert(err?.message || 'Une erreur est survenue.');
+}
 
 /* ── INIT ────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -34,37 +42,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Erreur chargement JSON:', e);
   }
 
-  // Check session
-  const sess = sessionStorage.getItem(LS_SESSION);
-  if (sess) {
-    R.session = JSON.parse(sess);
-    showApp();
-    return;
+  // Session : seul le serveur peut la confirmer.
+  try {
+    const { user } = await CulteAPI.me();
+    if (user.role === 'responsable') {
+      R.session = { id: user.id, nom: user.nom, email: user.email,
+                    infraId: user.infraId, infraNom: user.infraNom };
+      await showApp();
+      return;
+    }
+  } catch {
+    /* non authentifié : l'écran de connexion reste affiché */
   }
 
   // Login
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const pwd   = document.getElementById('loginPwd').value;
-    const pwdHash = await _sha256(pwd);
-    const resps = getResponsables();
-    const resp  = resps.find(r => r.email === email && r.pwd === pwdHash && r.statut === 'active');
-    const errEl = document.getElementById('loginError');
-    if (resp) {
-      R.session = { id: resp.id, nom: resp.nom, email: resp.email, infraId: resp.infraId, infraNom: resp.infraNom };
-      sessionStorage.setItem(LS_SESSION, JSON.stringify(R.session));
-      showApp();
-    } else {
-      const pending = getRegistrations().find(r => r.email === email);
-      if (pending && pending.statut === 'pending') {
-        errEl.textContent = 'Votre demande est en cours de validation. Merci de patienter.';
-      } else if (pending && pending.statut === 'rejected') {
-        errEl.textContent = 'Votre demande a été refusée. Contactez l\'administration pour plus d\'informations.';
-      } else {
-        errEl.textContent = 'Identifiants incorrects ou compte non approuvé.';
-      }
+    const email  = document.getElementById('loginEmail').value.trim();
+    const pwd    = document.getElementById('loginPwd').value;
+    const errEl  = document.getElementById('loginError');
+    const submit = e.target.querySelector('[type=submit]');
+
+    if (submit) submit.disabled = true;
+    try {
+      // Le serveur distingue lui-même « identifiants faux »,
+      // « demande en attente » et « demande refusée ».
+      const { user } = await CulteAPI.login(email, pwd, 'responsable');
+      R.session = { id: user.id, nom: user.nom, email: user.email,
+                    infraId: user.infraId, infraNom: user.infraNom };
+      errEl.classList.add('hidden');
+      document.getElementById('loginPwd').value = '';
+      await showApp();
+    } catch (err) {
+      errEl.textContent = err.message || 'Identifiants incorrects';
       errEl.classList.remove('hidden');
+    } finally {
+      if (submit) submit.disabled = false;
     }
   });
 
@@ -75,9 +88,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupInfraSearch();
 });
 
-function showApp() {
+async function showApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('respApp').classList.remove('hidden');
+
+  await refreshStore();
 
   // Find infra record
   R.infraRec = R.infraData[R.session.infraId] || null;
@@ -100,8 +115,8 @@ function showApp() {
   document.querySelectorAll('.mbn-btn').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
-  document.getElementById('btnLogout').addEventListener('click', () => {
-    sessionStorage.removeItem(LS_SESSION);
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    try { await CulteAPI.logout(); } catch { /* le cookie expirera de toute façon */ }
     location.reload();
   });
   document.getElementById('hamburger').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
@@ -138,9 +153,9 @@ function renderDashboard() {
     const commune = rec.COMMUNE || '';
     const region  = rec.REGION  || '';
     hero.innerHTML = `
-      <div class="hero-badge">${type}</div>
+      <div class="hero-badge">${esc(type)}</div>
       <div class="hero-name">${esc(rec.DESIGNATION || R.session.infraNom)}</div>
-      <div class="hero-loc">📍 ${[commune, region].filter(Boolean).join(', ')}</div>
+      <div class="hero-loc">📍 ${esc([commune, region].filter(Boolean).join(', '))}</div>
       <div class="hero-actions">
         <button class="hero-btn hero-btn-primary" onclick="switchView('profil')">✏️ Modifier le profil</button>
         <a class="hero-btn hero-btn-secondary" href="../site/?id=${R.session.infraId}" target="_blank">🌐 Voir la page publique</a>
@@ -219,14 +234,14 @@ function renderGalerie() {
   container.innerHTML = [
     ...published.map(ph => `
       <div class="gal-item">
-        <img src="${ph.url}" alt="${esc(ph.caption||'')}">
+        <img src="${safeUrl(ph.url)}" alt="${esc(ph.caption||'')}">
         <div class="gal-caption">${esc(ph.caption||'')}</div>
         <span class="gal-badge badge-approved">✓ Publiée</span>
       </div>
     `),
     ...myPending.filter(p => p.statut !== 'approved').map(p => `
       <div class="gal-item" style="opacity:.7">
-        <img src="${p.data.url}" alt="${esc(p.data.caption||'')}">
+        <img src="${safeUrl(p.data.url)}" alt="${esc(p.data.caption||'')}">
         <div class="gal-caption">${esc(p.data.caption||'')}</div>
         <span class="gal-badge ${p.statut === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${p.statut === 'rejected' ? '✕ Refusée' : '⏳ En attente'}</span>
       </div>
@@ -340,7 +355,7 @@ function resizeAndPreview(file, previewId, maxW, maxH) {
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
       const container = document.getElementById(previewId);
-      container.innerHTML = `<img src="${dataUrl}" alt="preview">`;
+      container.innerHTML = `<img src="${safeUrl(dataUrl)}" alt="preview">`;
       container.classList.remove('hidden');
       container.dataset.url = dataUrl;
     };
@@ -349,7 +364,7 @@ function resizeAndPreview(file, previewId, maxW, maxH) {
   reader.readAsDataURL(file);
 }
 
-function submitProfil() {
+async function submitProfil() {
   const data = {
     description: document.getElementById('pf-description').value.trim(),
     horaires:    document.getElementById('pf-horaires').value.trim(),
@@ -361,11 +376,11 @@ function submitProfil() {
     showStatus('profilStatus', 'err', 'Remplissez au moins un champ avant d\'envoyer.');
     return;
   }
-  submitPending('profile', data);
+  if (!await submitPending('profile', data)) return;
   showStatus('profilStatus', 'ok', '✓ Profil envoyé pour validation. Vous serez notifié par l\'équipe.');
 }
 
-function submitGalerie() {
+async function submitGalerie() {
   const preview = document.getElementById('gal-preview');
   const url     = preview.dataset.url;
   const caption = document.getElementById('gal-caption').value.trim();
@@ -373,7 +388,7 @@ function submitGalerie() {
     showStatus('galStatus', 'err', 'Veuillez sélectionner une photo.');
     return;
   }
-  submitPending('gallery_add', { url, caption });
+  if (!await submitPending('gallery_add', { url, caption })) return;
   showStatus('galStatus', 'ok', '✓ Photo envoyée pour validation.');
   document.getElementById('gal-file').value = '';
   document.getElementById('gal-caption').value = '';
@@ -405,7 +420,7 @@ async function submitEvent() {
     description: document.getElementById('ev-description').value.trim(),
     photos,
   };
-  submitPending('event', data);
+  if (!await submitPending('event', data)) return;
   showStatus('evStatus', 'ok', '✓ Événement envoyé pour validation.');
   ['ev-titre','ev-dateDebut','ev-dateFin','ev-lieu','ev-description'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('ev-photos').value = '';
@@ -422,7 +437,7 @@ async function submitActu() {
   }
   const preview = document.getElementById('ac-preview');
   const photo   = preview.dataset.url || '';
-  submitPending('actu', { titre, contenu, photo });
+  if (!await submitPending('actu', { titre, contenu, photo })) return;
   showStatus('acStatus', 'ok', '✓ Actualité envoyée pour validation.');
   document.getElementById('ac-titre').value = '';
   document.getElementById('ac-contenu').value = '';
@@ -433,21 +448,17 @@ async function submitActu() {
   renderActualites();
 }
 
-function submitPending(type, data) {
-  const pendings = getPending();
-  pendings.push({
-    id: 'pend_' + Date.now(),
-    respId: R.session.id,
-    respNom: R.session.nom,
-    infraId: R.session.infraId,
-    infraNom: R.session.infraNom,
-    type,
-    data,
-    statut: 'pending',
-    dateSubmit: new Date().toISOString(),
-    noteAdmin: '',
-  });
-  savePending(pendings);
+/* Le serveur rattache lui-même la contribution au responsable
+   connecté et à son infrastructure : rien d'autre à transmettre. */
+async function submitPending(type, data) {
+  try {
+    await CulteAPI.submitContribution(type, data);
+    await refreshStore();
+    return true;
+  } catch (err) {
+    apiError(err);
+    return false;
+  }
 }
 
 function showStatus(id, type, msg) {
@@ -541,60 +552,46 @@ async function submitRegistration() {
     alert('Veuillez remplir tous les champs obligatoires (*).');
     return;
   }
-  if (pwd.length < 6) {
-    alert('Le mot de passe doit contenir au moins 6 caractères.');
+  if (pwd.length < 12) {
+    alert('Le mot de passe doit contenir au moins 12 caractères.');
     return;
   }
 
-  // Check duplicate
-  const existing = getRegistrations().find(r => r.email === email);
-  if (existing) {
-    const lbls = { pending: 'en cours d\'examen', approved: 'déjà approuvée', rejected: 'refusée' };
-    alert(`Une demande avec cet email est ${lbls[existing.statut] || 'existante'}. Contactez l\'administration si nécessaire.`);
+  // Le mot de passe part en clair sur HTTPS et n'est haché (bcrypt)
+  // que par le serveur. Les doublons sont détectés côté serveur : le
+  // navigateur n'a pas à connaître la liste des comptes existants.
+  try {
+    await CulteAPI.submitRegistration({
+      nom, email, tel, password: pwd,
+      infraId: parseInt(infraId, 10),
+      infraNom, region, justification: justif,
+    });
+  } catch (err) {
+    alert(err.message || 'Envoi de la demande impossible.');
     return;
   }
-  const existingResp = getResponsables().find(r => r.email === email);
-  if (existingResp) {
-    alert('Cet email est déjà utilisé par un responsable. Connectez-vous directement.');
-    return;
-  }
-
-  const regs = getRegistrations();
-  const pwdHash = await _sha256(pwd);
-  regs.push({
-    id: 'reg_' + Date.now(),
-    nom, email, tel, pwd: pwdHash,
-    infraId: parseInt(infraId),
-    infraNom, region, justification: justif,
-    statut: 'pending',
-    dateInscription: new Date().toISOString(),
-    noteAdmin: '',
-  });
-  saveRegistrations(regs);
 
   closeRegisterModal();
-  document.getElementById('loginError').textContent = '✓ Demande envoyée ! Notre équipe l\'examinera et vous contactera par email.';
-  document.getElementById('loginError').style.background = '#d1e7dd';
-  document.getElementById('loginError').style.color = '#0f5132';
-  document.getElementById('loginError').classList.remove('hidden');
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '✓ Demande envoyée ! Notre équipe l\'examinera et vous contactera par email.';
+  errEl.style.background = '#d1e7dd';
+  errEl.style.color = '#0f5132';
+  errEl.classList.remove('hidden');
 }
 
-/* ── localStorage Helpers ────────────────────────────────────────── */
-function getRegistrations() { return JSON.parse(localStorage.getItem(LS_REG) || '[]'); }
-function saveRegistrations(a) { localStorage.setItem(LS_REG, JSON.stringify(a)); }
-function getResponsables()   { return JSON.parse(localStorage.getItem(LS_RESP) || '[]'); }
-function getPending()        { return JSON.parse(localStorage.getItem(LS_PENDING) || '[]'); }
-function savePending(a)      { localStorage.setItem(LS_PENDING, JSON.stringify(a)); }
-function getSiteContent()    { return JSON.parse(localStorage.getItem(LS_CONTENT) || '{}'); }
+/* ── Accès aux données (lecture depuis le miroir serveur) ────────── */
+function getPending()     { return R.contributions; }
+function getSiteContent() { return R.content; }
 function getMyPending() {
-  return getPending().filter(p => p.respId === R.session.id || p.infraId === R.session.infraId)
+  // L'API ne renvoie déjà que les contributions du responsable
+  // connecté ; le tri reste ici pour l'affichage.
+  return R.contributions
+    .slice()
     .sort((a, b) => new Date(b.dateSubmit) - new Date(a.dateSubmit));
 }
 
 /* ── Utils ───────────────────────────────────────────────────────── */
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+const esc = window.escapeHtml;
 function fmtDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });

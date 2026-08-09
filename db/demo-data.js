@@ -1,11 +1,13 @@
 /* ════════════════════════════════════════════════════════════════
-   CULTE — Données de démonstration africaines / sénégalaises
-   Exécuté une seule fois (flag culte_demo_seeded)
-   ════════════════════════════════════════════════════════════════ */
-(function seedDemo() {
-  'use strict';
-  if (localStorage.getItem('culte_demo_seeded') === '5') return; // version tag
+   CULTE — Jeu de démonstration (côté serveur)
 
+   Anciennement js/seed.js, qui peuplait le localStorage du visiteur.
+   Ces données appartiennent désormais à la base : elles sont
+   insérées par db/seed-demo.js.
+   ════════════════════════════════════════════════════════════════ */
+'use strict';
+
+module.exports = (function demoData() {
   /* ── Images Unsplash – thèmes africains ──────────────────────── */
   const IMG = {
     // Galeries / art
@@ -525,33 +527,6 @@ Le musée dispose également d'un espace de recherche, d'une médiathèque spéc
     },
   ];
 
-  /* ══════════════════════════════════════════════════════════════
-     SAVE TO LOCALSTORAGE
-  ══════════════════════════════════════════════════════════════ */
-  const existing_resp = JSON.parse(localStorage.getItem('culte_responsables') || '[]');
-  const existing_reg  = JSON.parse(localStorage.getItem('culte_registrations') || '[]');
-  const existing_pend = JSON.parse(localStorage.getItem('culte_pending') || '[]');
 
-  // Merge (don't overwrite user-created data)
-  const mergeById = (existing, demo) => {
-    const ids = new Set(existing.map(r => r.id));
-    return [...existing, ...demo.filter(r => !ids.has(r.id))];
-  };
-
-  localStorage.setItem('culte_responsables',   JSON.stringify(mergeById(existing_resp, responsables)));
-  localStorage.setItem('culte_registrations',  JSON.stringify(mergeById(existing_reg, registrations)));
-  localStorage.setItem('culte_pending',        JSON.stringify(mergeById(existing_pend, pending)));
-
-  // Force-update demo site content (4 known demo sites)
-  const DEMO_SITE_IDS = ['856', '858', '860', '868'];
-  const existingContent = JSON.parse(localStorage.getItem('culte_site_content') || '{}');
-  Object.keys(siteContent).forEach(key => {
-    if (DEMO_SITE_IDS.includes(key) || !existingContent[key]) {
-      existingContent[key] = siteContent[key];
-    }
-  });
-  localStorage.setItem('culte_site_content', JSON.stringify(existingContent));
-
-  localStorage.setItem('culte_demo_seeded', '5');
-  console.log('[Culte] Données de démonstration initialisées ✓');
+  return { responsables, registrations, siteContent, pending };
 })();
