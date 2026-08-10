@@ -41,6 +41,8 @@
     "@capacitor/core": "^8.4.2",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "pg": "^8.13.1"
   }
 }

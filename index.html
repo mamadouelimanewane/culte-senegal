@@ -24,9 +24,9 @@
 
   <link rel="stylesheet" href="css/desktop.css?v=5">
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css" />
+  <link rel="stylesheet" href="css/leaflet.css" />
+  <link rel="stylesheet" href="css/MarkerCluster.css" />
+  <link rel="stylesheet" href="css/MarkerCluster.Default.css" />
 </head>
 <body>
 <!-- ═══════════════════════════════════ SPLASH ═══════════════════ -->
@@ -415,8 +415,8 @@ window.addEventListener('online',  function() { document.body.classList.remove('
 window.addEventListener('offline', function() { document.body.classList.add('is-offline'); });
 if (!navigator.onLine) document.body.classList.add('is-offline');
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="js/leaflet.js"></script>
+<script src="js/leaflet.markercluster.js"></script>
 <script>window._leafletReady = true;</script>
 <!-- Modules critiques (chargement synchrone — utilisés par app.js) -->
 <script src="js/escape.js"></script>
@@ -432,7 +432,7 @@ if (!navigator.onLine) document.body.classList.add('is-offline');
 <script src="js/events-calendar.js"></script>
 <script src="js/chatbot.js"></script>
 <script src="js/recommendations.js"></script>
-<script src="js/app.js?v=25"></script>
+<script src="js/app.js?v=26"></script>
 <!-- Modules secondaires (chargement différé — autonomes) -->
 <script src="js/social.js" defer></script>
 <script src="js/multilang.js" defer></script>
