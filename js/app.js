@@ -1077,7 +1077,6 @@ function initMapLeaflet() {
     keepBuffer: 8,
     updateWhenIdle: false,
     updateWhenZooming: false,
-    crossOrigin: true,
     attribution: '© OpenStreetMap © CARTO'
   }).addTo(state.map);
   state.mapCluster = L.markerClusterGroup({ maxClusterRadius: 60, showCoverageOnHover: false });
@@ -1990,7 +1989,6 @@ function initHeroMap() {
     keepBuffer: 8,
     updateWhenIdle: false,
     updateWhenZooming: false,
-    crossOrigin: true,
     attribution: '© OpenStreetMap © CARTO'
   }).addTo(heroMap);
 
