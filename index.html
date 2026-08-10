@@ -24,8 +24,8 @@
 
   <link rel="stylesheet" href="css/desktop.css?v=5">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 </head>
 <body>
 <!-- ═══════════════════════════════════ SPLASH ═══════════════════ -->
@@ -414,8 +414,8 @@ window.addEventListener('online',  function() { document.body.classList.remove('
 window.addEventListener('offline', function() { document.body.classList.add('is-offline'); });
 if (!navigator.onLine) document.body.classList.add('is-offline');
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>window._leafletReady = true;</script>
 <!-- Modules critiques (chargement synchrone — utilisés par app.js) -->
 <script src="js/escape.js"></script>
@@ -431,7 +431,7 @@ if (!navigator.onLine) document.body.classList.add('is-offline');
 <script src="js/events-calendar.js"></script>
 <script src="js/chatbot.js"></script>
 <script src="js/recommendations.js"></script>
-<script src="js/app.js?v=23"></script>
+<script src="js/app.js?v=24"></script>
 <!-- Modules secondaires (chargement différé — autonomes) -->
 <script src="js/social.js" defer></script>
 <script src="js/multilang.js" defer></script>
