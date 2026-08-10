@@ -1062,7 +1062,7 @@ function fitSenegalBounds(targetMap) {
  */
 function initMap() {
   if (state.map) { state.map.invalidateSize(); return; }
-  if (typeof L === 'undefined') {
+  if (typeof L === 'undefined' || typeof L.markerClusterGroup === 'undefined') {
     // Leaflet vient d'un CDN : on retente au prochain tour de boucle.
     setTimeout(initMap, 250);
     return;
@@ -1980,6 +1980,10 @@ function applyLayout() {
    ════════════════════════════════════════════════════════════════ */
 function initHeroMap() {
   if (!isDesktop()) return;
+  if (typeof L === 'undefined' || typeof L.markerClusterGroup === 'undefined') {
+    setTimeout(initHeroMap, 250);
+    return;
+  }
   const el = document.getElementById('heroMap');
   if (!el || el._leaflet_id) return; // déjà initialisée
 
