@@ -850,13 +850,7 @@ function applyListFilters(resetPage) {
           if (isFormation && !formSet.has(r)) return false;
           if (!isFormation && !infraSet.has(r)) return false;
         }
-        // Vérification textuelle : chaque mot de la recherche doit apparaître dans au moins un champ
-        const fields = [r.DESIGNATION, r.NOM_ETABLISSEMENT, r.DESCRIPTIF, r.BRANCHE,
-                        r.COMMUNE, r.LOCALITE, r.LOCALITES, r.REGION, r.DEPARTEMENT].filter(Boolean);
-        const allFieldsText = fields.map(f => norm(f)).join(' ');
-        const searchWords = sNorm.split(/\s+/).filter(w => w.length > 1);
-        const textMatch = searchWords.every(w => allFieldsText.includes(w));
-        if (!textMatch) return false;
+
         // Filtres dropdown
         const reg = (r.REGION || '').toUpperCase();
         const typeKey = isFormation ? (r.BRANCHE || '') : getInfraType(r);
