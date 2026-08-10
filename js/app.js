@@ -1391,7 +1391,15 @@ function _renderNlpMapResults(recs, intent, raw, result, withGeo) {
       isProximity: withGeo,
     });
   }
-  NLP.showBot(botMsg);
+
+  // Update text field with clean query
+  mapSearch.value = raw;
+
+  // Show bot message + button to view list
+  NLP.showBot(botMsg, `<button onclick="switchTab('list')" style="margin-top:8px; padding:6px 14px; border-radius:16px; border:none; background:rgba(255,255,255,0.25); color:#fff; font-weight:600; cursor:pointer;">📋 Afficher les résultats en liste</button>`);
+
+  // Force map size recalculation in case it was glitching
+  setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 350);
 
   // ── Analytics tracking ──
   if (typeof Analytics !== 'undefined' && Analytics.trackSearch) {
@@ -1494,18 +1502,19 @@ const NLP = {
 
   _botTimer: null,
 
-  typewriter(el, text, speed) {
+  typewriter(el, text, speed, onComplete) {
     speed = speed || 24;
     clearTimeout(this._botTimer);
     el.textContent = '';
     let i = 0;
     const tick = () => {
       if (i < text.length) { el.textContent += text.charAt(i++); this._botTimer = setTimeout(tick, speed); }
+      else if (onComplete) onComplete();
     };
     tick();
   },
 
-  showBot(msg) {
+  showBot(msg, actionHtml) {
     const bar   = document.getElementById('mapBotBar');
     const msgEl = document.getElementById('mapBotMsg');
     if (!bar || !msgEl) return;
@@ -1513,7 +1522,13 @@ const NLP = {
     bar.style.animation = 'none';
     void bar.offsetWidth; // reflow
     bar.style.animation = 'botSlideIn .3s ease';
-    this.typewriter(msgEl, msg, 22);
+    this.typewriter(msgEl, msg, 22, () => {
+      if (actionHtml) {
+        const div = document.createElement('div');
+        div.innerHTML = actionHtml;
+        msgEl.appendChild(div);
+      }
+    });
   },
 
   showChips(intent) {
