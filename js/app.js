@@ -220,15 +220,27 @@ function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0
 
 /* ── Data Loading ───────────────────────────────────────────────── */
 async function loadData() {
-  const [infraRes, formRes] = await Promise.all([
-    fetch('infrastructures_culturelles.json'),
-    fetch('centre_formation_arts.json'),
-    // Contenu publié et corrections admin : le portail affiche
-    // désormais les mêmes données que le backoffice.
-    loadPublishedContent(),
-  ]);
-  const infraJson = await infraRes.json();
-  const formJson  = await formRes.json();
+  let infraRes, formRes;
+  try {
+    [infraRes, formRes] = await Promise.all([
+      fetch('infrastructures_culturelles.json').catch(e => ({ ok: false, error: e })),
+      fetch('centre_formation_arts.json').catch(e => ({ ok: false, error: e })),
+      // Contenu publié et corrections admin : le portail affiche
+      // désormais les mêmes données que le backoffice.
+      loadPublishedContent().catch(e => { console.warn(e); }),
+    ]);
+  } catch (err) {
+    console.error("Critical error during initial fetches:", err);
+  }
+
+  let infraJson = {}, formJson = {};
+  try {
+    if (infraRes && infraRes.ok) infraJson = await infraRes.json();
+    if (formRes && formRes.ok) formJson = await formRes.json();
+  } catch (err) {
+    console.error("Error parsing JSON data:", err);
+  }
+
   const infraSheet = infraJson.sheets?.INFRASTRUCTURES_CULTURELLES || {};
   const formSheet  = formJson.sheets?.CENTRE_FORMATION_CULTURE || {};
 
@@ -2373,10 +2385,13 @@ async function init() {
   });
 
   // Region select (mobile drawer)
-  document.getElementById('regionSelect').addEventListener('change', e => {
-    state.listFilters.region = e.target.value;
-    applyListFilters(true);
-  });
+  const regionSelect = document.getElementById('regionSelect');
+  if (regionSelect) {
+    regionSelect.addEventListener('change', e => {
+      state.listFilters.region = e.target.value;
+      applyListFilters(true);
+    });
+  }
 
   // Milieu pills (mobile drawer)
   document.querySelectorAll('.milieu-pill').forEach(btn => {
@@ -2389,20 +2404,27 @@ async function init() {
   });
 
   // Drawer reset (mobile)
-  document.getElementById('drawerReset').addEventListener('click', () => {
-    state.listFilters = { search: '', region: '', type: '', milieu: '' };
-    document.getElementById('listSearch').value = '';
-    document.getElementById('regionSelect').value = '';
-    document.querySelectorAll('.milieu-pill').forEach(b => b.classList.toggle('active', b.dataset.milieu === ''));
-    renderListTabs();
-    applyListFilters(true);
-  });
+  const drawerReset = document.getElementById('drawerReset');
+  if (drawerReset) {
+    drawerReset.addEventListener('click', () => {
+      state.listFilters = { search: '', region: '', type: '', milieu: '' };
+      const listSearch = document.getElementById('listSearch');
+      if (listSearch) listSearch.value = '';
+      if (regionSelect) regionSelect.value = '';
+      document.querySelectorAll('.milieu-pill').forEach(b => b.classList.toggle('active', b.dataset.milieu === ''));
+      renderListTabs();
+      applyListFilters(true);
+    });
+  }
 
   // Filter button toggle (mobile)
-  document.getElementById('filterBtn').addEventListener('click', () => {
-    const drawer = document.getElementById('listFilterDrawer');
-    drawer.classList.toggle('hidden');
-  });
+  const filterBtn = document.getElementById('filterBtn');
+  if (filterBtn) {
+    filterBtn.addEventListener('click', () => {
+      const drawer = document.getElementById('listFilterDrawer');
+      if (drawer) drawer.classList.toggle('hidden');
+    });
+  }
 
   // Map layer chips
   document.querySelectorAll('.map-chip').forEach(btn => {
@@ -2421,18 +2443,22 @@ async function init() {
   });
 
   // Modal backdrop
-  document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener('click', closeModal);
+  }
 
   // Home search
   setupHomeSearch();
 
   // Locate FAB — enrichi avec GeoSearch
-  document.getElementById('locateFab').addEventListener('click', () => {
-    const fab = document.getElementById('locateFab');
-    fab.classList.add('locating');
+  const locateFab = document.getElementById('locateFab');
+  if (locateFab) {
+    locateFab.addEventListener('click', () => {
+      locateFab.classList.add('locating');
 
     const onPos = (pos) => {
-      fab.classList.remove('locating');
+      locateFab.classList.remove('locating');
       MAP.setView(pos.coords ? pos.coords.latitude : pos.latitude,
                    pos.coords ? pos.coords.longitude : pos.longitude, 13);
       MAP.addUserMarker(pos.coords ? pos.coords.latitude : pos.latitude,
@@ -2456,12 +2482,13 @@ async function init() {
     if (typeof GeoSearch !== 'undefined') {
       GeoSearch.getPosition().then(pos => {
         if (pos) onPos({ coords: pos });
-        else fab.classList.remove('locating');
-      }).catch(() => fab.classList.remove('locating'));
+        else locateFab.classList.remove('locating');
+      }).catch(() => locateFab.classList.remove('locating'));
     } else {
-      navigator.geolocation?.getCurrentPosition(onPos, () => fab.classList.remove('locating'));
+      navigator.geolocation?.getCurrentPosition(onPos, () => locateFab.classList.remove('locating'));
     }
-  });
+    });
+  }
 
   // Dark mode
   initDarkMode();

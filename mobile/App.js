@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const SITE_URL = 'https://culte-senegal.vercel.app/';
+const SITE_URL = 'https://culte-senegal.vercel.app/responsable/';
 
 export default function App() {
   const webViewRef = useRef(null);

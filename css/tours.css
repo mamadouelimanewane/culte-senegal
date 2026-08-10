@@ -166,3 +166,8 @@
   .tours-grid { grid-template-columns: 1fr; }
   .tour-card-header { padding: 16px 12px 10px; }
 }
+
+/* ── Mobile : masquer Visites Guidées ── */
+@media (max-width: 767px) {
+  .tours-fab { display: none !important; }
+}

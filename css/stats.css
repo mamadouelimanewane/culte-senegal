@@ -116,6 +116,11 @@
   .stats-kpi-value { font-size: 1.5rem; }
 }
 
+/* ── Mobile : masquer Tableau de bord culturel ── */
+@media (max-width: 767px) {
+  .stats-fab { display: none !important; }
+}
+
 /* ── Print ── */
 @media print {
   .stats-overlay { position: static; background: #fff; }

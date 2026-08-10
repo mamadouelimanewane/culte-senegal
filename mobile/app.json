@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Scenews - Culture Sénégal",
-    "slug": "ndugumi-user",
+    "name": "SCeNews Responsable",
+    "slug": "scenews-responsable",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mamadouelimane.scenews"
+      "bundleIdentifier": "com.mamadouelimane.scenews.responsable"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.mamadouelimane.scenews",
+      "package": "com.mamadouelimane.scenews.responsable",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
