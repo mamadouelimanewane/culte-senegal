@@ -26,10 +26,18 @@
         "buildType": "app-bundle",
         "image": "latest"
       },
-      "ios": {}
+      "ios": {
+        "autoIncrement": true
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "ciaoservicetech@gmail.com",
+        "ascAppId": "6802286051",
+        "appleTeamId": "8XBA5CDB47"
+      }
+    }
   }
 }

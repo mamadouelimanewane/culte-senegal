@@ -13,7 +13,12 @@
     "build:client": "node configure-target.js client && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
     "build:admin": "node configure-target.js admin && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
     "build:responsable": "node configure-target.js responsable && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease",
-    "build:all": "npm run build:client && npm run build:admin && npm run build:responsable"
+    "build:all": "npm run build:client && npm run build:admin && npm run build:responsable",
+    "build:client:ios": "node configure-target.js client && npx eas-cli build --platform ios --profile production",
+    "build:admin:ios": "node configure-target.js admin && npx eas-cli build --platform ios --profile production",
+    "build:responsable:ios": "node configure-target.js responsable && npx eas-cli build --platform ios --profile production",
+    "build:all:ios": "npm run build:client:ios && npm run build:admin:ios && npm run build:responsable:ios",
+    "submit:client:ios": "npx eas-cli submit --platform ios --profile production --latest"
   },
   "dependencies": {
     "expo": "~55.0.7",

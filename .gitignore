@@ -7,3 +7,6 @@ dist/
 .env
 .env.local
 .env.*.local
+
+.DS_Store
+mobile/.current-target

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SCeNews",
-    "slug": "ndugumi-user",
+    "slug": "scenews-client",
     "version": "1.0.0",
     "sdkVersion": "55.0.0",
     "orientation": "portrait",
@@ -16,6 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.mamadouelimane.scenews",
       "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Scenews utilise votre position pour afficher les lieux culturels proches de vous.",
+        "NSMicrophoneUsageDescription": "Scenews utilise le micro pour la recherche vocale.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -38,9 +40,8 @@
     },
     "extra": {
       "eas": {
-        "projectId": "2c813298-042b-4c16-b139-a82c0790dc50"
+        "projectId": "c401c7c4-1ae4-41be-84d8-7a9ca0078617"
       }
-    },
-    "owner": "mamadouelimane"
+    }
   }
 }
