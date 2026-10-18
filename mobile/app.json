@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mamadouelimane.scenews"
+      "bundleIdentifier": "com.mamadouelimane.scenews",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,6 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.mamadouelimane.scenews",
-      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
