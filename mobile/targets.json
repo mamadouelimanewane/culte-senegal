@@ -1,7 +1,7 @@
 {
   "client": {
     "name": "SCeNews",
-    "slug": "ndugumi-user",
+    "slug": "scenews",
     "package": "com.mamadouelimane.scenews",
     "url": "https://culte-senegal.vercel.app/",
     "statusBarColor": "#0a3d6b",

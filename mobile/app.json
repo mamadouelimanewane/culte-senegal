@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "SCeNews Responsable",
-    "slug": "scenews-responsable",
+    "name": "SCeNews",
+    "slug": "scenews",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mamadouelimane.scenews.responsable"
+      "bundleIdentifier": "com.mamadouelimane.scenews"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.mamadouelimane.scenews.responsable",
+      "package": "com.mamadouelimane.scenews",
       "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
