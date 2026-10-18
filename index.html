@@ -27,6 +27,15 @@
   <link rel="stylesheet" href="css/leaflet.css" />
   <link rel="stylesheet" href="css/MarkerCluster.css" />
   <link rel="stylesheet" href="css/MarkerCluster.Default.css" />
+
+  <!-- iPad : les portails Responsables/Admin ne font pas partie de l'app publique -->
+  <style>.is-ipad .dt-admin-link { display: none !important; }</style>
+  <script>
+    if (/iPad/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      document.documentElement.classList.add('is-ipad');
+    }
+  </script>
 </head>
 <body>
 <!-- ═══════════════════════════════════ SPLASH ═══════════════════ -->
