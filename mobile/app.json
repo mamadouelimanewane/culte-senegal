@@ -1,8 +1,9 @@
 {
   "expo": {
     "name": "SCeNews",
-    "slug": "scenews",
+    "slug": "ndugumi-user",
     "version": "1.0.0",
+    "sdkVersion": "55.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
