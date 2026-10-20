@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SCeNews",
-    "slug": "scenews-client",
+    "slug": "ndugumi-user",
     "version": "1.0.0",
     "sdkVersion": "55.0.0",
     "orientation": "portrait",
@@ -40,8 +40,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "c401c7c4-1ae4-41be-84d8-7a9ca0078617"
+        "projectId": "2c813298-042b-4c16-b139-a82c0790dc50"
       }
-    }
+    },
+    "owner": "mamadouelimane"
   }
 }
