@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mamadouelimane.scenews",
+      "bundleIdentifier": "com.cultesenegal.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Scenews utilise votre position pour afficher les lieux culturels proches de vous.",
         "NSMicrophoneUsageDescription": "Scenews utilise le micro pour la recherche vocale.",
@@ -27,7 +27,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.mamadouelimane.scenews",
+      "package": "com.cultesenegal.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
