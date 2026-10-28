@@ -145,6 +145,10 @@ input { outline: none; }
 }
 .status-icons { display: flex; gap: 6px; align-items: center; }
 
+@media (max-width: 767px) {
+  .status-bar { display: none; }
+}
+
 /* ── Tab Sections ── */
 .tab-section {
   display: none; flex-direction: column;
