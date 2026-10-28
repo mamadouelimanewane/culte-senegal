@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const SITE_URL = 'https://culte-senegal.vercel.app/responsable/';
+const SITE_URL = 'https://culte-senegal.vercel.app/';
 
 export default function App() {
   const webViewRef = useRef(null);
@@ -116,6 +116,11 @@ export default function App() {
 
   const injectedJS = `
     (function() {
+      // Use the native iOS status bar; the web page's mobile status strip is a mock-up.
+      var nativeChromeStyle = document.createElement('style');
+      nativeChromeStyle.textContent = '@media (max-width: 1023px) { .status-bar { display: none !important; } }';
+      document.head.appendChild(nativeChromeStyle);
+
       // Disable long press context menu
       document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
@@ -180,7 +185,7 @@ export default function App() {
         mixedContentMode="compatibility"
         allowFileAccess={true}
         originWhitelist={['*']}
-        userAgent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+        mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
       />
 
       {/* Bouton flottant retour arrière — visible quand on n'est pas sur Home */}

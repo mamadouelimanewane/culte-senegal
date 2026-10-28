@@ -1311,6 +1311,8 @@ const VoiceSearch = (() => {
         statusEl.textContent = 'Microphone non disponible.';
       } else if (e.error === 'not-allowed') {
         statusEl.textContent = 'Accès au micro refusé. Activez dans les paramètres.';
+      } else if (e.error === 'service-not-allowed') {
+        statusEl.textContent = 'La reconnaissance vocale n’est pas autorisée sur cet appareil. Utilisez la recherche texte.';
       } else {
         statusEl.textContent = 'Erreur. Réessayez.';
       }

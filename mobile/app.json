@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "SCeNews Responsable",
-    "slug": "scenews-responsable",
+    "name": "SCeNews",
+    "slug": "ndugumi-user",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mamadouelimane.scenews.responsable"
+      "bundleIdentifier": "com.mamadouelimane.scenews",
+      "buildNumber": "3",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "SCeNews utilise le microphone lorsque vous lancez une recherche vocale de lieux culturels.",
+        "NSSpeechRecognitionUsageDescription": "SCeNews transcrit votre recherche vocale pour trouver des lieux culturels."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +27,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.mamadouelimane.scenews.responsable",
+      "package": "com.mamadouelimane.scenews",
       "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
