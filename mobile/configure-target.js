@@ -29,7 +29,7 @@ const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
 appJson.expo.name = config.name;
 appJson.expo.slug = config.slug;
 appJson.expo.android.package = config.package;
-appJson.expo.ios.bundleIdentifier = config.package;
+appJson.expo.ios.bundleIdentifier = config.iosBundleIdentifier || config.package;
 
 fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + '\n');
 console.log(`   ✅ app.json mis à jour`);

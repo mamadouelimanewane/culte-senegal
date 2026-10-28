@@ -2,7 +2,8 @@
   "client": {
     "name": "SCeNews",
     "slug": "ndugumi-user",
-    "package": "com.mamadouelimane.scenews",
+    "package": "com.cultesenegal.app",
+    "iosBundleIdentifier": "com.mamadouelimane.scenews",
     "url": "https://culte-senegal.vercel.app/",
     "statusBarColor": "#0a3d6b",
     "description": "Portail public - Cartographie culturelle du Sénégal",

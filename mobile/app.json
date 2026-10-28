@@ -3,6 +3,7 @@
     "name": "SCeNews",
     "slug": "ndugumi-user",
     "version": "1.0.0",
+    "sdkVersion": "55.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,11 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mamadouelimane.scenews",
-      "buildNumber": "3",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Scenews utilise votre position pour afficher les lieux culturels proches de vous.",
         "NSMicrophoneUsageDescription": "SCeNews utilise le microphone lorsque vous lancez une recherche vocale de lieux culturels.",
-        "NSSpeechRecognitionUsageDescription": "SCeNews transcrit votre recherche vocale pour trouver des lieux culturels."
+        "NSSpeechRecognitionUsageDescription": "SCeNews transcrit votre recherche vocale pour trouver des lieux culturels.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,8 +28,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.mamadouelimane.scenews",
-      "versionCode": 1,
+      "package": "com.cultesenegal.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

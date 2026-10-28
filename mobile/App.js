@@ -186,6 +186,9 @@ export default function App() {
         allowFileAccess={true}
         originWhitelist={['*']}
         mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
+        {...(Platform.OS === 'android'
+          ? { userAgent: 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' }
+          : {})}
       />
 
       {/* Bouton flottant retour arrière — visible quand on n'est pas sur Home */}
