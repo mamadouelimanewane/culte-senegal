@@ -466,6 +466,7 @@ const VoiceConversation = (() => {
 
   /** Crée le bouton d'activation / désactivation dans le DOM */
   function _createToggleButton() {
+    return null; // Bouton haut-parleur désactivé
     // Cherche un conteneur adapté, sinon ajoute au body
     const container = document.querySelector(
       '.voice-controls, .search-controls, .toolbar, header nav'

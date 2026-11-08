@@ -91,6 +91,7 @@ try {
   console.log(`   CSS: ${origSize} KB → ${minSize} KB (${((1 - minSize / origSize) * 100).toFixed(0)}% réduit)`);
 } catch (e) {
   console.error('   ⚠️  Erreur clean-css:', e.message);
+  fs.copyFileSync(cssBundlePath, cssMinPath);
 }
 
 // ── Générer index.prod.html ──

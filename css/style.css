@@ -33,7 +33,7 @@
   --radius-lg: 22px;
   --radius-xl: 30px;
   --nav-h: 66px;
-  --status-h: 28px;
+  --status-h: 0px;
   --transition: .22s ease;
 }
 
@@ -145,8 +145,9 @@ input { outline: none; }
 }
 .status-icons { display: flex; gap: 6px; align-items: center; }
 
-@media (max-width: 767px) {
-  .status-bar { display: none; }
+@media (max-width: 1023px) {
+  .status-bar { display: none !important; }
+  #tab-wrap { inset: 0 0 var(--nav-h) 0 !important; top: 0 !important; }
 }
 
 /* ── Tab Sections ── */
@@ -805,7 +806,7 @@ input { outline: none; }
    ════════════════════════════════════════════════════════════════ */
 #tab-wrap {
   position: absolute;
-  inset: var(--status-h) 0 var(--nav-h) 0;
+  inset: 0 0 var(--nav-h) 0;
   overflow: hidden;
 }
 
@@ -2421,7 +2422,7 @@ body.is-offline::after {
 
 /* ── Petit Mobile (<= 380px) ── */
 @media (max-width: 380px) {
-  .status-bar { padding: 0 12px; height: 50px; }
+  .status-bar { display: none !important; }
   .dt-brand-name { font-size: 17px; }
   .cat-icon { width: 50px; height: 50px; font-size: 22px; }
   .cat-label { font-size: 11px; }
@@ -2482,3 +2483,7 @@ body.is-offline::after {
     border-radius: 20px 20px 0 0;
   }
 }
+
+
+/* Masquer bouton micro et haut-parleur */
+.mic-btn, .vc-toggle-btn { display: none !important; }

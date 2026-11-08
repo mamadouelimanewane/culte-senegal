@@ -118,7 +118,7 @@ export default function App() {
     (function() {
       // Use the native iOS status bar; the web page's mobile status strip is a mock-up.
       var nativeChromeStyle = document.createElement('style');
-      nativeChromeStyle.textContent = '@media (max-width: 767px) { .status-bar { display: none !important; } }';
+      nativeChromeStyle.textContent = '@media (max-width: 1023px) { .status-bar { display: none !important; } #tab-wrap { inset: 0 0 var(--nav-h, 66px) 0 !important; top: 0 !important; } } .vc-toggle-btn { display: none !important; } .mic-btn { display: none !important; }';
       document.head.appendChild(nativeChromeStyle);
 
       // Disable long press context menu
